@@ -1,0 +1,58 @@
+html {
+    background: var(--background-color);
+    font-size: 16px;
+    font-family: Arial;
+    line-height: 1.5;
+    word-break: break-word;
+    overflow: hidden;
+}
+
+body {
+    height: 100vh;
+    margin: 0;
+}
+
+.navBarBreak {
+    height: var(--navbar-height);
+}
+
+#scrollingElement {
+    height: calc(100vh - var(--navbar-height));
+    width: 100vw;
+    overflow-y: auto;
+}
+
+.navbar {
+    height: var(--navbar-height);
+    background-color: var(--navbar-background-color);
+    padding: 0 12px;
+    position: fixed;
+    top: 0;
+    right: 0;
+    left: 0;
+    z-index: 1030;
+}
+
+.container {
+    width: 100%;
+    max-width: 800px;
+    padding-right: var(--bs-gutter-x, .75rem);
+    padding-left: var(--bs-gutter-x, .75rem);
+    padding-bottom: 16px;
+    margin-right: auto;
+    margin-left: auto;
+}
+
+@media (min-width: 750px) {
+    .container {
+        padding-left: calc(var(--bs-gutter-x, 0.75rem) + calc(calc(100vw - 100%) / 2));
+    }
+}
+
+p {
+    margin: 0;
+}
+
+.flowStickyContainer {
+    box-shadow: -2px 0 0 0 var(--background-color), 2px 0 0 0 var(--background-color);
+}

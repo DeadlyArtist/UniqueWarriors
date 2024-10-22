@@ -1,0 +1,23 @@
+.htmlRawText {
+    white-space: pre-wrap;
+    word-break: break-word;
+    padding-top: 10px;
+    padding-bottom: 16px;
+}
+
+.htmlTopBar, .htmlBottomBar {
+    background-color: var(--code-bar-background-color);
+    color: var(--codeblock-color);
+}
+
+.htmlTopBar {
+    border-radius: 8px 8px 0 0;
+}
+
+.htmlBottomBar {
+    border-radius: 0 0 8px 8px;
+}
+
+.htmlPreview {
+    padding: 10px 16px;
+}

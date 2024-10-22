@@ -1,0 +1,7 @@
+﻿@if (TempData[XError.clientError] != null)
+{
+    <div>
+        <h2 class="danger-text" style="margin-top:64px">Client Error</h2>
+        @TempData[XError.clientError]
+    </div>
+}
