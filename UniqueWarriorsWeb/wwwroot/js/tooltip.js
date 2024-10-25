@@ -1,13 +1,21 @@
 class Tooltip {
-    static tooltipQuery = ".tooltipAnchor, [tooltip], [tooltip-url]";
+    static tooltipAttributesSet = new Set(['tooltip', 'tooltip-url']);
+    static tooltipAttributes = [];
+    static tooltipQuery = "";
     static cachedHtmlsByUrl = {};
     static fetchPromisesByUrl = {};
     static currentElement = null;
     static keepTooltipsOpenKey = "q";
-    static minEdgeDistance = 6;
+    static minDistanceToEdge = 6;
+    static distanceToElement = 8;
 
     static tooltip = null;
     static tooltipStyle = null;
+
+    static init() {
+        Tooltip.tooltipAttributes = [...Tooltip.tooltipAttributesSet];
+        Tooltip.tooltipQuery = Tooltip.tooltipAttributes.map(a => `[${a}]`).join(', ');
+    }
 
     static setupEventListeners() {
         Tooltip.setupTooltips(document);
@@ -26,7 +34,7 @@ class Tooltip {
                         }
                     });
                 } else if (mutation.type === 'attributes') {
-                    if (mutation.attributeName === 'tooltip' || mutation.attributeName === 'tooltip-url') {
+                    if (Tooltip.tooltipAttributesSet.has(mutation.attributeName)) {
                         if (mutation.target === Tooltip.currentElement) {
                             Tooltip.updateTooltip();
                         }
@@ -35,7 +43,7 @@ class Tooltip {
             }
         });
 
-        observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['tooltip', 'tooltip-url'] });
+        observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: Tooltip.tooltipAttributes });
     }
 
     static setupTooltips(element = document) {
@@ -56,7 +64,8 @@ class Tooltip {
         let tooltipLeft = 0;
         let elementRect = element.getBoundingClientRect();
         let tooltipRect = Tooltip.tooltip.getBoundingClientRect();
-        let distance = 8;
+        let minDistanceToEdge = Tooltip.minDistanceToEdge;
+        let distanceToElement = Tooltip.distanceToElement;
         let position = 'top';
         let match = true;
 
@@ -67,13 +76,13 @@ class Tooltip {
         let tooltipYTopFromCenter = elementYCenter - tooltipRect.height / 2;
         let tooltipYBottomFromCenter = elementYCenter + tooltipRect.height / 2;
 
-        let yFitsTop = elementRect.top - tooltipRect.height - distance >= 0;
-        let yFitsBottom = elementRect.bottom + tooltipRect.height + distance <= window.innerHeight;
+        let yFitsTop = elementRect.top - tooltipRect.height - distanceToElement >= 0;
+        let yFitsBottom = elementRect.bottom + tooltipRect.height + distanceToElement <= window.innerHeight;
         let xCenterFitsLeft = tooltipXLeftFromCenter >= 0;
         let xCenterFitsRight = tooltipXRightFromCenter <= window.innerWidth;
         let xCenterFits = xCenterFitsLeft && xCenterFitsRight;
-        let xFitsLeft = elementRect.left - tooltipRect.width - distance >= 0;
-        let xFitsRight = elementRect.right + tooltipRect.width + distance <= window.innerWidth;
+        let xFitsLeft = elementRect.left - tooltipRect.width - distanceToElement >= 0;
+        let xFitsRight = elementRect.right + tooltipRect.width + distanceToElement <= window.innerWidth;
         let yCenterFitsTop = tooltipYTopFromCenter >= 0;
         let yCenterFitsBottom = tooltipYBottomFromCenter <= window.innerHeight;
         let yCenterFits = yCenterFitsTop && yCenterFitsBottom;
@@ -103,36 +112,36 @@ class Tooltip {
 
         if (match) {
             if (position === 'top') {
-                tooltipTop = elementRect.top - tooltipRect.height - distance;
+                tooltipTop = elementRect.top - tooltipRect.height - distanceToElement;
                 tooltipLeft = tooltipXLeftFromCenter;
             } else if (position === 'bottom') {
-                tooltipTop = elementRect.bottom + distance;
+                tooltipTop = elementRect.bottom + distanceToElement;
                 tooltipLeft = tooltipXLeftFromCenter;
             } else if (position === 'left') {
                 tooltipTop = tooltipYTopFromCenter;
-                tooltipLeft = elementRect.left - tooltipRect.width - distance;
+                tooltipLeft = elementRect.left - tooltipRect.width - distanceToElement;
             } else if (position === 'right') {
                 tooltipTop = tooltipYTopFromCenter;
-                tooltipLeft = elementRect.right + distance;
+                tooltipLeft = elementRect.right + distanceToElement;
             }
 
             Tooltip.tooltip.style.top = tooltipTop + 'px';
-            Tooltip.tooltip.style.left = Math.max(tooltipLeft, Tooltip.minEdgeDistance) + 'px';
+            Tooltip.tooltip.style.left = Math.max(tooltipLeft, minDistanceToEdge) + 'px';
             Tooltip.tooltipStyle.innerHTML = "";
         } else {
             if (position === 'top') {
-                tooltipTop = elementRect.top - tooltipRect.height - distance;
+                tooltipTop = elementRect.top - tooltipRect.height - distanceToElement;
             } else if (position === 'bottom') {
-                tooltipTop = elementRect.bottom + distance;
+                tooltipTop = elementRect.bottom + distanceToElement;
             }
             Tooltip.tooltip.style.top = tooltipTop + 'px';
 
-            let currentLeft = Tooltip.minEdgeDistance;
-            let newCenterIfLeft = Tooltip.minEdgeDistance + tooltipRect.width / 2;
+            let currentLeft = minDistanceToEdge;
+            let newCenterIfLeft = minDistanceToEdge + tooltipRect.width / 2;
             let newCenterIfRight = window.innerWidth - tooltipRect.width / 2;
             if (Math.abs(elementXCenter - newCenterIfLeft) > Math.abs(elementXCenter - newCenterIfRight)) {
                 // Closer to right than left.
-                currentLeft = window.innerWidth - Tooltip.minEdgeDistance - tooltipRect.width;
+                currentLeft = window.innerWidth - minDistanceToEdge - tooltipRect.width;
             }
             Tooltip.tooltip.style.left = currentLeft + 'px';
             let normalLeft = tooltipXLeftFromCenter;
@@ -147,45 +156,63 @@ class Tooltip {
 
     static async updateTooltip() {
         const element = Tooltip.currentElement;
-        let tooltipAttribute = element.getAttribute('tooltip');
-        if (tooltipAttribute == null) {
-            let url = element.getAttribute('tooltip-url');
-            let alreadyLoading = false;
-            if (url) {
-                if (Tooltip.fetchPromisesByUrl[url]) {
-                    alreadyLoading = true;
-                } else {
-                    if (!Tooltip.cachedHtmlsByUrl[url]) {
-                        Tooltip.tooltip.innerHTML = "Loading...";
-                    }
+        let attribute = null;
+        let value = null;
+        for (const attr of Tooltip.tooltipAttributes) {
+            value = element.getAttribute(attr);
+            if (value != null) {
+                attribute = attr;
+                break;
+            }
+        }
+
+        if (attribute == 'tooltip') {
+            Tooltip.smallTooltip(value);
+        } else if (attribute == 'tooltip-url') {
+            let url = value;
+            if (Tooltip.cachedHtmlsByUrl[url]) {
+                Tooltip.cardTooltip(Tooltip.cachedHtmlsByUrl[url]);
+            } else if (Tooltip.fetchPromisesByUrl[url]) {
+                // do nothing
+            } else {
+                Tooltip.smallTooltip("Loading...");
+
+                Tooltip.fetchPromisesByUrl[url] = (async () => {
                     try {
-                        const fetchPromise = fetch(url);
-                        Tooltip.fetchPromisesByUrl[url] = fetchPromise;
-                        const response = await fetchPromise;
-                        Tooltip.cachedHtmlsByUrl[url] = await response.text();
-                        Tooltip.tooltip.innerHTML = Tooltip.cachedHtmlsByUrl[url];
+                        Tooltip.cachedHtmlsByUrl[url] = await fetchText(url);
                     } catch (e) {
-                        Tooltip.tooltip.innerHTML = "Error loading tooltip.";
+                        if (Tooltip.currentElement == element) {
+                            Tooltip.smallTooltip("Error loading tooltip.");
+                        }
+                        return;
                     }
 
                     delete Tooltip.fetchPromisesByUrl[url];
-                }
+                    if (Tooltip.currentElement == element) Tooltip.updateTooltip();
+                })();
             }
-
-            if (!alreadyLoading) {
-                Tooltip.tooltip.classList.remove('smallTooltip');
-                Tooltip.tooltip.classList.add('cardTooltip');
-            }
-        } else {
-            Tooltip.tooltip.innerHTML = tooltipAttribute;
-            Tooltip.tooltip.classList.add('smallTooltip');
-            Tooltip.tooltip.classList.remove('cardTooltip');
         }
 
         if (Tooltip.currentElement) {
             Tooltip.tooltip.classList.remove('hide');
             Tooltip.updatePosition();
         }
+    }
+
+    static setTooltip(html) {
+        Tooltip.tooltip.innerHTML = html;
+    }
+
+    static smallTooltip(html) {
+        Tooltip.setTooltip(html);
+        Tooltip.tooltip.classList.add('smallTooltip');
+        Tooltip.tooltip.classList.remove('cardTooltip');
+    }
+
+    static cardTooltip(html) {
+        Tooltip.setTooltip(html);
+        Tooltip.tooltip.classList.remove('smallTooltip');
+        Tooltip.tooltip.classList.add('cardTooltip');
     }
 
     static async onMouseenter(event) {
@@ -224,6 +251,7 @@ class Tooltip {
         Tooltip.currentElement = null;
     }
 }
+Tooltip.init();
 
 // Initialize Tooltip on script load
 window.addEventListener('load', () => {
