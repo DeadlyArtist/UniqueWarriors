@@ -1,23 +1,3 @@
-function getIndexBeyond(searchTerm, text, startIndex = 0) {
-    // Find the next occurrence of the search term starting from startIndex
-    const nextIndex = text.indexOf(searchTerm, startIndex);
-
-    // If the searchTerm is not found, return null
-    if (nextIndex === -1) {
-        return null;
-    }
-
-    // Return the index just after the found searchTerm
-    const newIndex = nextIndex + searchTerm.length;
-
-
-    // If the new index is out of bounds, return null
-    if (newIndex === searchTerm.length) {
-        return null;
-    }
-
-    return nextIndex;
-}
 
 const _htmlStringHelpers = {
     escapeHtmlChars: {
@@ -120,4 +100,59 @@ function getStringByteSize(string) {
 
 function addIndent(string, spaces = 4) {
     return string.split('\n').map(l => ' '.repeat(spaces) + l).join('\n');
+}
+function getIndexBeyond(string, searchTerm, startIndex = 0) {
+    const nextIndex = string.indexOf(searchTerm, startIndex);
+    if (nextIndex === -1) return null;
+    const newIndex = nextIndex + searchTerm.length;
+    if (newIndex === searchTerm.length) return null;
+    return nextIndex;
+}
+
+function getSubstringAfterOrNull(string, searchTerm, startIndex = 0) {
+    const searchIndex = string.indexOf(searchTerm, startIndex);
+    if (searchIndex === -1) return null;
+    return string.slice(searchIndex + searchTerm.length);
+}
+
+function getSubstringAfter(string, searchTerm, startIndex = 0) {
+    const searchIndex = string.indexOf(searchTerm, startIndex);
+    return searchIndex === -1 ? string : string.slice(searchIndex + searchTerm.length);
+}
+
+function getSubstringBeforeOrNull(string, searchTerm, startIndex = 0) {
+    const searchIndex = string.indexOf(searchTerm, startIndex);
+    if (searchIndex === -1) return null;
+    return string.slice(0, searchIndex);
+}
+
+function getSubstringBefore(string, searchTerm, startIndex = 0) {
+    const searchIndex = string.indexOf(searchTerm, startIndex);
+    return searchIndex === -1 ? string : string.slice(0, searchIndex);
+}
+
+function getSubstringAfterLastOrNull(string, searchTerm, endIndex = null) {
+    const adjustedEndIndex = endIndex !== null ? endIndex : string.length;
+    const lastIndex = string.lastIndexOf(searchTerm, adjustedEndIndex);
+    if (lastIndex === -1) return null;
+    return string.slice(lastIndex + searchTerm.length, adjustedEndIndex);
+}
+
+function getSubstringAfterLast(string, searchTerm, endIndex = null) {
+    const adjustedEndIndex = endIndex !== null ? endIndex : string.length;
+    const lastIndex = string.lastIndexOf(searchTerm, adjustedEndIndex);
+    return lastIndex === -1 ? '' : string.slice(lastIndex + searchTerm.length, adjustedEndIndex);
+}
+
+function getSubstringBeforeLastOrNull(string, searchTerm, endIndex = null) {
+    const adjustedEndIndex = endIndex !== null ? endIndex : string.length;
+    const lastIndex = string.lastIndexOf(searchTerm, adjustedEndIndex);
+    if (lastIndex === -1) return null;
+    return string.slice(0, lastIndex);
+}
+
+function getSubstringBeforeLast(string, searchTerm, endIndex = null) {
+    const adjustedEndIndex = endIndex !== null ? endIndex : string.length;
+    const lastIndex = string.lastIndexOf(searchTerm, adjustedEndIndex);
+    return lastIndex === -1 ? string : string.slice(0, lastIndex);
 }

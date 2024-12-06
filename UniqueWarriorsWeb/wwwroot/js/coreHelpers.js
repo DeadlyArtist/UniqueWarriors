@@ -9,8 +9,14 @@ function _tryRemoveIndexHtml() {
         window.history.replaceState(null, "", newUrl);
     }
 }
-
 _tryRemoveIndexHtml();
+
+function _tryRemoveEmptyHash() {
+    let urlWithoutHash = window.location.href.split('#')[0];
+    let hash = window.location.hash;
+    if (hash != null && hash.length < 2) history.replaceState(null, "", urlWithoutHash);
+}
+_tryRemoveEmptyHash();
 
 
 pressedKeys = {};
@@ -106,16 +112,6 @@ function copyToClipboard(text) {
     navigator.clipboard.writeText(text);
 }
 
-function removeHash() {
-    // Get the current URL without the hash
-    const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + window.location.search;
-    // Replace the current history state with the clean URL
-    history.replaceState(null, "", cleanUrl);
-}
-
-function goToUrl(url) {
-    window.location.href = url;
-}
 
 function spliceChildren(element, start = -1, deleteCount = 0, ...newChildren) {
     if (start < 0) start = element.children.length + 1 + start;
@@ -159,6 +155,15 @@ function onBodyCreated(callback) {
         callback();
     } else {
         window.addEventListener('body-created', e => callback());
+    }
+}
+
+let isHtmlBeforeScriptsLoaded = false;
+function onBeforeScriptsAfterHtml(callback) {
+    if (isHtmlBeforeScriptsLoaded) {
+        callback();
+    } else {
+        window.addEventListener('app-loaded', e => callback());
     }
 }
 
@@ -212,16 +217,6 @@ function replaceTextNodeWithHTML(node, html) {
 
 function clamp(number, min, max) {
     return Math.max(min, Math.min(number, max));
-}
-
-function getUrlBase() {
-    return window.location.href.split('?')[0].split('#')[0];
-}
-
-function createObjectUrl(object, options = undefined) {
-    const blob = new Blob([object], options);
-    const blobUrl = URL.createObjectURL(blob);
-    return blobUrl;
 }
 
 /**

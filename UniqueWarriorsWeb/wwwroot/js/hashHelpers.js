@@ -57,7 +57,7 @@ function getHashParams() {
 }
 
 function getHash() {
-    return window.location.hash;
+    return window.location.hash == '' ? '#' : window.location.hash;
 }
 
 function getHashUrl() {
