@@ -12,10 +12,36 @@ class Pages {
 
     static error = this.register(new Page(null, "error", new ErrorPageManager()));
     static home = this.register(new Page("/", "home", new HomePageManager()));
-    static rules = this.register(new Page(null, "rules", new RulesPageManager()));
+
+    // Game
+    static rules = this.register(new Page(null, "rules", new SectionsPageManager(SectionHelpers.TextType, { registry: Registries.rules })));
+    static techniques = this.register(new Page(null, "techniques", new SectionsPageManager(SectionHelpers.MasonryType, { registry: Registries.techniques })));
+    static masteries = this.register(new Page(null, "masteries", new SectionsPageManager(SectionHelpers.MasonryType, { registry: Registries.masteries })));
+    static summons = this.register(new Page(null, "summons", new SectionsPageManager(SectionHelpers.MasonryType, { registry: Registries.summons })));
+    static conditions = this.register(new Page(null, "conditions", new SectionsPageManager(SectionHelpers.MasonryType, { registry: Registries.conditions })));
 
     static setup() {
         document.addEventListener('click', e => this._handleNavigation(e));
+        this.setupSidebar();
+    }
+
+    static setupSidebar() {
+        let sidebarPages = [
+            this.home,
+            this.rules,
+            this.techniques,
+            this.masteries,
+            this.summons,
+            this.conditions,
+        ];
+
+        for (let page of sidebarPages) {
+            let link = fromHTML(`<a class="element sidebarElement hoverable">`);
+            link.setAttribute('href', page.link);
+            link.textContent = page.name;
+
+            sidebarListElement.appendChild(link);
+        }
     }
 
     static _handleNavigation(event) {
@@ -79,7 +105,7 @@ class Pages {
         if (this.isHomePath(path)) {
             page = Pages.home;
         } else if (this.isAppPath(path)) {
-            path = getSubstringAfter(path, this.appPath);
+            path = getSubstringStartingWith(path, this.appPath);
             page = Registries.pages.get(path);
         }
 

@@ -156,3 +156,31 @@ function getSubstringBeforeLast(string, searchTerm, endIndex = null) {
     const lastIndex = string.lastIndexOf(searchTerm, adjustedEndIndex);
     return lastIndex === -1 ? string : string.slice(0, lastIndex);
 }
+
+function getSubstringStartingWith(string, searchTerm, startIndex = 0) {
+    const searchIndex = string.indexOf(searchTerm, startIndex);
+    return searchIndex === -1 ? '' : string.slice(searchIndex);
+}
+
+function getSubstringStartingWithOrNull(string, searchTerm, startIndex = 0) {
+    const searchIndex = string.indexOf(searchTerm, startIndex);
+    return searchIndex === -1 ? null : string.slice(searchIndex);
+}
+
+function getSubstringStartingWithLast(string, searchTerm, endIndex = null) {
+    const adjustedEndIndex = endIndex !== null ? endIndex : string.length;
+    const lastIndex = string.lastIndexOf(searchTerm, adjustedEndIndex);
+    return lastIndex === -1 ? '' : string.slice(lastIndex);
+}
+
+function getSubstringStartingWithLastOrNull(string, searchTerm, endIndex = null) {
+    const adjustedEndIndex = endIndex !== null ? endIndex : string.length;
+    const lastIndex = string.lastIndexOf(searchTerm, adjustedEndIndex);
+    return lastIndex === -1 ? null : string.slice(lastIndex);
+}
+
+
+function toNormalCase(text) {
+    text = text.replace(/_/g, ' ');
+    return text.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
+}

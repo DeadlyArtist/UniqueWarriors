@@ -8,10 +8,17 @@ class Page {
         return this.link;
     }
 
-    constructor(link, name, pageManager) {
+    constructor(link, name, pageManager, settings = null) {
         this.name = name;
-        this.link = link ?? `/${name}`;
+        this.link = link ?? `/app/${name}`;
         this.pageManager = pageManager;
+        this.settings = settings ?? {};
+
+        this.setup();
+    }
+
+    setup() {
+        if (!this.settings.keepCase) this.name = toNormalCase(this.name);
     }
 
     load() {

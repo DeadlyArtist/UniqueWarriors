@@ -163,7 +163,7 @@ function onBeforeScriptsAfterHtml(callback) {
     if (isHtmlBeforeScriptsLoaded) {
         callback();
     } else {
-        window.addEventListener('app-loaded', e => callback());
+        window.addEventListener('before-scripts', e => callback());
     }
 }
 

@@ -30,6 +30,7 @@ class App {
         this.isRunning = true;
         this.setup();
 
+        Loader.registerAllCollections();
         Pages.loadFromPath();
 
         Resources.preloadAll();

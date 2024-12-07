@@ -10,7 +10,7 @@ async function fetchText(url) {
     return await response.text();
 }
 
-async function fetchJson(url) {
+async function fetchFromJson(url) {
     return JSON.parse(await fetchText(url));
 }
 
@@ -42,6 +42,6 @@ async function fetchTextWithCache(url) {
     return result;
 }
 
-async function fetchJsonWithCache(url) {
+async function fetchFromJsonWithCache(url) {
     return JSON.parse(await fetchTextWithCache(url));
 }

@@ -7,21 +7,21 @@
 }
 
 .sidebar {
-    background: var(--sidebar-background-color);
-    width: 250px;
-    height: 100vh;
-    padding-top: var(--navbar-height);
-    padding-bottom: 8px;
-    position: fixed;
-    top: 0;
-    left: 0;
-    z-index: 999;
+  background: var(--sidebar-background-color);
+  width: var(--sidebar-width);
+  height: 100vh;
+  padding-top: var(--navbar-height);
+  padding-bottom: 8px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 999;
 }
 
-@media (max-width: 250px) {
-    .sidebar {
-      width: 100vw;
-    }
+@media (max-width: var(--sidebar-width)) {
+  .sidebar {
+    width: 100vw;
+  }
 }
 
 

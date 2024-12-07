@@ -39,6 +39,10 @@
     flex-wrap: nowrap;
 }
 
+.smallGap {
+  gap: 4px;
+}
+
 .largeGap {
     gap: 6rem;
 }

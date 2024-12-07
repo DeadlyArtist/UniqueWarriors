@@ -16,7 +16,7 @@ class Resource {
         return await fetchTextWithCache(this.link);
     }
 
-    async getJson() {
-        return await fetchJsonWithCache(this.link);
+    async getFromJson() {
+        return await fetchFromJsonWithCache(this.link);
     }
 }

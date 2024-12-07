@@ -1,4 +1,4 @@
-const minWidthForPermaOpenSidebar = 1340;
+const minWidthForPermaOpenSidebar = 1534;
 
 let preSidebarStyleElement;
 function preSidebar() {
