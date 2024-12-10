@@ -139,6 +139,8 @@ class MasonryGrid {
 }
 
 function resizeMasonryGrid(grid) {
+    if (!grid.classList.contains('masonryGrid')) return;
+
     let masonry = grid.__masonry;
     if (masonry) {
         masonry.resize();
@@ -156,8 +158,9 @@ onBodyCreated(() => {
     new MutationObserver(mutations => {
         mutations.forEach(mutation => {
             mutation.addedNodes.forEach(node => {
-                if (node.nodeType === 1 && node.classList.contains("masonryGrid")) {
+                if (node.nodeType === Node.ELEMENT_NODE) {
                     resizeMasonryGrid(node);
+                    node.querySelectorAll('.masonryGrid').forEach(resizeMasonryGrid);
                 }
             });
         });

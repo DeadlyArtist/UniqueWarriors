@@ -16,9 +16,7 @@ class SectionsPageManager extends PageManager {
         if (streamProvider) {
             this.setupStream(streamProvider);
         } else {
-            const sections = typeof this.sectionsProvider === "function"
-                ? this.sectionsProvider()
-                : this.sectionsProvider;
+            const sections = isFunction(this.sectionsProvider) ? this.sectionsProvider() : this.sectionsProvider;
             const overview = SectionHelpers.generateStructuredHtmlForSectionOverview(sections, this.overviewType);
             pageElement.appendChild(overview.container);
         }
@@ -30,8 +28,9 @@ class SectionsPageManager extends PageManager {
         const overview = SectionHelpers.generateStructuredHtmlForSectionOverview(sections, this.overviewType);
         pageElement.appendChild(overview.container);
 
-        this.stream = streamProvider((newSection) => {
-            overview.addSection(newSection, this.overviewType);
+        this.stream = streamProvider(event => {
+            if (event.registered) overview.addSection(event.obj, { insertBefore: event.insertBefore });
+            else overview.removeSection(event.obj);
         });
     }
 

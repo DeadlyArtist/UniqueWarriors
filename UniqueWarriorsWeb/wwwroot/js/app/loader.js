@@ -9,6 +9,8 @@ class Loader {
         new Collection(Registries.rules, [
             new Collection.SectionResourceWrapper(Resources.rules_main),
             new Collection.SectionResourceWrapper(Resources.rules_attacks),
+            new Collection.SectionResourceWrapper(Resources.rules_character_creation),
+            new Collection.SectionResourceWrapper(Resources.rules_character_leveling),
             new Collection.SectionResourceWrapper(Resources.tools_sheet_pc),
             new Collection.SectionResourceWrapper(Resources.tools_sheet_npc),
         ]),

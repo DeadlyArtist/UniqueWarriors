@@ -13,33 +13,33 @@ class Collection {
     }
 
     async register() {
-        var sections = await this.parse();
+        let sections = await this.parse();
 
         // Register top-level sections in categories registry if specified in settings
         if (this.settings.categories) {
             for (let section of sections) {
-                Registries.categories.registerSection(SectionHelpers.copyWithoutSubsections(section));
+                Registries.categories.register(SectionHelpers.copyWithoutSubSections(section));
 
                 // Register all second-level sections in the target registry
-                if (section.SubSections && section.SubSections.length > 0) {
-                    for (let subSection of section.SubSections) {
-                        this.registry.registerSection(subSection);
+                if (section.subSections && section.subSections.length > 0) {
+                    for (let subSection of section.subSections) {
+                        this.registry.register(subSection);
                     }
                 }
             }
         } else {
             // Default behavior: register all sections directly to the target registry
             for (let section of sections) {
-                this.registry.registerSection(section);
+                this.registry.register(section);
             }
         }
     }
 
     async parse() {
-        var allSections = [];
+        let allSections = [];
         for (let wrapper of this.sectionResourceWrappers) {
             var sections = await wrapper.resource.getFromJson();
-            sections = SectionHelpers.modify(sections, wrapper.settings);
+            sections = SectionHelpers.modify(sections, { ...SectionHelpers.getInitModifySettings(),  ...wrapper.settings });
             sections.forEach(s => allSections.push(s));
         }
         return allSections;

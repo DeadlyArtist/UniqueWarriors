@@ -4,9 +4,23 @@ class RegistryEntry {
     tags;
     registry;
 
-    constructor(obj, id = null, tags = null) {
+    constructor(obj, settings = null) {
+        settings ??= {};
         this.obj = obj;
-        this.id = id ?? obj.id;
-        this.tags = tags ?? obj.tags;
+        this.id = settings.id ?? RegistryEntry.extractId(obj);
+        this.tags = new Set([...(settings.tags ?? obj.tags ?? [])]);
+    }
+
+    static extractId(obj) {
+        if (isString(obj) || isNumber(obj)) return obj;
+        return obj.id ?? obj.name ?? obj.title;
+    }
+
+    unregister() {
+        this.registry?.unregisterEntry(this);
+    }
+
+    hasTag(tag) {
+        return this.tags.has(tag);
     }
 }

@@ -5,6 +5,7 @@ class App {
         window.addEventListener('hashchange', this.#onHashChange);
         window.addEventListener('load', this.#onLoad);
         window.addEventListener('load-silently', this.#onLoad);
+        window.addEventListener('popstate', this.#onLoad);
 
         window.dispatchEvent(new CustomEvent('app-loaded'));
     }

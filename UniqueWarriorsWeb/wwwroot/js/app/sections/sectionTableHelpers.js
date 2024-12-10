@@ -6,14 +6,14 @@ class SectionTableHelpers {
 
     static generateHtmlForTable(model) {
         // Create the wrapper and main table element
-        const tableWrapper = fromHTML(`<div class="tableWrapper search-content search-label-table">`);
+        const tableWrapper = fromHTML(`<div class="section-table tableWrapper search-content search-label-table">`);
         const table = fromHTML(`<table>`);
 
         // Determine the classes for the table based on header location
-        let none = !model.TableHeaderLocation || model.TableHeaderLocation === this.None;
-        let top = model.TableHeaderLocation === this.Top;
-        let left = model.TableHeaderLocation === this.Left;
-        let both = model.TableHeaderLocation === this.Both;
+        let none = !model.tableHeaderLocation || model.tableHeaderLocation === this.None;
+        let top = model.tableHeaderLocation === this.Top;
+        let left = model.tableHeaderLocation === this.Left;
+        let both = model.tableHeaderLocation === this.Both;
 
         // Add relevant classes
         table.classList.add("tableBordered");
@@ -29,17 +29,17 @@ class SectionTableHelpers {
 
         // Generate rows and cells based on header logic
         if (none) {
-            model.Table.forEach(rowData => {
+            model.table.forEach(rowData => {
                 const row = this.createTableRow(rowData);
                 table.appendChild(row);
             });
         } else if (top) {
-            table.appendChild(this.createTableHeader(model.Table[0]));
-            for (let i = 1; i < model.Table.length; i++) {
-                table.appendChild(this.createTableRow(model.Table[i]));
+            table.appendChild(this.createTableHeader(model.table[0]));
+            for (let i = 1; i < model.table.length; i++) {
+                table.appendChild(this.createTableRow(model.table[i]));
             }
         } else if (left) {
-            model.Table.forEach(rowData => {
+            model.table.forEach(rowData => {
                 const row = fromHTML(`<tr>`);
                 const headerCell = fromHTML(`<th><span>`);
                 headerCell.querySelector("span").textContent = rowData[0];
@@ -54,17 +54,17 @@ class SectionTableHelpers {
                 table.appendChild(row);
             });
         } else if (both) {
-            table.appendChild(this.createTableHeader(model.Table[0]));
-            for (let i = 1; i < model.Table.length; i++) {
+            table.appendChild(this.createTableHeader(model.table[0]));
+            for (let i = 1; i < model.table.length; i++) {
                 const row = fromHTML(`<tr>`);
 
                 const headerCell = fromHTML(`<th><span>`);
-                headerCell.querySelector("span").textContent = model.Table[i][0];
+                headerCell.querySelector("span").textContent = model.table[i][0];
                 row.appendChild(headerCell);
 
-                for (let j = 1; j < model.Table[i].length; j++) {
+                for (let j = 1; j < model.table[i].length; j++) {
                     const cell = fromHTML(`<td><span>`);
-                    cell.querySelector("span").textContent = model.Table[i][j];
+                    cell.querySelector("span").textContent = model.table[i][j];
                     row.appendChild(cell);
                 }
 

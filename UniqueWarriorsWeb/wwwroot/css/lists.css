@@ -43,8 +43,16 @@
   gap: 4px;
 }
 
+.halfMediumGap {
+  gap: 16px;
+}
+
+.mediumGap {
+  gap: 32px;
+}
+
 .largeGap {
-    gap: 6rem;
+    gap: 96px;
 }
 
 .flexFill {

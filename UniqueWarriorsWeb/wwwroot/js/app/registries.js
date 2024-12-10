@@ -2,7 +2,7 @@ class Registries {
     static all = {};
 
     static register(registry) {
-        return this.all[registry.id] = registry;
+        return this.all[registry.name] = registry;
     }
 
     static resources = this.register(new Registry("resources"));

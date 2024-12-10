@@ -44,4 +44,20 @@ class HtmlHelpers {
 
         return codeBar;
     }
+
+    static insertAt(parentElement, index, elementToInsert, output = null) {
+        output ??= {};
+
+        const children = Array.from(parentElement.children);
+
+        output.index = index;
+        output.insertedBefore = index > 0 ? children[index - 1] : null;
+        output.insertedAfter = index < children.length ? children[index] : null;
+
+        if (index >= children.length) {
+            parentElement.appendChild(elementToInsert);
+        } else {
+            parentElement.insertBefore(elementToInsert, children[index]);
+        }
+    }
 }
