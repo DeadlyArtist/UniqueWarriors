@@ -60,4 +60,13 @@ class HtmlHelpers {
             parentElement.insertBefore(elementToInsert, children[index]);
         }
     }
+
+    static getClosestProperty(element, property) {
+        while (element) {
+            if (element[property] !== undefined) return element[property];
+            element = element.parentElement;
+        }
+        return undefined;
+    }
+
 }

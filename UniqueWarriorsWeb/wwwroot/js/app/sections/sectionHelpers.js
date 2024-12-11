@@ -7,15 +7,48 @@ class SectionHelpers {
 
         if (settings.classify) {
             sections = this.classify(sections);
+        } else if (settings.clone) {
+            if (settings.noChildren) sections = sections.map(section => section.cloneWithoutSubSections());
+            else sections = sections.map(section => section.clone());
         }
 
-        if (settings.heightLevel != null) {
-            this.adjustHeightLevel(sections, settings.heightLevel);
+        if (settings.addChild) settings.addChildren = [settings.addChild];
+        if (settings.removeChild) settings.removeChildren = [settings.removeChild];
+
+        if (settings.replaceChildren) {
+            settings.noChildren = true;
+            settings.addChildren = settings.replaceChildren;
+        }
+        if (settings.noChildren) sections.forEach(s => s.clearSubSections());
+        if (settings.addChildren) sections.forEach(s => settings.addChildren.forEach(c => s.addSubSection(c)));
+        if (settings.removeChildren) sections.forEach(s => settings.removeChildren.forEach(c => s.removeSubSection(c)));
+
+        if (settings.parent) {
+            sections = this.addTopLevelSection(sections, {
+                section: settings.parent,
+                height: settings.parentHeight ?? 0,
+                heightOffset: settings.parentHeightOffset ?? 1,
+            });
+        } else if (settings.parentTitle) {
+            sections = sections.map(s => this.addTopLevelSection([s], {
+                title: settings.parentTitle,
+                height: settings.parentTitleHeight ?? 0,
+                heightOffset: settings.parentTitleHeightOffset ?? 1,
+            })[0]);
         }
 
         if (settings.title != null) {
-            sections = this.addTopLevelSection(sections, settings.title, settings.titleHeight ?? 0);
+            sections = this.addTopLevelSection(sections, {
+                title: settings.title,
+                height: settings.titleHeight ?? 0,
+                heightOffset: settings.titleHeightOffset ?? 1,
+            });
         }
+
+        if (settings.height != null) {
+            this.adjustHeightLevel(sections, settings.height);
+        }
+
 
         if (settings.setupAbilities) {
             sections.forEach(section => this.setupAbility(section));
@@ -27,20 +60,83 @@ class SectionHelpers {
     static getInitModifySettings() {
         return {
             classify: true,
-            heightLevel: 1,
+            height: 1,
             setupAbilities: true,
         };
     }
 
-    static copyWithoutSubSections(section) {
-        let copiedSection = clone(section);
-        copiedSection.subSections = [];
-        return copiedSection;
+    static getPathModifierSettings(modifiers, section) {
+        let settings = {
+            height: 1,
+        };
+        for (let modifier of modifiers) {
+            let parts = modifier.split('=');
+            if (parts.length == 1) settings[parts[0]] = true;
+            else if (parts.length == 2) settings[parts[0]] = parts[1];
+        }
+
+        if (settings.addChild) settings.addChildren = settings.addChild;
+        if (settings.removeChild) settings.removeChildren = settings.removeChild;
+
+        if (settings.replaceChildren) {
+            settings.noChildren = true;
+            settings.addChildren = settings.replaceChildren;
+        }
+        if (settings.addChildren) settings.addChildren = this.resolveMultipleSectionsExpression(settings.addChildren);
+        if (settings.removeChildren) settings.removeChildren = this.resolveMultipleSectionsExpression(settings.removeChildren);
+        if (settings.parent) {
+            if (settings.parent === true) {
+                settings.parent = section.parent;
+            } else {
+                settings.parent = this.resolveSectionExpression(settings.parent);
+            }
+        }
+
+        if (settings.parentTitle) {
+            settings.parentTitle = section.parent.title;
+            settings.parentTitleHeightOffset = section.height - section.parent.height;
+        }
+
+        settings.classify = false;
+        settings.setupAbilities = false;
+        settings.clone = true;
+
+        return settings;
+    }
+
+    static resolveSectionExpression(expression, multiple = false) {
+        let paths = expression.split('&');
+
+        let sections = [];
+        for (let path of paths) {
+            let modifiers = path.split('*');
+            path = modifiers.shift();
+            let section = this.resolvePath(path);
+            let modifyResult = SectionHelpers.modify([section], this.getPathModifierSettings(modifiers, section));
+            if (!multiple) return modifyResult[0];
+            modifyResult.forEach(s => sections.push(s));
+        }
+        return sections;
+    }
+
+    static resolveMultipleSectionsExpression(expression) {
+        return this.resolveSectionExpression(expression, true);
+    }
+
+    static resolvePath(path) {
+        let parts = path.split('/');
+        let registry = Registries.all[parts.shift()];
+        let sectionId = parts.pop();
+        for (let part of parts) {
+            registry = registry.get(part).subSections;
+        }
+        return registry.get(sectionId);
     }
 
     static classify(sections) {
         let newSections = [];
         for (const section of sections) {
+            if (section instanceof Section) continue;
             newSections.push(Section.classify(section));
         }
 
@@ -59,33 +155,34 @@ class SectionHelpers {
         return sections;
     }
 
-    static addTopLevelSection(sections, title, titleHeight = 0) {
-        // Adjust heights of all original sections and their subsections
-        const queue = [...sections];
-        while (queue.length > 0) {
-            const current = queue.shift();
+    static addTopLevelSection(sections, settings = null) {
+        settings ??= {};
+        settings.height ??= 0;
+        settings.heightOffset ??= 1;
+        this.adjustHeightLevel(settings.height + settings.heightOffset);
 
-            current.height += titleHeight;
-
-            if (current.subSections && current.subSections.length > 0) {
-                queue.push(...current.subSections);
-            }
+        let section;
+        if (settings.section) {
+            section = settings.section.cloneWithoutSubSections();
+            section.height = settings.height;
+            sections.forEach(s => section.registerSubSection(s));
+        } else if (settings.title != null) {
+            section = new Section({
+                title,
+                height,
+                subSections: sections, // Nest all current sections as subsections
+            });
         }
 
-        const newTopLevelSection = {
-            title: title,
-            height: titleHeight,
-            subSections: sections // Nest all current sections as subsections
-        };
-
-        return [newTopLevelSection];
+        return [section];
     }
 
     static setupAbility(section) {
-
+        if (section instanceof Section) return;
     }
 
-    static generateStructuredHtmlForSection(section, type) {
+    static generateStructuredHtmlForSection(section, type, settings = null) {
+        settings ??= {};
         const sectionElement = fromHTML(`<div class="section">`);
         let needsBreak = false;
 
@@ -97,31 +194,37 @@ class SectionHelpers {
             sectionElement.appendChild(headerElement);
         } 
 
+        // Need to extract embedded (summon) variables before here.
         let attributesElement = null;
         if (section.attributes?.length > 0) {
             needsBreak = true;
-            attributesElement = fromHTML(`<div class="section-attributes">`);
+            attributesElement = fromHTML(`<div class="section-attributes markTooltips">`);
             section.attributes.forEach(attributeList => {
                 let attributesLine = fromHTML(`<div class="section-attributesLine">`);
                 attributesElement.appendChild(attributesLine);
-                let parts = [];
-                attributeList.forEach(attr => {
+                attributeList.forEach((attr, index) => {
+                    let attributeElement;
                     if (SectionAttributesHelpers.isTag(attr)) {
-                        parts.push(`<span class="section-tag">${escapeHTML(attr)}</span>`);
+                        attributeElement = fromHTML(`<span class="section-tag">${escapeHTML(attr)}</span>`);
                     } else if (SectionAttributesHelpers.isHeadValue(attr)) {
-                        parts.push(`<span class="section-headValue"><span class="name">${escapeHTML(attr.name)}</span>: <span class="value">${escapeHTML(attr.value)}</span></span>`);
+                        attributeElement = fromHTML(`<span class="section-headValue"><span class="section-headValue-name">${escapeHTML(attr.name)}</span>: <span class="section-headValue-value">${escapeHTML(attr.value)}</span></span>`);
+                        attributeElement._headValue = attr;
                     }
+                    attributesLine.appendChild(attributeElement);
+                    if (index < attributeList.length - 1) attributesLine.appendChild(document.createTextNode(", "));
                 });
-                attributesLine.innerHTML = parts.join(', ');
             });
+            SectionReferenceHelpers.addTooltips(attributesElement, settings.variables);
             sectionElement.appendChild(attributesElement);
         }
+
 
         let contentElement = null;
         if (section.content) {
             needsBreak = true;
-            contentElement = fromHTML(`<div class="section-content">`);
+            contentElement = fromHTML(`<div class="section-content markTooltips">`);
             contentElement.textContent = section.content;
+            SectionReferenceHelpers.addTooltips(contentElement, settings.variables);
             sectionElement.appendChild(contentElement);
         }
 
@@ -130,13 +233,15 @@ class SectionHelpers {
             if (needsBreak) sectionElement.appendChild(hb(2));
             needsBreak = true;
             tableElement = SectionTableHelpers.generateHtmlForTable(section);
+            SectionReferenceHelpers.addTooltips(tableElement, settings.variables);
             sectionElement.appendChild(tableElement);
         }
 
         const structuredSection = new StructuredSectionHtml(
             section,
             sectionElement,
-            sectionElement
+            sectionElement,
+            settings,
         );
 
         structuredSection.headerElement = headerElement;
@@ -154,7 +259,7 @@ class SectionHelpers {
         return structuredSection;
     }
 
-    static generateStructuredHtmlForSectionOverview(sections, type) {
+    static generateStructuredHtmlForSectionOverview(sections, type, settings = null) {
         let container = fromHTML(`<div class="section-overview listContainerVertical children-w-100">`);
 
         let sectionListElement;
@@ -166,14 +271,14 @@ class SectionHelpers {
         sectionListElement.setAttribute('placeholder', "Loading...");
         container.appendChild(sectionListElement);
 
-        const overview = new StructuredSectionOverviewHtml(type, container, sectionListElement);
+        const overview = new StructuredSectionOverviewHtml(type, container, sectionListElement, settings);
         sections.forEach(section => overview.addSection(section));
 
         return overview;
     }
 
-    static wrapSectionForOverview(section, type) {
-        const structuredSection = this.generateStructuredHtmlForSection(section, type);
+    static wrapSectionForOverview(section, type, settings = null) {
+        const structuredSection = this.generateStructuredHtmlForSection(section, type, settings);
         if (type === this.TextType) {
             structuredSection.wrapperElement = structuredSection.element;
         } else if (type === this.MasonryType) {
@@ -185,10 +290,11 @@ class SectionHelpers {
 }
 
 class StructuredSectionHtml {
-    constructor(section, element, wrapperElement) {
+    constructor(section, element, wrapperElement, settings = null) {
         this.section = section;
         this.element = element;
         this.wrapperElement = wrapperElement;
+        this.settings = settings;
         this.headerElement = null;
         this.attributesElement = null;
         this.contentElement = null;
@@ -196,12 +302,12 @@ class StructuredSectionHtml {
         this.subSectionContainer = null;
         this.subSections = new Registry();
 
-        element.__section = this;
-        wrapperElement.__section = this;
+        element._section = this;
+        wrapperElement._section = this;
     }
 
     addSubSection(subSection, type, insertSettings = {}) {
-        const structuredSubSection = SectionHelpers.generateStructuredHtmlForSection(subSection, type);
+        const structuredSubSection = SectionHelpers.generateStructuredHtmlForSection(subSection, type, this.settings);
 
         if (!this.subSectionContainer) {
             this.subSectionContainer = fromHTML(`<div class="section-subSections listVertical halfMediumGap children-w-100">`);
@@ -230,19 +336,20 @@ class StructuredSectionHtml {
 
 
 class StructuredSectionOverviewHtml {
-    constructor(type, container, sectionListElement) {
+    constructor(type, container, sectionListElement, settings = null) {
         this.type = type;
         this.container = container;
         this.sectionListElement = sectionListElement;
+        this.settings = settings;
         this.sections = new Registry();
 
-        container.__sectionOverview = this;
-        sectionListElement.__sectionOverview = this;
+        container._sectionOverview = this;
+        sectionListElement._sectionOverview = this;
     }
 
     addSection(section, insertSettings) {
         insertSettings ??= {};
-        const structuredSection = SectionHelpers.wrapSectionForOverview(section, this.type);
+        const structuredSection = SectionHelpers.wrapSectionForOverview(section, this.type, this.settings);
 
         let index = this.sections.getInsertIndex(insertSettings.insertBefore, insertSettings.insertAfter);
         if (index !== null) {

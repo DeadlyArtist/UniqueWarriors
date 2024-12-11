@@ -46,7 +46,7 @@
   /* Specific Elements */
   --sidebar-background-color: var(--background-color);
   --navbar-background-color: var(--background-color);
-  --tooltip-background-color: var(--raised-background-color);
+  --tooltip-background-color: var(--lowered-background-color);
   --code-bar-background-color: var(--raised-background-color);
   --codeblock-color: var(--text-color);
   --codeblock-background-color: var(--lowered-background-color);

@@ -32,6 +32,7 @@ class App {
         this.setup();
 
         Loader.registerAllCollections();
+        Snippets.registerAllSnippets();
         Pages.loadFromPath();
 
         Resources.preloadAll();

@@ -141,11 +141,11 @@ class MasonryGrid {
 function resizeMasonryGrid(grid) {
     if (!grid.classList.contains('masonryGrid')) return;
 
-    let masonry = grid.__masonry;
+    let masonry = grid._masonry;
     if (masonry) {
         masonry.resize();
     } else {
-        grid.__masonry = new MasonryGrid(grid);
+        grid._masonry = new MasonryGrid(grid);
     }
 }
 

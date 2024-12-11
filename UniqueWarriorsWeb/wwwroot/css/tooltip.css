@@ -86,14 +86,14 @@
   border-color: transparent var(--tooltip-background-color) transparent transparent;
 }
 
-.colorTooltips .replaceTooltips .tooltipTarget {
+.colorTooltips .markTooltips .tooltipTarget {
   color: var(--stress-color);
 }
 
-.underlineTooltips .replaceTooltips .tooltipTarget {
+.underlineTooltips .markTooltips .tooltipTarget {
   text-decoration: underline 2px;
 }
 
-.highlightTooltips .replaceTooltips .tooltipTarget {
+.highlightTooltips .markTooltips .tooltipTarget {
   background-color: var(--highlight-color);
 }

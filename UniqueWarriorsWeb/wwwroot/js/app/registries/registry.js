@@ -32,7 +32,7 @@ class Registry {
         if (entry.id == null) return null;
 
         let insertInfo = {};
-        let index = this.getInsertIndex(settings.insertBefore, settings.insertAfter);
+        let index = this.getInsertIndex(settings.replace ?? settings.insertBefore, settings.insertAfter);
         if (index != null) {
             MapHelpers.insertAtIndex(this.entries, index, entry.id, entry, insertInfo);
         } else {
@@ -50,6 +50,8 @@ class Registry {
 
         // Notify any active streams
         for (const stream of this.streams) stream.callback(this.getCallbackParam(entry, true, insertInfo));
+
+        if (settings.replace != null) this.unregister(settings.replace);
 
         return entry;
     }
@@ -75,6 +77,10 @@ class Registry {
         for (const stream of this.streams) stream.callback(this.getCallbackParam(entry, false));
 
         return entry;
+    }
+
+    clear() {
+        for (let entry of this.getAllEntries()) this.unregisterEntry(entry);
     }
 
     /**
@@ -139,11 +145,6 @@ class Registry {
         return [...this.entries.values()];
     }
 
-    *iterate() {
-        for (const entry of this.entries.values()) {
-            yield entry.obj;
-        }
-    }
 
     forEach(callback, thisArg = undefined) {
         for (const obj of this) {
@@ -151,14 +152,20 @@ class Registry {
         }
     }
 
-    getEntryIterator() {
-        return this.iterateEntries();
+    *iterate() {
+        for (const entry of this.entries.values()) {
+            yield entry.obj;
+        }
     }
 
     *iterateEntries() {
         for (const entry of this.entries.values()) {
             yield entry;
         }
+    }
+
+    getEntryIterator() {
+        return this.iterateEntries();
     }
 
     /**
@@ -192,9 +199,10 @@ class Registry {
     }
 
     clone() {
-        return Registry.fromJSON(this.toJSON());
+        return Registry.fromJSON(JSON.stringify(this));
     }
 
+    // Does NOT return a string. Use JSON.stringify instead.
     toJSON() {
         return {
             name: this.name,

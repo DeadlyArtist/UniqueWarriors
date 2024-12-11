@@ -18,7 +18,7 @@ class Collection {
         // Register top-level sections in categories registry if specified in settings
         if (this.settings.categories) {
             for (let section of sections) {
-                Registries.categories.register(SectionHelpers.copyWithoutSubSections(section));
+                Registries.categories.register(section.cloneWithoutSubSections());
 
                 // Register all second-level sections in the target registry
                 if (section.subSections && section.subSections.length > 0) {

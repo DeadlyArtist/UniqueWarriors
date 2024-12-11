@@ -193,9 +193,13 @@ function logStorageSizes() {
     ; console.log("Total = " + (_lsTotal / 1024).toFixed(2) + " KB");
 }
 
-function replaceElementWithClone(element) {
-    const clone = element.cloneNode(true);
-    element.parentNode.replaceChild(clone, element);
+function replaceNode(oldNode, newNode) {
+    return oldNode.parentNode.replaceChild(newNode, oldNode);
+}
+
+function replaceNodeWithClone(node) {
+    const clone = node.cloneNode(true);
+    replaceNode(node, clone);
     return clone;
 }
 
@@ -213,6 +217,32 @@ function replaceTextNodeWithHTML(node, html) {
         // Remove the original text node
         node.remove();
     }
+}
+
+function getTextNodesFromArray(elements, settings = null) {
+    settings ??= {};
+    let nodes = [];
+    if (!elements) return nodes;
+
+    for (let element of elements) {
+        (function worker(node) {
+            if (node.nodeType === Node.TEXT_NODE) {
+                nodes.push(node);
+            } else if (node.nodeType === Node.ELEMENT_NODE) {
+                if (settings.excludeQuery && node.matches(settings.excludeQuery)) return;
+                if (settings.includeQuery && !node.matches(settings.includeQuery)) return;
+                for (const child of node.childNodes) {
+                    worker(child);
+                }
+            }
+        })(element);
+    }
+
+    return nodes;
+}
+
+function getTextNodes(element, settings = null) {
+    return getTextNodesFromArray([element], settings);
 }
 
 function clamp(number, min, max) {

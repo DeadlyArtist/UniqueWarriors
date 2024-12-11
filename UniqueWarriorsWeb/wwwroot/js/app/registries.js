@@ -1,6 +1,9 @@
 class Registries {
     static all = {};
 
+    /**
+     * @returns {Registry}
+     */
     static register(registry) {
         return this.all[registry.name] = registry;
     }
@@ -15,4 +18,6 @@ class Registries {
     static summons = this.register(new Registry("summons"));
     static conditions = this.register(new Registry("conditions"));
     static rules = this.register(new Registry("rules"));
+
+    static snippets = this.register(new Registry("snippets"));
 }

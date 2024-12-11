@@ -6,7 +6,7 @@ class SectionTableHelpers {
 
     static generateHtmlForTable(model) {
         // Create the wrapper and main table element
-        const tableWrapper = fromHTML(`<div class="section-table tableWrapper search-content search-label-table">`);
+        const tableWrapper = fromHTML(`<div class="section-table markTooltips tableWrapper search-content search-label-table">`);
         const table = fromHTML(`<table>`);
 
         // Determine the classes for the table based on header location

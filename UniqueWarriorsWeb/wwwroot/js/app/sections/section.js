@@ -7,7 +7,7 @@ class Section {
         this.table = section.table ?? null;
         this.tableHeaderLocation = section.tableHeaderLocation ?? null;
         this.subSections = new Registry();
-        if (section.subSections) for (const subSection of section.subSections) this.subSections.register(subSection);
+        if (section.subSections) for (const subSection of section.subSections) this.addSubSection(subSection);
 
         // Custom
         this.parent = section.parent ?? null;
@@ -36,6 +36,30 @@ class Section {
         return section;
     }
 
+    addSubSection(section, settings) {
+        this.subSections.register(section, settings);
+        section.parent = this;
+    }
+
+    removeSubSection(section) {
+        this.subSections.unregister(section);
+        section.parent = null;
+    }
+
+    clearSubSections() {
+        for (let subSection of this.subSections) this.removeSubSection(subSection);
+    }
+
+    clone() {
+        return Section.fromJSON(JSON.stringify(this));
+    }
+
+    cloneWithoutSubSections() {
+        let json = this.toJSON();
+        json.subSections = [];
+        return Section.fromJSON(JSON.stringify(this));
+    }
+
     toJSON() {
         return {
             title: this.title,
@@ -52,7 +76,7 @@ class Section {
     static fromJSON(json) {
         let section = JSON.parse(json);
         let newSubSections = [];
-        if (section.subSections) section.subSection.forEach(s => newSubSections.push(new Section(s)));
+        if (section.subSections) section.subSections.forEach(s => newSubSections.push(new Section(s)));
         section.subSections = newSubSections;
         return new Section(section);
     }

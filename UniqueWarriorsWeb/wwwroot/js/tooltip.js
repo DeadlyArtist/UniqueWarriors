@@ -1,5 +1,5 @@
 class Tooltip {
-    static tooltipAttributesSet = new Set(['tooltip', 'tooltip-url']);
+    static tooltipAttributesSet = new Set(['tooltip', 'tooltip-url', 'tooltip-path']);
     static tooltipAttributes = [];
     static tooltipQuery = "";
     static cachedHtmlsByUrl = {};
@@ -13,6 +13,8 @@ class Tooltip {
     static tooltipStyle = null;
 
     static init() {
+        document.documentElement.classList.add("colorTooltips");
+
         Tooltip.tooltipAttributes = [...Tooltip.tooltipAttributesSet];
         Tooltip.tooltipQuery = Tooltip.tooltipAttributes.map(a => `[${a}]`).join(', ');
     }
@@ -191,6 +193,9 @@ class Tooltip {
                     if (Tooltip.currentElement == element) Tooltip.updateTooltip();
                 })();
             }
+        } else if (attribute == 'tooltip-path') {
+            let sections = SectionHelpers.resolveMultipleSectionsExpression(section);
+            Tooltip.cardTooltip(SectionHelpers.generateStructuredHtmlForSectionOverview(sections, SectionHelpers.TextType));
         }
 
         if (Tooltip.currentElement) {

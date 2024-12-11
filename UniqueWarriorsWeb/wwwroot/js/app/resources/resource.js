@@ -1,4 +1,6 @@
 class Resource {
+    loaded = false;
+
     get id() {
         return this.link;
     }
@@ -9,14 +11,25 @@ class Resource {
     }
 
     async get() {
-        return await fetchWithCache(this.link);
+        let result = await fetchWithCache(this.link);
+        this.onLoaded();
+        return result;
     }
 
     async getText() {
-        return await fetchTextWithCache(this.link);
+        let result = await fetchTextWithCache(this.link);
+        this.onLoaded();
+        return result;
     }
 
     async getFromJson() {
-        return await fetchFromJsonWithCache(this.link);
+        let result = await fetchFromJsonWithCache(this.link);
+        this.onLoaded();
+        return result;
+    }
+
+    onLoaded() {
+        if (this.loaded) return;
+        this.loaded = true;
     }
 }
