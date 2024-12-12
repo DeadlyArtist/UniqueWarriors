@@ -278,7 +278,7 @@ class Tooltip {
 
     static tryAddTooltip(target) {
         if (Tooltip.tooltipsByTarget.has(target)) return;
-        while (Tooltip.currentTooltip && !Tooltip.currentTooltip.element.contains(target)) Tooltip.removeCurrentTooltip();
+        if (Tooltip.currentTooltip && !Tooltip.currentTooltip.element.contains(target)) return;
         Tooltip.addTooltip(target);
     }
 

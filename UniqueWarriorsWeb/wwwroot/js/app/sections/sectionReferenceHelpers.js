@@ -14,7 +14,9 @@ class SectionReferenceHelpers {
     }
 
     static addTooltips(element, variables = null) {
+        if (!element) return;
         this.addIncreaseDecreaseTooltips(element);
+        this.addSectionReferenceTooltip(element);
         if (variables) {
             this.addSpecialVariableTooltips(element, variables);
             this.addVariableTooltips(element, variables);
@@ -89,4 +91,63 @@ class SectionReferenceHelpers {
         }
     }
 
+    static addSectionReferenceTooltip(element) {
+        let textNodes = getTextNodes(element);
+        for (let node of textNodes.reverse()) {
+            let value = node.nodeValue;
+            let html = "";
+            let start = -1, end = -1;
+
+            let reference = null;
+            let path = null;
+            let mutation = null;
+            let name = null;
+            let isLine = false;
+            for (let i = 0; i < value.length; i++) {
+                if (value[i] === '<') {
+                    if (i > start + 1) {
+                        html += escapeHTML(value.substring(end + 1, i));
+                    }
+                    start = i;
+                } else if (value[i] === '>') {
+                    end = i;
+                    const parts = value.substring(start + 1, end).split('|');
+                    reference = parts.shift();
+                    for (let part of parts) {
+                        if (!mutation && part.endsWith('Mutation')) mutation = part;
+                        else name = part;
+                    }
+                    if (mutation) reference += `*mutation=${mutation}`;
+                    if (name) reference += `*name=${name}`;
+                    path = this.findPathFromReference(reference);
+                    isLine = start == 0 && end == value.length - 1;
+                    let display = name ?? reference;
+                    html += `<span tooltip-path="${escapeHTML(path)}" section-formula>${escapeHTML(isLine ? "<" + display + ">" : display)}</span>`;
+                }
+            }
+            if (isLine) {
+                let section = SectionHelpers.resolveSectionExpression(path);
+                let parentSectionElement = HtmlHelpers.getClosestWithProperty(node, "_section");
+                let parentSection = parentSectionElement._section;
+                if (section) {
+                    let height = 1;
+                    if (parentSection) height = parentSection.height + 1;
+                    section = SectionHelpers.modify(section, { height })[0];
+                    node.remove();
+                    parentSectionElement._structuredSection.addSubSection(section, {insertBefore: 0});
+                    continue;
+                }
+            }
+
+            if (end < value.length - 1) {
+                html += escapeHTML(value.substring(end + 1));
+            }
+
+            if (html !== value) replaceTextNodeWithHTML(node, html);
+        }
+    }
+
+    static findPathFromReference(reference) {
+        return 'techniques/' + reference;
+    }
 }

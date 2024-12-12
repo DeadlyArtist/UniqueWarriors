@@ -17,12 +17,12 @@ class Collection {
 
         // Register top-level sections in categories registry if specified in settings
         if (this.settings.categories) {
+            let categories = sections.map(s => s.cloneWithoutSubSections());
+            for (let category of categories) Registries.categories.register(category);
             for (let section of sections) {
-                Registries.categories.register(section.cloneWithoutSubSections());
-
-                // Register all second-level sections in the target registry
                 if (section.subSections && section.subSections.length > 0) {
-                    for (let subSection of section.subSections) {
+                    let subSections = SectionHelpers.modify(section.subSections.getAll(), { height:1 });
+                    for (let subSection of subSections) {
                         this.registry.register(subSection);
                     }
                 }

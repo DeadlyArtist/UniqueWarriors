@@ -2,8 +2,17 @@ class SectionHelpers {
     static TextType = "text";
     static MasonryType = "masonry";
 
+    /**
+     * Either section or array of sections works as param.
+     * Warning: Always returns an array.
+     */
     static modify(sections, settings) {
         if (settings == null) return;
+        let wasArray = true;
+        if (!isArray(sections)) {
+            sections = [sections];
+            wasArray = true;
+        }
 
         if (settings.classify) {
             sections = this.classify(sections);
@@ -11,6 +20,8 @@ class SectionHelpers {
             if (settings.noChildren) sections = sections.map(section => section.cloneWithoutSubSections());
             else sections = sections.map(section => section.clone());
         }
+
+        if (settings.name) sections.forEach(s => s.title = settings.name);
 
         if (settings.addChild) settings.addChildren = [settings.addChild];
         if (settings.removeChild) settings.removeChildren = [settings.removeChild];
@@ -112,7 +123,11 @@ class SectionHelpers {
             let modifiers = path.split('*');
             path = modifiers.shift();
             let section = this.resolvePath(path);
-            let modifyResult = SectionHelpers.modify([section], this.getPathModifierSettings(modifiers, section));
+            if (!section) {
+                if (!multiple) return null;
+                continue;
+            }
+            let modifyResult = SectionHelpers.modify(section, this.getPathModifierSettings(modifiers, section));
             if (!multiple) return modifyResult[0];
             modifyResult.forEach(s => sections.push(s));
         }
@@ -125,10 +140,12 @@ class SectionHelpers {
 
     static resolvePath(path) {
         let parts = path.split('/');
+        if (parts.length < 2) return null;
         let registry = Registries.all[parts.shift()];
         let sectionId = parts.pop();
         for (let part of parts) {
-            registry = registry.get(part).subSections;
+            registry = registry.get(part)?.subSections;
+            if (!registry) return null;
         }
         return registry.get(sectionId);
     }
@@ -184,6 +201,14 @@ class SectionHelpers {
     static generateStructuredHtmlForSection(section, type, settings = null) {
         settings ??= {};
         const sectionElement = fromHTML(`<div class="section">`);
+        const structuredSection = new StructuredSectionHtml(
+            type,
+            section,
+            sectionElement,
+            sectionElement,
+            settings,
+        );
+
         let needsBreak = false;
 
         let headerElement = null;
@@ -214,7 +239,6 @@ class SectionHelpers {
                     if (index < attributeList.length - 1) attributesLine.appendChild(document.createTextNode(", "));
                 });
             });
-            SectionReferenceHelpers.addTooltips(attributesElement, settings.variables);
             sectionElement.appendChild(attributesElement);
         }
 
@@ -224,7 +248,6 @@ class SectionHelpers {
             needsBreak = true;
             contentElement = fromHTML(`<div class="section-content applySnippets markTooltips">`);
             contentElement.textContent = section.content;
-            SectionReferenceHelpers.addTooltips(contentElement, settings.variables);
             sectionElement.appendChild(contentElement);
         }
 
@@ -234,16 +257,9 @@ class SectionHelpers {
             needsBreak = true;
             tableElement = SectionTableHelpers.generateHtmlForTable(section);
             tableElement.classList.add('applySnippets');
-            SectionReferenceHelpers.addTooltips(tableElement, settings.variables);
             sectionElement.appendChild(tableElement);
         }
 
-        const structuredSection = new StructuredSectionHtml(
-            section,
-            sectionElement,
-            sectionElement,
-            settings,
-        );
 
         structuredSection.headerElement = headerElement;
         structuredSection.attributesElement = attributesElement;
@@ -251,11 +267,14 @@ class SectionHelpers {
         structuredSection.tableElement = tableElement;
 
         if (section.subSections?.length > 0) {
-            if (needsBreak) sectionElement.appendChild(hb(section.height > 1 ? 2 : 4));
             section.subSections.forEach(subSection => {
-                structuredSection.addSubSection(subSection, type);
+                structuredSection.addSubSection(subSection);
             });
         }
+
+        SectionReferenceHelpers.addTooltips(attributesElement, settings.variables);
+        SectionReferenceHelpers.addTooltips(contentElement, settings.variables);
+        SectionReferenceHelpers.addTooltips(tableElement, settings.variables);
 
         return structuredSection;
     }
@@ -291,7 +310,8 @@ class SectionHelpers {
 }
 
 class StructuredSectionHtml {
-    constructor(section, element, wrapperElement, settings = null) {
+    constructor(type, section, element, wrapperElement, settings = null) {
+        this.type = type;
         this.section = section;
         this.element = element;
         this.wrapperElement = wrapperElement;
@@ -303,17 +323,24 @@ class StructuredSectionHtml {
         this.subSectionContainer = null;
         this.subSections = new Registry();
 
-        element._section = this;
-        wrapperElement._section = this;
+        element._section = section;
+        element._structuredSection = this;
+        wrapperElement._section = section;
+        wrapperElement._structuredSection = this;
     }
 
-    addSubSection(subSection, type, insertSettings = {}) {
-        const structuredSubSection = SectionHelpers.generateStructuredHtmlForSection(subSection, type, this.settings);
-
+    addSubSection(subSection, insertSettings = {}) {
         if (!this.subSectionContainer) {
             this.subSectionContainer = fromHTML(`<div class="section-subSections listVertical halfMediumGap children-w-100">`);
             this.wrapperElement.appendChild(this.subSectionContainer);
         }
+
+        let needsBreak = this.contentElement || this.attributesElement || this.tableElement;
+        if (needsBreak && this.subSections.length == 0) {
+            this.element.insertBefore(hb(this.section.height > 1 ? 2 : 4), this.subSectionContainer);
+        }
+
+        const structuredSubSection = SectionHelpers.generateStructuredHtmlForSection(subSection, this.type, this.settings);
 
         const index = this.subSections.getInsertIndex(insertSettings.insertBefore, insertSettings.insertAfter);
         if (index !== null) {
@@ -330,6 +357,10 @@ class StructuredSectionHtml {
         if (!structuredSubSection) return;
         structuredSubSection.wrapperElement.remove();
         this.subSections.unregister(structuredSubSection);
+
+        if (this.subSections.length == 0) {
+            this.subSectionContainer.previousSibling.remove();
+        }
     }
 }
 

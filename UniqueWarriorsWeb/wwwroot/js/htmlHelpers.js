@@ -61,6 +61,14 @@ class HtmlHelpers {
         }
     }
 
+    static getClosestWithProperty(element, property) {
+        while (element) {
+            if (element[property] !== undefined) return element;
+            element = element.parentElement;
+        }
+        return undefined;
+    }
+
     static getClosestProperty(element, property) {
         while (element) {
             if (element[property] !== undefined) return element[property];
@@ -68,5 +76,4 @@ class HtmlHelpers {
         }
         return undefined;
     }
-
 }
