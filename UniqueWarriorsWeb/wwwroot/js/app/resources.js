@@ -28,31 +28,4 @@ class Resources {
     static techniques_weapon_m = this.register(new Resource("/data/techniques_weapon_m.json", true));
     static tools_sheet_npc = this.register(new Resource("/data/tools_sheet_npc.json", true));
     static tools_sheet_pc = this.register(new Resource("/data/tools_sheet_pc.json", true));
-
-    static async preloadAll() {
-        for (const resource of this.preloadableResources) {
-            await this.cacheResource(resource.link); // Persist to service worker cache
-        }
-        this.updateServiceWorkerPrecache(); // Notify service worker about dynamic precache
-    }
-
-    static async cacheResource(resourceUrl) {
-        // Add to service worker cache
-        const cache = await caches.open("offline-cache");
-        await cache.add(resourceUrl).catch(err =>
-            console.error(`Failed to cache resource: ${resourceUrl}`, err)
-        );
-
-        // Preload into app-level fetch cache for runtime access
-        await fetchWithCache(resourceUrl);
-    }
-
-    static updateServiceWorkerPrecache() {
-        if (navigator.serviceWorker && navigator.serviceWorker.controller) {
-            navigator.serviceWorker.controller.postMessage({
-                type: "UPDATE_PRECACHE",
-                urls: this.precacheUrls
-            });
-        }
-    }
 }

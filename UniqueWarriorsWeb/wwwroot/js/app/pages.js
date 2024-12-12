@@ -134,7 +134,8 @@ class Pages {
         this.load(this.error);
     }
 }
-
 Pages.setup();
+App.onAppLoaded(() => Pages.loadFromPath());
+
 
 const pageElement = Pages.element;

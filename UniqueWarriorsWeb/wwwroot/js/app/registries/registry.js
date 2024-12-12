@@ -2,6 +2,7 @@ class Registry {
     entries = new Map();
     entriesByObjects = new Map();
     streams = new Set();
+    batchStreams = new Set();
     tags = new Map();
     name;
 
@@ -19,8 +20,21 @@ class Registry {
 
     constructor(name = null) {
         this.name = name;
+
+        this.setup();
     }
 
+    setup() {
+        let selfRef = new WeakRef(this);
+        (async function () {
+            while (true) {
+                await sleep(100);
+                let self = selfRef.deref();
+                if (!self) return;
+                self._processBatchStreams();
+            }
+        })();
+    }
 
     register(obj, settings = null) {
         return this.registerEntry(new RegistryEntry(obj, settings), settings);
@@ -49,18 +63,22 @@ class Registry {
         }
 
         // Notify any active streams
-        for (const stream of this.streams) stream.callback(this.getCallbackParam(entry, true, insertInfo));
+        for (const stream of this.streams) stream.callback(this._getStreamCallbackParam(entry, true, insertInfo));
+        for (const stream of this.batchStreams) {
+            stream.batchState.registered.add(entry);
+            stream.batchState.unregistered.delete(entry);
+        }
 
         if (settings.replace != null) this.unregister(settings.replace);
 
         return entry;
     }
 
-    unregister(obj) {
-        return this.unregisterEntry(this.getEntryForObject(obj));
-    }
-
-    unregisterEntry(entry) {
+    /**
+     * `id` can be id, object, or entry
+     */
+    unregister(id) {
+        let entry = this.getEntry(id);
         if (!entry) return null;
 
         // Remove entry from the primary registries
@@ -74,7 +92,11 @@ class Registry {
         }
 
         // Notify streams
-        for (const stream of this.streams) stream.callback(this.getCallbackParam(entry, false));
+        for (const stream of this.streams) stream.callback(this._getStreamCallbackParam(entry, false));
+        for (const stream of this.batchStreams) {
+            stream.batchState.unregistered.add(entry);
+            stream.batchState.registered.delete(entry);
+        }
 
         return entry;
     }
@@ -148,7 +170,7 @@ class Registry {
 
     forEach(callback, thisArg = undefined) {
         for (const obj of this) {
-            callback.call(thisArg, obj, this.getEntryForObject(obj), this.entries);
+            callback.call(thisArg, obj, this.getEntryForObject(obj), this.getAllEntries());
         }
     }
 
@@ -176,7 +198,7 @@ class Registry {
     }
 
     stream(callback) {
-        for (const entry of this.getAllEntries()) callback(this.getCallbackParam(entry, true));
+        for (const entry of this.getAllEntries()) callback(this._getStreamCallbackParam(entry, true));
 
         let self = this;
         const stream = {
@@ -188,9 +210,45 @@ class Registry {
         return stream;
     }
 
+    _getStreamCallbackParam(entry, registered, insertInfo = null) {
+        return { obj: entry.obj, entry, insertInfo, registered };
+    }
 
-    getCallbackParam(entry, registered, insertInfo = null) {
-        return { obj: entry.obj, entry: entry, insertInfo, registered };
+    streamBatch(callback) {
+        callback(this._getStreamBatchCallbackParam(this.getAllEntries()));
+
+        const batchState = {
+            registered: new Set(),
+            unregistered: new Set(),
+        };
+
+        let self = this;
+        const stream = {
+            batchState,
+            callback,
+            stop: () => self.streams.delete(stream), // Unregister the stream
+        };
+        this.batchStreams.add(stream);
+
+        return stream;
+    }
+
+    _getStreamBatchCallbackParam(registeredEntries, unregisteredEntries = null) {
+        registeredEntries ??= [];
+        unregisteredEntries ??= [];
+        return { registered: registeredEntries.map(e => e.obj), registeredEntries: registeredEntries, unregistered: unregisteredEntries.map(e => e.obj), unregisteredEntries: unregisteredEntries };
+    }
+
+    _processBatchStreams() {
+        for (const stream of this.batchStreams) {
+            const registered = [...stream.batchState.registered];
+            const unregistered = [...stream.batchState.unregistered];
+            if (registered.length || unregistered.length) {
+                stream.callback(this._getStreamBatchCallbackParam(registered, unregistered));
+                stream.batchState.registered.clear();
+                stream.batchState.unregistered.clear();
+            }
+        }
     }
 
     streamTag(tag, callback) {
@@ -241,7 +299,7 @@ class Registry {
     addToTag(tag, entry) {
         this.tryInitTag(tag);
         const tagRegistry = this.getTagRegistry(tag);
-        tagRegistry.registerEntry(entry);
+        tagRegistry.register(entry.obj);
         entry.tags.add(tag);
     }
 
@@ -251,7 +309,7 @@ class Registry {
         const tagRegistry = this.getTagRegistry(tag);
         if (!tagRegistry) return;
 
-        tagRegistry.unregisterEntry(entry);
+        tagRegistry.unregister(entry);
     }
 
     getEntriesByTag(tag) {
@@ -260,6 +318,6 @@ class Registry {
     }
 
     tagExists(tag) {
-        return this.tags.get(tag)?.size != 0;
+        return this.tags.get(tag)?.size > 0;
     }
 }

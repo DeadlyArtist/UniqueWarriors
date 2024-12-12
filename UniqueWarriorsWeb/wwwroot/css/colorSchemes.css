@@ -9,7 +9,7 @@
 [color-scheme="dark"], .dark {
   color-scheme: dark;
   /* Generic Colors */
-  --brand-color: #2c7566;
+  --brand-color: #b865bc;
   --danger-color: #d97263;
   --success-color: #63da86;
   /* Text Colors */
@@ -60,7 +60,7 @@
 [color-scheme="light"], .light {
   color-scheme: light;
   /* Generic Colors */
-  --brand-color: #2c7566;
+  --brand-color: #b865bc;
   --danger-color: #8a291b;
   --success-color: #209b43;
   /* Text Colors */

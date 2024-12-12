@@ -80,6 +80,26 @@ class SectionAttributesHelpers {
 
         return newAttributes;
     }
+
+    static toJSON(attributes) {
+        let newAttributes = [];
+        for (let line of attributes) {
+            let newLine = [];
+            for (let attribute of line) {
+                let newAttribute = null;
+                if (this.isTag(attribute)) newAttribute = this.createTag(attribute);
+                else if (this.isHeadValue(attribute)) newAttribute = this.createHeadValue(attribute.name, attribute.value);
+                if (newAttribute != null) newLine.push(newAttribute);
+            }
+            newAttributes.push(newLine);
+        }
+
+        return newAttributes;
+    }
+
+    static fromJSON(attributes) {
+        return this.classify(attributes);
+    }
 }
 
 class HeadValue {

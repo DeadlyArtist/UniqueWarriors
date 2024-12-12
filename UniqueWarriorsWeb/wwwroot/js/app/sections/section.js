@@ -57,14 +57,14 @@ class Section {
     cloneWithoutSubSections() {
         let json = this.toJSON();
         json.subSections = [];
-        return Section.fromJSON(JSON.stringify(this));
+        return Section.fromJSON(JSON.stringify(json));
     }
 
     toJSON() {
         return {
             title: this.title,
             height: this.height,
-            attributes: this.attributes,
+            attributes: SectionAttributesHelpers.toJSON(this.attributes),
             content: this.content,
             table: this.table,
             tableHeaderLocation: this.tableHeaderLocation,
@@ -76,6 +76,7 @@ class Section {
     static fromJSON(json) {
         let section = JSON.parse(json);
         let newSubSections = [];
+        if (section.attributes) section.attributes = SectionAttributesHelpers.fromJSON(section.attributes);
         if (section.subSections) section.subSections.forEach(s => newSubSections.push(new Section(s)));
         section.subSections = newSubSections;
         return new Section(section);

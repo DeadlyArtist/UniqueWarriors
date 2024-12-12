@@ -31,6 +31,9 @@ function onKeyUp(event) {
 
 document.addEventListener('keydown', onKeyDown);
 document.addEventListener('keyup', onKeyUp);
+window.addEventListener('focus', () => {
+    Object.keys(pressedKeys).forEach(key => delete pressedKeys[key]); // Delete all keys upon gaining focus to prevent missing a keyup from outside the window
+});
 
 async function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
@@ -225,14 +228,13 @@ function getTextNodesFromArray(elements, settings = null) {
     if (!elements) return nodes;
 
     for (let element of elements) {
-        (function worker(node) {
+        (function worker(node, matchedInclude = false) {
             if (node.nodeType === Node.TEXT_NODE) {
-                nodes.push(node);
+                if (!settings.includeQuery || matchedInclude) nodes.push(node);
             } else if (node.nodeType === Node.ELEMENT_NODE) {
                 if (settings.excludeQuery && node.matches(settings.excludeQuery)) return;
-                if (settings.includeQuery && !node.matches(settings.includeQuery)) return;
                 for (const child of node.childNodes) {
-                    worker(child);
+                    worker(child, matchedInclude || node.matches(settings.includeQuery));
                 }
             }
         })(element);

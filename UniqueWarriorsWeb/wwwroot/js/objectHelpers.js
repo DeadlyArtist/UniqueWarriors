@@ -71,6 +71,10 @@ class ObjectHelpers {
     static upperFirstCharOfKeysRecursively(obj, overwrite = true) {
         return this.mapKeysRecursively(obj, key => key ? key.charAt(0).toUpperCase() + key.slice(1) : key, overwrite);
     }
+
+    static clearKeys(obj) {
+        Object.keys(obj).forEach(key => delete obj[key]);
+    }
 }
 
 function isNumber(obj) {

@@ -159,13 +159,13 @@ class SectionHelpers {
         settings ??= {};
         settings.height ??= 0;
         settings.heightOffset ??= 1;
-        this.adjustHeightLevel(settings.height + settings.heightOffset);
+        this.adjustHeightLevel(sections, settings.height + settings.heightOffset);
 
         let section;
         if (settings.section) {
             section = settings.section.cloneWithoutSubSections();
             section.height = settings.height;
-            sections.forEach(s => section.registerSubSection(s));
+            sections.forEach(s => section.addSubSection(s));
         } else if (settings.title != null) {
             section = new Section({
                 title,
@@ -198,7 +198,7 @@ class SectionHelpers {
         let attributesElement = null;
         if (section.attributes?.length > 0) {
             needsBreak = true;
-            attributesElement = fromHTML(`<div class="section-attributes markTooltips">`);
+            attributesElement = fromHTML(`<div class="section-attributes applySnippets markTooltips">`);
             section.attributes.forEach(attributeList => {
                 let attributesLine = fromHTML(`<div class="section-attributesLine">`);
                 attributesElement.appendChild(attributesLine);
@@ -222,7 +222,7 @@ class SectionHelpers {
         let contentElement = null;
         if (section.content) {
             needsBreak = true;
-            contentElement = fromHTML(`<div class="section-content markTooltips">`);
+            contentElement = fromHTML(`<div class="section-content applySnippets markTooltips">`);
             contentElement.textContent = section.content;
             SectionReferenceHelpers.addTooltips(contentElement, settings.variables);
             sectionElement.appendChild(contentElement);
@@ -233,6 +233,7 @@ class SectionHelpers {
             if (needsBreak) sectionElement.appendChild(hb(2));
             needsBreak = true;
             tableElement = SectionTableHelpers.generateHtmlForTable(section);
+            tableElement.classList.add('applySnippets');
             SectionReferenceHelpers.addTooltips(tableElement, settings.variables);
             sectionElement.appendChild(tableElement);
         }

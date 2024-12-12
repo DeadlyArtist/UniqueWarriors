@@ -89,7 +89,4 @@ class SectionReferenceHelpers {
         }
     }
 
-    static updateSnippets() {
-
-    }
 }

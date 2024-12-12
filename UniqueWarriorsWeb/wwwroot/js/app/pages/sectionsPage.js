@@ -10,6 +10,11 @@ class SectionsPageManager extends PageManager {
     }
 
     load() {
+        let self = this;
+        setTimeout(() => self.delayedLoad(), 1);
+    }
+
+    delayedLoad() {
         let streamProvider = this.settings.streamProvider;
         if (this.settings.registry) streamProvider = callback => this.settings.registry.stream(callback);
 

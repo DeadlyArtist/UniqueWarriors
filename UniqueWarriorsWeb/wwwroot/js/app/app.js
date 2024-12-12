@@ -8,6 +8,7 @@ class App {
         window.addEventListener('popstate', this.#onLoad);
 
         window.dispatchEvent(new CustomEvent('app-loaded'));
+        window.dispatchEvent(new CustomEvent('after-app-loaded'));
     }
 
     static #onHashChange() {
@@ -18,7 +19,7 @@ class App {
         Pages.loadFromPath();
     }
 
-    static onLoaded(callback) {
+    static onAppLoaded(callback) {
         if (this.isRunning) {
             callback();
         } else {
@@ -26,15 +27,17 @@ class App {
         }
     }
 
+    static onAfterAppLoaded(callback) {
+        if (this.isRunning) {
+            callback();
+        } else {
+            window.addEventListener('after-app-loaded', e => callback());
+        }
+    }
+
     static run() {
         if (this.isRunning) return;
         this.isRunning = true;
         this.setup();
-
-        Loader.registerAllCollections();
-        Snippets.registerAllSnippets();
-        Pages.loadFromPath();
-
-        Resources.preloadAll();
     }
 }
