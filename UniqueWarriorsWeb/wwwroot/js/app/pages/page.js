@@ -3,6 +3,8 @@ class Page {
     name;
     link;
     pageManager;
+    loadId;
+    isLoaded = false;
 
     get id() {
         return this.link;
@@ -18,19 +20,33 @@ class Page {
     }
 
     setup() {
+        this.pageManager.page = this;
         if (!this.settings.keepCase) this.name = toNormalCase(this.name);
     }
 
     load() {
+        this.isLoaded = true;
+        this.loadId = generateUniqueId();
         this.pageManager.load();
     }
 
     unload() {
         this.pageManager.unload();
+        this.loadId = null;
+        this.isLoaded = false;
     }
 }
 
 class PageManager {
+    page;
+    get isLoaded() {
+        return this.page.isLoaded;
+    }
+
+    get loadId() {
+        return this.page.loadId;
+    }
+
     load() {
 
     }

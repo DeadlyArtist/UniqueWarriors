@@ -3,6 +3,8 @@ class ScrollingHelpers {
     static userHasScrolled = false;
     static autoScrollBotom = false;
     static pageLoaded = true;
+    static scrollTickBlockers = 1; // Block by default, as it is not really needed in this app
+    static tickDuration = 10;
 
     static setupEventListeners() {
         // Use MutationObserver to monitor the DOM for added images
@@ -25,7 +27,7 @@ class ScrollingHelpers {
         if (isScrolledTop()) topButton.classList.add('invisible');
         scrollButtons.appendChild(topButton);
 
-        getScrollingElement().addEventListener('scroll', () => {
+        scrollingElement.addEventListener('scroll', () => {
             if (isScrolledTop()) topButton.classList.add('invisible');
             else topButton.classList.remove('invisible');
         });
@@ -39,7 +41,7 @@ class ScrollingHelpers {
         if (isScrolledBottom()) bottomButton.classList.add('invisible');
         scrollButtons.appendChild(bottomButton);
 
-        getScrollingElement().addEventListener('scroll', () => {
+        scrollingElement.addEventListener('scroll', () => {
             if (isScrolledBottom()) bottomButton.classList.add('invisible');
             else bottomButton.classList.remove('invisible');
         });
@@ -49,39 +51,77 @@ class ScrollingHelpers {
         ScrollingHelpers.injectScrollTopButton();
         ScrollingHelpers.injectScrollBottomButton();
     }
+
+    static blockScrollTicks() {
+        this.scrollTickBlockers++;
+    }
+
+    static unblockScrollTicks() {
+        this.scrollTickBlockers--;
+    }
+
+    static areScrollTicksBlocked() {
+        return this.scrollTickBlockers != 0;
+    }
 }
 
-function getScrollingElement() {
-    return document.getElementById('scrollingElement');
+let scrollingElement = null;
+onBeforeScriptsAfterHtml(() => scrollingElement = document.getElementById('scrollingElement'));
+
+function getScrollbarWidth() {
+    // Creating invisible container
+    const outer = document.createElement('div');
+    outer.style.visibility = 'hidden';
+    outer.style.overflow = 'scroll'; // forcing scrollbar to appear
+    outer.style.msOverflowStyle = 'scrollbar'; // needed for WinJS apps
+    document.body.appendChild(outer);
+
+    // Creating inner element and placing it in the container
+    const inner = document.createElement('div');
+    outer.appendChild(inner);
+
+    // Calculating difference between container's full width and the child width
+    const scrollbarWidth = (outer.offsetWidth - inner.offsetWidth);
+
+    // Removing temporary elements from the DOM
+    outer.parentNode.removeChild(outer);
+
+    return scrollbarWidth;
 }
+
+function isScrollbarPresent() {
+    return scrollingElement.clientWidth < scrollingElement.innerWidth;
+}
+
 
 function isScrolledBottom() {
-    let scrollingElement = getScrollingElement();
     return Math.abs(scrollingElement.scrollHeight - scrollingElement.scrollTop - scrollingElement.clientHeight) <= 3.0;
 }
 
 function scrollToBottom() {
-    let scrollingElement = getScrollingElement();
     scrollingElement.scroll({ top: scrollingElement.scrollHeight });
 }
 
 function isScrolledTop() {
-    let scrollingElement = getScrollingElement();
     return scrollingElement.scrollTop === 0;
 }
 
 function scrollToTop() {
-    let scrollingElement = getScrollingElement();
     scrollingElement.scroll({ top: 0 });
 }
 
-getScrollingElement().addEventListener('scroll', () => {
+scrollingElement.addEventListener('scroll', () => {
     ScrollingHelpers.userHasScrolled = true;
 });
 
 window.addEventListener('pageloaded', e => ScrollingHelpers.pageLoaded = true);
 
 async function doScrollTick() {
+    if ( ScrollingHelpers.areScrollTicksBlocked()) {
+        await sleep(ScrollingHelpers.tickDuration);
+        return;
+    }
+
     if (isScrolledBottom()) {
         ScrollingHelpers.scrolledBottomLastFrame = true;
     } else if (ScrollingHelpers.userHasScrolled || ScrollingHelpers.pageLoaded) {
@@ -93,7 +133,7 @@ async function doScrollTick() {
     ScrollingHelpers.userHasScrolled = false;
     ScrollingHelpers.pageLoaded = false;
 
-    await sleep(10);
+    await sleep(ScrollingHelpers.tickDuration);
 }
 
 // Check scroll periodically

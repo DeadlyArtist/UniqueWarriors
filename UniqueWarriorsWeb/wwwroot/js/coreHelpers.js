@@ -153,21 +153,27 @@ function wrapElement(element, wrapper) {
     observer.observe(document.documentElement, { childList: true, subtree: true });
 })();
 
-function onBodyCreated(callback) {
-    if (document.body) {
-        callback();
-    } else {
-        window.addEventListener('body-created', e => callback());
-    }
+async function onBodyCreated(callback) {
+    new Promise((resolve, reject) => {
+        _callback = () => { callback(); resolve(); }
+        if (document.body) {
+            callback();
+        } else {
+            window.addEventListener('body-created', e => callback());
+        }
+    });
 }
 
 let isHtmlBeforeScriptsLoaded = false;
-function onBeforeScriptsAfterHtml(callback) {
-    if (isHtmlBeforeScriptsLoaded) {
-        callback();
-    } else {
-        window.addEventListener('before-scripts', e => callback());
-    }
+async function onBeforeScriptsAfterHtml(callback) {
+    new Promise((resolve, reject) => {
+        _callback = () => { callback(); resolve(); }
+        if (isHtmlBeforeScriptsLoaded) {
+            callback();
+        } else {
+            window.addEventListener('before-scripts', e => callback());
+        }
+    });
 }
 
 const isFirefox = navigator.userAgent.toLowerCase().includes('firefox');
@@ -266,3 +272,13 @@ async function parallel(iterator, asyncFunc) {
     if (errors.length != 0) throw errors[0];
     return results;
 }
+
+function debounce(func, delay) {
+    let timeout;
+    return function (...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), delay);
+    };
+}
+
+function doNothing() { }

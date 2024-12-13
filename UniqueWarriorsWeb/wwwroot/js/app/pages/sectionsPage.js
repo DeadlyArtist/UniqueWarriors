@@ -11,7 +11,12 @@ class SectionsPageManager extends PageManager {
 
     load() {
         let self = this;
-        setTimeout(() => self.delayedLoad(), 1);
+        let loadId = this.loadId;
+         setTimeout(() => {
+             Loader.onCollectionsLoaded(() => {
+                 if (self.loadId == loadId) self.delayedLoad()
+             });
+         }, 1);
     }
 
     delayedLoad() {
@@ -31,12 +36,13 @@ class SectionsPageManager extends PageManager {
         const sections = [];
 
         const overview = SectionHelpers.generateStructuredHtmlForSectionOverview(sections, this.overviewType);
-        pageElement.appendChild(overview.container);
 
         this.stream = streamProvider(event => {
             if (event.registered) overview.addSection(event.obj, { insertBefore: event.insertBefore });
             else overview.removeSection(event.obj);
         });
+
+        pageElement.appendChild(overview.container);
     }
 
     unload() {

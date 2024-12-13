@@ -1,4 +1,6 @@
 class Loader {
+    static collectionsLoaded = false;
+
     static collections = [
         new Collection(Registries.conditions, [
             new Collection.SectionResourceWrapper(Resources.conditions)
@@ -27,14 +29,23 @@ class Loader {
         ], {categories: true}),
     ];
 
-    static setup() {
-
+    static async registerAllCollections() {
+        await parallel(this.collections, async function (collection) {
+            await collection.register();
+        });
+        this.collectionsLoaded = true;
+        window.dispatchEvent(new CustomEvent('collections-loaded'));
     }
 
-    static registerAllCollections() {
-        for (let collection of this.collections) {
-            collection.register();
-        }
+    static async onCollectionsLoaded(callback = doNothing) {
+        return new Promise((resolve, reject) => {
+            _callback = () => { callback(); resolve(); }
+            if (this.collectionsLoaded) {
+                _callback();
+            } else {
+                window.addEventListener('collections-loaded', e => _callback());
+            }
+        });
     }
 }
 
