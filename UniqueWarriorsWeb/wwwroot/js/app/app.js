@@ -25,22 +25,22 @@ class App {
 
     static async onAppLoaded(callback = doNothing) {
         new Promise((resolve, reject) => {
-            _callback = () => { callback(); resolve(); }
+            let _callback = () => { callback(); resolve(); }
             if (this.appLoaded) {
-                callback();
+                _callback();
             } else {
-                window.addEventListener('app-loaded', e => callback());
+                window.addEventListener('app-loaded', e => _callback());
             }
         });
     }
 
     static async onAfterAppLoaded(callback = doNothing) {
         new Promise((resolve, reject) => {
-            _callback = () => { callback(); resolve(); }
+            let _callback = () => { callback(); resolve(); }
             if (this.afterAppLoaded) {
-                callback();
+                _callback();
             } else {
-                window.addEventListener('after-app-loaded', e => callback());
+                window.addEventListener('after-app-loaded', e => _callback());
             }
         });
     }

@@ -36,6 +36,9 @@ class Loader {
         });
         console.log("DISPATCH");
         this.collectionsLoaded = true;
+        window.addEventListener('collections-loaded', e => {
+            console.log("RECEIVED");
+        });
         window.dispatchEvent(new CustomEvent('collections-loaded'));
         console.log("FIRED");
     }
@@ -43,13 +46,16 @@ class Loader {
     static async onCollectionsLoaded(callback = doNothing) {
         return new Promise((resolve, reject) => {
             console.log("COLLECTION");
-            _callback = () => { console.log("LOAD"); callback(); console.log("FINISHED"); resolve(); }
+            let _callback = () => { console.log("LOAD"); callback(); console.log("FINISHED"); resolve(); }
             if (this.collectionsLoaded) {
                 console.log("NOW");
                 _callback();
             } else {
                 console.log("LATER");
-                window.addEventListener('collections-loaded', e => _callback());
+                window.addEventListener('collections-loaded', e => {
+                    console.log("WHAT?");
+                    _callback();
+                });
             }
         });
     }

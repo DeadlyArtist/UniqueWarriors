@@ -154,24 +154,24 @@ function wrapElement(element, wrapper) {
 })();
 
 async function onBodyCreated(callback) {
-    new Promise((resolve, reject) => {
-        _callback = () => { callback(); resolve(); }
+    return new Promise((resolve, reject) => {
+        let _callback = () => { callback(); resolve(); }
         if (document.body) {
-            callback();
+            _callback();
         } else {
-            window.addEventListener('body-created', e => callback());
+            window.addEventListener('body-created', e => _callback());
         }
     });
 }
 
 let isHtmlBeforeScriptsLoaded = false;
 async function onBeforeScriptsAfterHtml(callback) {
-    new Promise((resolve, reject) => {
-        _callback = () => { callback(); resolve(); }
+    return new Promise((resolve, reject) => {
+        let _callback = () => { callback(); resolve(); }
         if (isHtmlBeforeScriptsLoaded) {
-            callback();
+            _callback();
         } else {
-            window.addEventListener('before-scripts', e => callback());
+            window.addEventListener('before-scripts', e => _callback());
         }
     });
 }
