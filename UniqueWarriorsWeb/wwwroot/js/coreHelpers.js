@@ -253,6 +253,23 @@ function getTextNodes(element, settings = null) {
     return getTextNodesFromArray([element], settings);
 }
 
+function applyFunctionToAllNodes(node, fn, nodeFilter = NodeFilter.SHOW_ALL) {
+    const walker = document.createTreeWalker(
+        element,
+        nodeFilter, // Only process element nodes
+        null,
+        false
+    );
+
+    do {
+        fn(walker.currentNode);
+    } while (walker.nextNode());
+}
+
+function applyFunctionToAllElements(element, fn) {
+    applyFunctionToAllNodes(element, fn, NodeFilter.SHOW_ELEMENT);
+}
+
 function clamp(number, min, max) {
     return Math.max(min, Math.min(number, max));
 }

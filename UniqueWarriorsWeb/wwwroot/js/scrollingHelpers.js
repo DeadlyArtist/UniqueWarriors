@@ -89,8 +89,12 @@ function getScrollbarWidth() {
     return scrollbarWidth;
 }
 
-function isScrollbarPresent() {
-    return scrollingElement.clientWidth < scrollingElement.innerWidth;
+function isYScrollbarPresent() {
+    return scrollingElement.offsetWidth > scrollingElement.clientWidth;
+}
+
+function isXScrollbarPresent() {
+    return scrollingElement.offsetHeight > scrollingElement.clientHeight;
 }
 
 

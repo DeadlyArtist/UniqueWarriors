@@ -6,9 +6,11 @@ class MasonryGrid {
 
     constructor(gridElement) {
         this.grid = gridElement;
+        let self = this;
+        this.debouncedResize = debounce(() => self.resize());
         this.updateValues();
 
-        this.resize();
+        this.debouncedResize();
         this.initObservers();
     }
 
@@ -44,31 +46,15 @@ class MasonryGrid {
             for (const mutation of mutations) {
                 if (mutation.target != this.grid && mutation.target.parentElement != this.grid) continue;
 
-                if (
-                    mutation.type === "childList" &&
-                    ([...mutation.addedNodes, ...mutation.removedNodes].some(node => node.classList?.contains("masonryGridItem")))
-                ) {
-                    itemChanged = true; // A relevant grid item was added or removed
-                    break;
-                } else if (
-                    mutation.type === "attributes" &&
-                    mutation.target.classList.contains("masonryGridItem")
-                ) {
-                    itemChanged = true; // A relevant grid item had its visibility/style changed
-                    break;
+                if (mutation.type === "childList" && ([...mutation.addedNodes, ...mutation.removedNodes].some(node => node.classList?.contains("masonryGridItem")))) {
+                    this.debouncedResize();
                 }
-            }
-
-            if (itemChanged) {
-                this.resize();
             }
         });
 
         observer.observe(this.grid, {
             childList: true,  // Detect when children (grid-items) are added or removed
             subtree: true,
-            attributes: true, // Detect if grid items' visibility changes (style change)
-            attributeFilter: ['style', 'class']
         });
 
         const images = this.grid.querySelectorAll('.masonryGridItem img')
@@ -87,7 +73,7 @@ class MasonryGrid {
 
         // Measure container and calculate layout - reading phase
         const scrollbarWidth = window.innerWidth < 750 ? 0 : getScrollbarWidth(); // Special handling for container window width
-        const containerWidth = grid.clientWidth - (isScrollbarPresent() ? 0 : Math.floor(scrollbarWidth / 2));
+        const containerWidth = grid.clientWidth - (isYScrollbarPresent() ? 0 : Math.floor(scrollbarWidth / 2));
         const columnCount = Math.max(
             1,
             Math.floor((containerWidth + this.gapX) / (this.minWidth + this.gapX))
@@ -134,9 +120,8 @@ class MasonryGrid {
         grid.style.height = `${gridHeight}px`;
 
         // Check if rerun is needed
-        if (!rerun && grid.clientWidth !== containerWidth) this.resize(true);
+        if (!rerun) this.resize(true);
     }
-
 }
 
 function resizeMasonryGrid(grid) {
@@ -144,7 +129,7 @@ function resizeMasonryGrid(grid) {
 
     let masonry = grid._masonry;
     if (masonry) {
-        masonry.resize();
+        masonry.debouncedResize();
     } else {
         grid._masonry = new MasonryGrid(grid);
     }
@@ -172,4 +157,4 @@ onBodyCreated(() => {
 });
 
 window.addEventListener('load', resizeAllMasonryGrids);
-window.addEventListener('resize', debounce(resizeAllMasonryGrids, 100));
+window.addEventListener('resize', resizeAllMasonryGrids);
