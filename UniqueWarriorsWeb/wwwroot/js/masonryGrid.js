@@ -65,7 +65,7 @@ class MasonryGrid {
         });
     }
 
-    resize(rerun = false) {
+    resize() {
         if (this.resizeDisabled || MasonryGrid.allResizeDisabled) return;
 
         const grid = this.grid;
@@ -94,7 +94,12 @@ class MasonryGrid {
             startOffset = emptySpace / 2; // Center alignment offset
         }
 
-        // Prepare positions and column heights - batch read phase
+        // Batch set widths
+        items.forEach(item => {
+            item.style.width = `${itemWidth}px`;
+        });
+
+        // Batch read height and calculate position
         items.forEach(item => {
             const minHeight = Math.min(...columns);
             const columnIndex = columns.indexOf(minHeight);
@@ -109,18 +114,14 @@ class MasonryGrid {
             columns[columnIndex] += contentHeight + this.gapY;
         });
 
-        // Write item positions and sizes - write phase
+        // Batch write position
         positions.forEach(({ item, xPos, yPos }) => {
-            item.style.width = `${itemWidth}px`;
             item.style.transform = `translate3d(${xPos}px, ${yPos}px, 0)`;
         });
 
         // Set container height
         const gridHeight = Math.max(...columns);
         grid.style.height = `${gridHeight}px`;
-
-        // Check if rerun is needed
-        if (!rerun) this.resize(true);
     }
 }
 
