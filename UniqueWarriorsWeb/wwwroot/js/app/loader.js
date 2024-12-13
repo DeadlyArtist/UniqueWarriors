@@ -30,30 +30,20 @@ class Loader {
     ];
 
     static async registerAllCollections() {
-        console.log("REGISTER");
         await parallel(this.collections, async function (collection) {
             await collection.register();
         });
-        console.log("DISPATCH");
         this.collectionsLoaded = true;
-        window.addEventListener('collections-loaded', e => {
-            console.log("RECEIVED");
-        });
         window.dispatchEvent(new CustomEvent('collections-loaded'));
-        console.log("FIRED");
     }
 
     static async onCollectionsLoaded(callback = doNothing) {
         return new Promise((resolve, reject) => {
-            console.log("COLLECTION");
-            let _callback = () => { console.log("LOAD"); callback(); console.log("FINISHED"); resolve(); }
+            let _callback = () => { callback(); resolve(); }
             if (this.collectionsLoaded) {
-                console.log("NOW");
                 _callback();
             } else {
-                console.log("LATER");
                 window.addEventListener('collections-loaded', e => {
-                    console.log("WHAT?");
                     _callback();
                 });
             }
