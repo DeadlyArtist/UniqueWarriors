@@ -198,6 +198,11 @@ class SectionHelpers {
         if (section instanceof Section) return;
     }
 
+    static generateSectionHTML(section, type, settings = null) {
+        settings ??= {};
+        let html = `<div class="section">`;
+    }
+
     static generateStructuredHtmlForSection(section, type, settings = null) {
         settings ??= {};
         const sectionElement = fromHTML(`<div class="section">`);
@@ -255,7 +260,7 @@ class SectionHelpers {
         if (section.table) {
             if (needsBreak) sectionElement.appendChild(hb(2));
             needsBreak = true;
-            tableElement = SectionTableHelpers.generateHtmlForTable(section);
+            tableElement = fromHTML(SectionTableHelpers.generateTableHTML(section));
             tableElement.classList.add('applySnippets');
             sectionElement.appendChild(tableElement);
         }

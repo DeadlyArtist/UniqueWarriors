@@ -1,5 +1,6 @@
 class Snippets {
     static snippetQuery = ".applySnippets";
+    static waitingForRerender = false;
 
     static defaultSnippets = [
         new Snippet("Action", "rules/Actions/Action*parent"),
@@ -61,20 +62,6 @@ class Snippets {
     ];
 
     static onAppLoadedSetup() {
-        const observer = new MutationObserver((mutationsList) => {
-            for (const mutation of mutationsList) {
-                if (mutation.type === 'childList') {
-                    mutation.addedNodes.forEach((node) => {
-                        if (node.nodeType === Node.ELEMENT_NODE) {
-                            this.updateSnippets(node);
-                        }
-                    });
-                }
-            }
-        });
-
-        observer.observe(document.body, { childList: true, subtree: true });
-
         this.registerAllSnippets();
     }
 
@@ -86,7 +73,7 @@ class Snippets {
         Registries.snippets.unregister(snippet);
     }
 
-    static registerAllSnippets() {
+    static async registerAllSnippets() {
         for (let snippet of this.defaultSnippets) {
             Registries.snippets.register(snippet);
         }
@@ -96,38 +83,6 @@ class Snippets {
             if (event.registered) Snippets.registerSnippet(new Snippet(condition.title, `conditions/${condition.title}`));
             else Snippets.unregisterSnippet(condition.title);
         });
-
-        Registries.snippets.streamBatch(event => {
-            Snippets.updateSnippets();
-        });
-    }
-
-    static updateSnippets(element = document.documentElement) {
-        const snippetElements = [...element.querySelectorAll(Snippets.snippetQuery)];
-        if (element.matches(Snippets.snippetQuery)) snippetElements.push(element);
-
-        for (let snippetElement of snippetElements) {
-            let existingTargets = [...snippetElement.querySelectorAll('.snippetTarget')];
-            for (let target of existingTargets) {
-                target.outerHTML = escapeHTML(target.textContent);
-            }
-        }
-
-        let snippets = Registries.snippets.getAll().sort((a, b) => b.target.length - a.target.length);
-        for (let snippet of snippets) {
-            let blacklist = snippet.blacklist ? snippet.blacklist + ', ' : '';
-            blacklist += '.snippetTarget';
-            let nodes = getTextNodesFromArray(snippetElements, { includeQuery: snippet.whitelist, excludeQuery: blacklist });
-            let target = escapeRegex(escapeHTML(snippet.target));
-            const regex = new RegExp("\\b(" + target + "s?)\\b", "gi");
-            for (let node of nodes) {
-                const oldHtml = escapeHTML(node.textContent);
-                const newHtml = oldHtml.replace(regex, function (matched, matchedTarget) {
-                    return `<span class="snippetTarget" tooltip-path="${escapeHTML(snippet.path)}">${matchedTarget}</span>`;
-                });
-                if (oldHtml != newHtml) replaceTextNodeWithHTML(node, newHtml);
-            }
-        }
     }
 }
 

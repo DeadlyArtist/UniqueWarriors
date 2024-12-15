@@ -100,6 +100,32 @@ class SectionAttributesHelpers {
     static fromJSON(attributes) {
         return this.classify(attributes);
     }
+
+    static attributesToHTML(attributes) {
+        if (!attributes || attributes.length === 0) return "";
+
+        let html = '<div class="section-attributes applySnippets markTooltips">';
+        for (const attributeList of attributes) {
+            html += '<div class="section-attributesLine">';
+            attributeList.forEach((attr, index) => {
+                if (this.isTag(attr)) {
+                    html += `<span class="section-tag">${escapeHTML(attr)}</span>`;
+                } else if (this.isHeadValue(attr)) {
+                    html += `
+                        <span class="section-headValue">
+                            <span class="section-headValue-name">${escapeHTML(attr.name)}</span>: 
+                            <span class="section-headValue-value">${escapeHTML(attr.value)}</span>
+                        </span>`;
+                }
+                if (index < attributeList.length - 1) {
+                    html += ", ";
+                }
+            });
+            html += "</div>";
+        }
+        html += "</div>";
+        return html;
+    }
 }
 
 class HeadValue {

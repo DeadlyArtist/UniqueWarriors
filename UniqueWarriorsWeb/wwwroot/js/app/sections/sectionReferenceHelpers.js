@@ -21,6 +21,7 @@ class SectionReferenceHelpers {
             this.addSpecialVariableTooltips(element, variables);
             this.addVariableTooltips(element, variables);
         }
+        this.addSnippets(element);
     }
 
     static addIncreaseDecreaseTooltips(element) {
@@ -48,18 +49,18 @@ class SectionReferenceHelpers {
 
     static addSpecialVariableTooltips(element, variables) {
         let textNodes = getTextNodes(element);
+        let special = {};
+        if (variables.has('Range')) special['within range'] = 'Range';
+        if (variables.has('Reach')) special['within reach'] = 'Reach';
+        if (Object.keys(special).length == 0) return;
+
+        const regex = new RegExp("\\b(" + Object.keys(special).map(k => escapeRegex(k)).join("|") + ")\\b", "gi");
         for (let node of textNodes) {
             let value = node.nodeValue;
-            let special = {};
-            if (variables.has('Range')) special['within range'] = 'Range';
-            if (variables.has('Reach')) special['within reach'] = 'Reach';
-            if (Object.keys(special).length > 0) {
-                const regex = new RegExp("\\b(" + Object.keys(special).map(k => escapeRegex(k)).join("|") + ")\\b", "gi");
-                let html = value.replace(regex, (matched, group1) => {
-                    return `<span tooltip="within ${escapeHTML(variables.get(special[group1.toLowerCase()]))} meters">${matched}</span>`;
-                });
-                replaceTextNodeWithHTML(node, html);
-            }
+            let html = value.replace(regex, (matched, group1) => {
+                return `<span tooltip="within ${escapeHTML(variables.get(special[group1.toLowerCase()]))} meters">${matched}</span>`;
+            });
+            replaceTextNodeWithHTML(node, html);
         }
     }
 
@@ -150,4 +151,81 @@ class SectionReferenceHelpers {
     static findPathFromReference(reference) {
         return 'techniques/' + reference;
     }
+
+    static updateSnippets(element = document.documentElement) {
+        const snippetElements = [...element.querySelectorAll(Snippets.snippetQuery)];
+        if (element.matches(Snippets.snippetQuery)) snippetElements.push(element);
+        if (snippetElements.length == 0) return;
+
+        for (let snippetElement of snippetElements) {
+            let existingTargets = [...snippetElement.querySelectorAll('.snippetTarget')];
+            for (let target of existingTargets) {
+                target.outerHTML = escapeHTML(target.textContent);
+            }
+        }
+
+        SectionReferenceHelpers.addSnippets(element, snippetElements);
+    }
+
+    static addSnippets(element = document.documentElement, snippetElements = null) {
+        if (snippetElements == null) {
+            snippetElements = [...element.querySelectorAll(Snippets.snippetQuery)];
+            if (element.matches(Snippets.snippetQuery)) snippetElements.push(element);
+        }
+        if (snippetElements.length == 0) return;
+        // Group snippets by whitelist and blacklist to optimize performance
+        const snippets = Registries.snippets.getAll().sort((a, b) => b.target.length - a.target.length);
+        const groupedSnippets = new Map();
+
+        // Group snippets by JSON.stringify of their whitelist/blacklist combination
+        for (const snippet of snippets) {
+            const key = JSON.stringify({
+                whitelist: snippet.whitelist,
+                blacklist: snippet.blacklist,
+            });
+            if (!groupedSnippets.has(key)) {
+                groupedSnippets.set(key, {
+                    snippets: [],
+                    whitelist: snippet.whitelist,
+                    blacklist: snippet.blacklist,
+                });
+            }
+            groupedSnippets.get(key).snippets.push(snippet);
+        }
+
+        // Add the `snippetTarget` class to the blacklist to avoid re-snippeting
+        for (const group of groupedSnippets.values()) {
+            if (group.blacklist) group.blacklist = group.blacklist + ', .snippetTarget';
+        }
+
+        // Escape snippets and process matching text nodes
+        for (const group of groupedSnippets.values()) {
+            const { snippets, whitelist, blacklist } = group;
+            const pathsByTarget = {};
+            for (const snippet of snippets) pathsByTarget[escapeHTML(snippet.target).toLowerCase()] = snippet.path;
+
+            // Generate regex for this group of snippets
+            const regex = new RegExp("\\b(" + snippets.map(k => escapeRegex(escapeHTML(k.target))).join("|") + ")(s?)\\b", "gi");
+
+            // Get text nodes within the whitelist/blacklist scope
+            const nodes = getTextNodesFromArray(snippetElements, {
+                excludeQuery: blacklist,
+                includeQuery: whitelist,
+            });
+
+            // Replace text content with highlighted snippet targets
+            for (let node of nodes) {
+                const oldHtml = escapeHTML(node.textContent);
+                const newHtml = oldHtml.replace(regex, function (matched, matchedTarget, maybeS) {
+                    return `<span class="snippetTarget" tooltip-path="${escapeHTML(pathsByTarget[matchedTarget.toLowerCase()])}">${matchedTarget + maybeS}</span>`;
+                });
+
+                if (oldHtml !== newHtml) {
+                    replaceTextNodeWithHTML(node, newHtml);
+                }
+            }
+        }
+    }
 }
+
+SectionReferenceHelpers.debouncedUpdateSnippets = debounce(SectionReferenceHelpers.updateSnippets);
