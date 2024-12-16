@@ -38,8 +38,8 @@ class Collection {
     async parse() {
         let allSections = [];
         for (let wrapper of this.sectionResourceWrappers) {
-            var sections = await wrapper.resource.getFromJson();
-            sections = SectionHelpers.modify(sections, { ...SectionHelpers.getInitModifySettings(),  ...wrapper.settings });
+            let sections = await wrapper.resource.getFromJson();
+            sections = SectionHelpers.modify(sections, { ...SectionHelpers.getInitModifySettings(), ...wrapper.settings });
             sections.forEach(s => allSections.push(s));
         }
         return allSections;

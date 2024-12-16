@@ -154,6 +154,7 @@ class SectionHelpers {
     }
 
     static classify(sections) {
+        sections.forEach(s => s.SubSections = s.SubSections?.filter(sub => !sub.Title?.includes("(Example Mutation)")));
         let newSections = [];
         for (const section of sections) {
             if (section instanceof Section) continue;
