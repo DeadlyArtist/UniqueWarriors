@@ -27,7 +27,7 @@ class SectionReferenceHelpers {
     static addIncreaseDecreaseTooltips(element) {
         let textNodes = getTextNodes(element);
         for (let node of textNodes) {
-            const value = node.nodeValue;
+            let value = node.nodeValue;
             let name = HtmlHelpers.getClosestProperty(node.parentElement, "_headValue")?.name;
             let tooltip = null;
             let operator = null;
@@ -42,6 +42,7 @@ class SectionReferenceHelpers {
             }
             if (!tooltip) continue;
 
+            value = value.replace(/([+-] ?)(\dd)( )/, `$1<span tooltip-path="rules/Mutations/Die Size">$2</span>$3`);
             let html = `<span tooltip="${escapeHTML(tooltip)}">${operator}</span>` + value.substring(operator.length);
             replaceTextNodeWithHTML(node, html);
         }
@@ -126,11 +127,12 @@ class SectionReferenceHelpers {
                     html += `<span tooltip-path="${escapeHTML(path)}" section-formula>${escapeHTML(isLine ? "<" + display + ">" : display)}</span>`;
                 }
             }
+
             if (isLine) {
                 let section = SectionHelpers.resolveSectionExpression(path);
                 let parentSectionElement = HtmlHelpers.getClosestWithProperty(node, "_section");
                 let parentSection = parentSectionElement._section;
-                if (section) {
+                if (section && value[0] == '<' && value[value.length - 1] == '>') {
                     let height = 1;
                     if (parentSection) height = parentSection.height + 1;
                     section = SectionHelpers.modify(section, { height })[0];

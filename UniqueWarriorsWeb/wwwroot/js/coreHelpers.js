@@ -16,6 +16,8 @@ function _tryRemoveEmptyHash() {
     let hash = window.location.hash;
     if (hash != null && hash.length < 2) history.replaceState(null, "", urlWithoutHash);
 }
+window.addEventListener('hashchange', _tryRemoveEmptyHash);
+window.addEventListener('load-silently', _tryRemoveEmptyHash);
 _tryRemoveEmptyHash();
 
 

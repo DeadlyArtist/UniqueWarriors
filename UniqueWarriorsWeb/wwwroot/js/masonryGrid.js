@@ -94,7 +94,7 @@ class MasonryGrid {
             startOffset = emptySpace / 2; // Center alignment offset
         }
 
-        // Batch set widths
+        // Batch write widths
         items.forEach(item => {
             item.style.width = `${itemWidth}px`;
         });

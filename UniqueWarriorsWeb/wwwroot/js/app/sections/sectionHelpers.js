@@ -21,7 +21,7 @@ class SectionHelpers {
             else sections = sections.map(section => section.clone());
         }
 
-        if (settings.name) sections.forEach(s => s.title = settings.name);
+        if (settings.name && !settings.mutation) sections.forEach(s => s.title = settings.name);
 
         if (settings.addChild) settings.addChildren = [settings.addChild];
         if (settings.removeChild) settings.removeChildren = [settings.removeChild];
@@ -60,6 +60,9 @@ class SectionHelpers {
             this.adjustHeightLevel(sections, settings.height);
         }
 
+        if (settings.mutation) {
+            sections.forEach(section => this.setupMutation(section, settings.mutation, settings.mutationTitle || settings.name));
+        }
 
         if (settings.setupAbilities) {
             sections.forEach(section => this.setupAbility(section));
@@ -196,6 +199,69 @@ class SectionHelpers {
 
     static setupAbility(section) {
         if (section instanceof Section) return;
+    }
+
+    static setupMutation(section, mutation, mutationTitle) {
+        mutation = mutation.replace(/ Mutation$/, "");
+        section.removeHeadValue("Connections");
+        section.addHeadValue("Mutation", `<${section.title}> + <${mutation} Mutation>`, { lineIndex: 0 });
+        section.title = mutationTitle;
+
+        let weapon = section.getHeadValueValue("Weapon");
+        let weaponCore = section.getHeadValueValue("Weapon Core");
+        let headValueName = weapon ? "Weapon" : "Weapon Core";
+        let headValueValue = (weapon || weaponCore) + " + " + mutation;
+        section.addHeadValue(headValueName, headValueValue, { update: true });
+
+
+        let mutationSection = Registries.techniques.get(mutation + " Mutation");
+        if (!mutationSection) return;
+
+        // Handle "Damage"
+        const damageInfo = DamageHelpers.parseAttribute(section.getHeadValueValue("Damage"));
+        if (!damageInfo) return;
+        const mutationDamage = DamageHelpers.parseAttribute(mutationSection.getHeadValueValue("Base Damage"));
+
+        // Special case: If "rolled damage" content exists, only update types, not the dice
+        if (!section.content || section.content.includes("rolled damage")) {
+            if (mutationDamage) {
+                const damageTypes = DamageHelpers.mergeTypes(damageInfo?.types, mutationDamage?.types);
+                const newDamageValue = DamageHelpers.formatDiceDamage(damageInfo?.dice, damageTypes); // Keep original dice, just update types
+                section.addHeadValue("Damage", newDamageValue, { update: true });
+            }
+        } else {
+            if (mutationDamage) {
+                const damage = DamageHelpers.updateDiceDamage(damageInfo?.dice, mutationDamage?.dice);
+                const damageTypes = DamageHelpers.mergeTypes(damageInfo?.types, mutationDamage?.types);
+                const newDamageValue = DamageHelpers.formatDiceDamage(damage, damageTypes);
+                section.addHeadValue("Damage", newDamageValue, { update: true });
+            }
+        }
+
+        // Handle other attributes
+        const attributesToMutate = ["Accuracy", "Graze Range", "Crit Range"];
+        for (const attribute of attributesToMutate) {
+            let sectionValueRaw = section.getHeadValueValue(attribute);
+            let mutationValueRaw = mutationSection.getHeadValueValue(attribute);
+            if (mutationValueRaw == null) continue;
+
+            let sectionValue = 0;
+            if (sectionValueRaw != null) {
+                const negativeSection = sectionValueRaw.startsWith('-');
+                sectionValueRaw = sectionValueRaw.replace(/^[+-]{2}?\s*/, "");
+                sectionValue = negativeSection ? -parseInt(sectionValueRaw) : parseInt(sectionValueRaw);
+            }
+
+            const negativeMutation = mutationValueRaw.startsWith('-');
+            mutationValueRaw = mutationValueRaw.replace(/^[+-]{2}?\s*/, "");
+            const mutationValue = negativeMutation ? -parseInt(mutationValueRaw) : parseInt(mutationValueRaw);
+
+            const totalValue = sectionValue + mutationValue;
+
+            // Add or update the attribute with the correctly formatted modifier (++ or --)
+            const formattedValue = DamageHelpers.formatModifierValue(totalValue);
+            section.addHeadValue(attribute, formattedValue, { update: sectionValueRaw != null });
+        }
     }
 
     static generateSectionHTML(section, type, settings = null) {
