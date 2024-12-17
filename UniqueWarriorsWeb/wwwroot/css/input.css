@@ -1,19 +1,33 @@
 input {
-    padding: 4px;
-    border: 1px solid var(--border-color);
-    border-radius: 5px;
-    background: inherit;
+  padding: 4px;
+  border: 1px solid var(--border-color);
+  border-radius: 5px;
+  background: inherit;
+  font-size: 1rem;
 }
 
 ::placeholder {
-    font-style: italic;
-    color: var(--placeholder-color);
+  font-style: italic;
+  color: var(--placeholder-color);
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  user-select: none;
 }
 
 .validationMessage {
     color: var(--danger-color);
     font-style: italic;
     font-size: 0.8rem;
+}
+
+input:focus-visible {
+  outline: 0;
+  border-color: var(--brand-color);
+}
+
+input[type="search"] {
+  width: 100%;
+  padding: 6px 12px;
 }
 
 input[type="number"] {

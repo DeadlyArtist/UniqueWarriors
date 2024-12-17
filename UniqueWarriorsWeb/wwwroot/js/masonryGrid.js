@@ -65,15 +65,18 @@ class MasonryGrid {
         });
     }
 
-    resize() {
+    resize(rerun = false) {
         if (this.resizeDisabled || MasonryGrid.allResizeDisabled) return;
 
         const grid = this.grid;
         if (grid.children.length === 0) return;
 
         // Measure container and calculate layout - reading phase
+        const isScrollbarPresent = isYScrollbarPresent() || rerun;
         const scrollbarWidth = window.innerWidth < 750 ? 0 : getScrollbarWidth(); // Special handling for container window width
-        const containerWidth = grid.clientWidth - (isYScrollbarPresent() ? 0 : Math.floor(scrollbarWidth / 2));
+        // We just assume that a scrollbar will become present upon resize
+        // This way, we only resize twice when there weren't many items to begin with
+        const containerWidth = grid.clientWidth - (isScrollbarPresent ? 0 : Math.floor(scrollbarWidth / 2));
         const columnCount = Math.max(
             1,
             Math.floor((containerWidth + this.gapX) / (this.minWidth + this.gapX))
@@ -94,13 +97,15 @@ class MasonryGrid {
             startOffset = emptySpace / 2; // Center alignment offset
         }
 
+        const visibleItems = items.filter(item => item.offsetParent !== null);
+
         // Batch write widths
-        items.forEach(item => {
+        visibleItems.forEach(item => {
             item.style.width = `${itemWidth}px`;
         });
 
         // Batch read height and calculate position
-        items.forEach(item => {
+        visibleItems.forEach(item => {
             const minHeight = Math.min(...columns);
             const columnIndex = columns.indexOf(minHeight);
             const xPos = Math.floor(startOffset + (columnIndex * (itemWidth + this.gapX)));
@@ -122,6 +127,9 @@ class MasonryGrid {
         // Set container height
         const gridHeight = Math.max(...columns);
         grid.style.height = `${gridHeight}px`;
+
+        // If we guessed wrongly that a scrollbar would appear after resize, resize again without that assumption
+        if (!rerun && containerWidth < grid.clientWidth) this.resize(true);
     }
 }
 

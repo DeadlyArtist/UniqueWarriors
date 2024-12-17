@@ -42,6 +42,7 @@ class Section {
     }
 
     removeSubSection(section) {
+        section = this.subSections.get(section);
         this.subSections.unregister(section);
         section.parent = null;
     }

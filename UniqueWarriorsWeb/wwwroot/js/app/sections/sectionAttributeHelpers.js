@@ -3,6 +3,11 @@ class SectionAttributesHelpers {
     static HeadValueType = "headValue";
 
     static getAttributeValue(attribute) {
+        if (!attribute.parts) {
+            if (this.isTag(attribute)) attribute = this.createTag(attribute);
+            else if (this.isHeadValue(attribute)) attribute = this.createHeadValue(attribute.name, attribute.value);
+        }
+
         if (attribute.parts && attribute.parts.length > 0) {
             const separators = attribute.separators || [];
             let result = "";
@@ -101,31 +106,31 @@ class SectionAttributesHelpers {
         return this.classify(attributes);
     }
 
-    static attributesToHTML(attributes) {
-        if (!attributes || attributes.length === 0) return "";
+    //static attributesToHTML(attributes) {
+    //    if (!attributes || attributes.length === 0) return "";
 
-        let html = '<div class="section-attributes applySnippets markTooltips">';
-        for (const attributeList of attributes) {
-            html += '<div class="section-attributesLine">';
-            attributeList.forEach((attr, index) => {
-                if (this.isTag(attr)) {
-                    html += `<span class="section-tag">${escapeHTML(attr)}</span>`;
-                } else if (this.isHeadValue(attr)) {
-                    html += `
-                        <span class="section-headValue">
-                            <span class="section-headValue-name">${escapeHTML(attr.name)}</span>: 
-                            <span class="section-headValue-value">${escapeHTML(attr.value)}</span>
-                        </span>`;
-                }
-                if (index < attributeList.length - 1) {
-                    html += ", ";
-                }
-            });
-            html += "</div>";
-        }
-        html += "</div>";
-        return html;
-    }
+    //    let html = '<div class="section-attributes applySnippets markTooltips">';
+    //    for (const attributeList of attributes) {
+    //        html += '<div class="section-attributesLine">';
+    //        attributeList.forEach((attr, index) => {
+    //            if (this.isTag(attr)) {
+    //                html += `<span class="section-tag">${escapeHTML(attr)}</span>`;
+    //            } else if (this.isHeadValue(attr)) {
+    //                html += `
+    //                    <span class="section-headValue">
+    //                        <span class="section-headValue-name">${escapeHTML(attr.name)}</span>: 
+    //                        <span class="section-headValue-value">${escapeHTML(attr.value)}</span>
+    //                    </span>`;
+    //            }
+    //            if (index < attributeList.length - 1) {
+    //                html += ", ";
+    //            }
+    //        });
+    //        html += "</div>";
+    //    }
+    //    html += "</div>";
+    //    return html;
+    //}
 }
 
 class HeadValue {

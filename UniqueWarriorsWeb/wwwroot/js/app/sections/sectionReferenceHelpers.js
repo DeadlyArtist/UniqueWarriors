@@ -1,5 +1,27 @@
 class SectionReferenceHelpers {
     static invalidFormulaTooltip = "Invalid Formula";
+    static pathEncoding = {
+        "\\": "back",
+        "/": "for",
+        "!": "invert",
+        "?": "exact",
+        "@": "at",
+        "\$": "dollar",
+        "|": "or",
+        ",": "comma",
+        " ": "space",
+        "#": "hash",
+        ">": "right",
+        "<": "left",
+        "^": "top",
+        "-": "minus",
+        "\'": "quote",
+        "~": "rough",
+        "+": "plus",
+        ":": "semi",
+        "%": "cent",
+        "*": "mul",
+    }
 
     static parseFormula(formula, variables) {
         var settings = CustomMath.getDefaultSettings();
@@ -97,6 +119,13 @@ class SectionReferenceHelpers {
         let textNodes = getTextNodes(element);
         for (let node of textNodes.reverse()) {
             let value = node.nodeValue;
+            if (node.parentElement.classList.contains('section-headValue-value')) {
+                let headValue = HtmlHelpers.getClosestProperty(node, "_headValue");
+                if (headValue.name == "Connections") {
+                    value = headValue.value.replace(/\.$/, '').split(", ").map(v => v == "Category" ? v : `<${v}>`).join(', ') + ".";
+                }
+            }
+
             let html = "";
             let start = -1, end = -1;
 
@@ -200,8 +229,9 @@ class SectionReferenceHelpers {
             if (group.blacklist) group.blacklist = group.blacklist + ', .snippetTarget';
         }
 
+        let groups = [...groupedSnippets.values()].sort((a, b) => ((b.whitelist ?? '').length + (b.blacklist ?? '').length) - ((a.whitelist ?? '').length + (a.blacklist ?? '').length));
         // Escape snippets and process matching text nodes
-        for (const group of groupedSnippets.values()) {
+        for (const group of groups) {
             const { snippets, whitelist, blacklist } = group;
             const pathsByTarget = {};
             for (const snippet of snippets) pathsByTarget[escapeHTML(snippet.target).toLowerCase()] = snippet.path;
@@ -230,4 +260,5 @@ class SectionReferenceHelpers {
     }
 }
 
+SectionReferenceHelpers.pathEncoder = new Encoder(SectionReferenceHelpers.pathEncoding);
 SectionReferenceHelpers.debouncedUpdateSnippets = debounce(SectionReferenceHelpers.updateSnippets);

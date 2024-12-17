@@ -33,6 +33,7 @@ class SectionHelpers {
         if (settings.noChildren) sections.forEach(s => s.clearSubSections());
         if (settings.addChildren) sections.forEach(s => settings.addChildren.forEach(c => s.addSubSection(c)));
         if (settings.removeChildren) sections.forEach(s => settings.removeChildren.forEach(c => s.removeSubSection(c)));
+        if (settings.remove) sections.forEach(s => s.removeSubSection(settings.remove));
 
         if (settings.parent) {
             sections = this.addTopLevelSection(sections, {
@@ -79,12 +80,13 @@ class SectionHelpers {
         };
     }
 
-    static getPathModifierSettings(modifiers, section) {
+    static getPathModifierSettings(modifiers, section, encoded = false) {
+        if (!encoded) modifiers = modifiers.map(part => SectionReferenceHelpers.pathEncoder.encode(part));
         let settings = {
             height: 1,
         };
         for (let modifier of modifiers) {
-            let parts = modifier.split('=');
+            let parts = modifier.split('=').map(part => SectionReferenceHelpers.pathEncoder.unescape(part));
             if (parts.length == 1) settings[parts[0]] = true;
             else if (parts.length == 2) settings[parts[0]] = parts[1];
         }
@@ -123,14 +125,14 @@ class SectionHelpers {
 
         let sections = [];
         for (let path of paths) {
-            let modifiers = path.split('*');
+            let modifiers = SectionReferenceHelpers.pathEncoder.encode(path).split('*');
             path = modifiers.shift();
-            let section = this.resolvePath(path);
+            let section = this.resolvePath(path, true);
             if (!section) {
                 if (!multiple) return null;
                 continue;
             }
-            let modifyResult = SectionHelpers.modify(section, this.getPathModifierSettings(modifiers, section));
+            let modifyResult = SectionHelpers.modify(section, this.getPathModifierSettings(modifiers, section, true));
             if (!multiple) return modifyResult[0];
             modifyResult.forEach(s => sections.push(s));
         }
@@ -141,8 +143,9 @@ class SectionHelpers {
         return this.resolveSectionExpression(expression, true);
     }
 
-    static resolvePath(path) {
-        let parts = path.split('/');
+    static resolvePath(path, encoded = false) {
+        if (!encoded) path = SectionReferenceHelpers.pathEncoder.encode(part);
+        let parts = path.split('/').map(part => SectionReferenceHelpers.pathEncoder.unescape(part));
         if (parts.length < 2) return null;
         let registry = Registries.all[parts.shift()];
         let sectionId = parts.pop();
@@ -265,11 +268,6 @@ class SectionHelpers {
         }
     }
 
-    static generateSectionHTML(section, type, settings = null) {
-        settings ??= {};
-        let html = `<div class="section">`;
-    }
-
     static generateStructuredHtmlForSection(section, type, settings = null) {
         settings ??= {};
         const sectionElement = fromHTML(`<div class="section">`);
@@ -283,12 +281,12 @@ class SectionHelpers {
 
         let needsBreak = false;
 
-        let headerElement = null;
+        let titleElement = null;
         if (section.title) {
             const headerLevel = Math.min(Math.max(1, section.height), 6);
-            headerElement = fromHTML(`<h${headerLevel}>`);
-            headerElement.textContent = section.title;
-            sectionElement.appendChild(headerElement);
+            titleElement = fromHTML(`<h${headerLevel} class="section-title">`);
+            titleElement.textContent = section.title;
+            sectionElement.appendChild(titleElement);
         } 
 
         // Need to extract embedded (summon) variables before here.
@@ -302,9 +300,9 @@ class SectionHelpers {
                 attributeList.forEach((attr, index) => {
                     let attributeElement;
                     if (SectionAttributesHelpers.isTag(attr)) {
-                        attributeElement = fromHTML(`<span class="section-tag">${escapeHTML(attr)}</span>`);
+                        attributeElement = fromHTML(`<span class="section-attribute section-tag">${escapeHTML(attr)}</span>`);
                     } else if (SectionAttributesHelpers.isHeadValue(attr)) {
-                        attributeElement = fromHTML(`<span class="section-headValue"><span class="section-headValue-name">${escapeHTML(attr.name)}</span>: <span class="section-headValue-value">${escapeHTML(attr.value)}</span></span>`);
+                        attributeElement = fromHTML(`<span class="section-attribute section-headValue"><span class="section-headValue-name">${escapeHTML(attr.name)}</span>: <span class="section-headValue-value">${escapeHTML(attr.value)}</span></span>`);
                         attributeElement._headValue = attr;
                     }
                     attributesLine.appendChild(attributeElement);
@@ -333,7 +331,7 @@ class SectionHelpers {
         }
 
 
-        structuredSection.headerElement = headerElement;
+        structuredSection.titleElement = titleElement;
         structuredSection.attributesElement = attributesElement;
         structuredSection.contentElement = contentElement;
         structuredSection.tableElement = tableElement;
@@ -352,7 +350,18 @@ class SectionHelpers {
     }
 
     static generateStructuredHtmlForSectionOverview(sections, type, settings = null) {
+        settings ??= {};
         let container = fromHTML(`<div class="section-overview listContainerVertical children-w-100">`);
+
+        let searchContainer;
+        let searchElement;
+        if (settings.addSearch) {
+            searchContainer = fromHTML(`<div class="sticky">`);
+            container.appendChild(searchContainer);
+            searchElement = fromHTML(`<input type="search" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Search" aria-label="Search" />`);
+            searchContainer.appendChild(searchElement);
+            searchContainer.appendChild(hb(2));
+        }
 
         let sectionListElement;
         if (type === this.TextType) {
@@ -363,7 +372,7 @@ class SectionHelpers {
         sectionListElement.setAttribute('placeholder', "Loading...");
         container.appendChild(sectionListElement);
 
-        const overview = new StructuredSectionOverviewHtml(type, container, sectionListElement, settings);
+        const overview = new StructuredSectionOverviewHtml(type, container, sectionListElement, searchContainer, searchElement, settings);
         sections.forEach(section => overview.addSection(section));
 
         return overview;
@@ -388,12 +397,12 @@ class StructuredSectionHtml {
         this.element = element;
         this.wrapperElement = wrapperElement;
         this.settings = settings;
-        this.headerElement = null;
+        this.titleElement = null;
         this.attributesElement = null;
         this.contentElement = null;
         this.tableElement = null;
         this.subSectionContainer = null;
-        this.subSections = new Registry();
+        this.subSections = new Registry(); // Structured sections
 
         element._section = section;
         element._structuredSection = this;
@@ -440,15 +449,22 @@ class StructuredSectionHtml {
 
 
 class StructuredSectionOverviewHtml {
-    constructor(type, container, sectionListElement, settings = null) {
+    constructor(type, container, sectionListElement, searchContainer, searchElement, settings = null) {
         this.type = type;
         this.container = container;
         this.sectionListElement = sectionListElement;
         this.settings = settings;
-        this.sections = new Registry();
+        this.sections = new Registry(); // Structured sections
 
         container._sectionOverview = this;
         sectionListElement._sectionOverview = this;
+
+        if (searchContainer) {
+            this.searchContainer = searchContainer;
+            this.searchElement = searchElement;
+            this.search = new SectionSearch(this);
+            searchContainer._search = this.search;
+        }
     }
 
     addSection(section, insertSettings) {

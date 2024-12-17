@@ -184,3 +184,14 @@ function toNormalCase(text) {
     text = text.replace(/_/g, ' ');
     return text.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
 }
+
+function findAllIndicesInString(str, subString) {
+    if (subString.length == 0) return range(str.length);
+    let indices = [];
+    let i = 0;
+    while (~(i = str.indexOf(subString, i))) {
+        indices.push(i);
+        i += subString.length;
+    }
+    return indices;
+}

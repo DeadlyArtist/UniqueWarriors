@@ -23,9 +23,9 @@ class SectionTableHelpers {
             html += this.generateTableRows(model.table.slice(1));
         } else if (left) {
             for (const row of model.table) {
-                let rowHtml = `<tr><th>${escapeHTML(row[0])}</th>`;
+                let rowHtml = `<tr><th class="section-table-cell">${escapeHTML(row[0])}</th>`;
                 for (let i = 1; i < row.length; i++) {
-                    rowHtml += `<td>${escapeHTML(row[i])}</td>`;
+                    rowHtml += `<td class="section-table-cell">${escapeHTML(row[i])}</td>`;
                 }
                 rowHtml += "</tr>";
                 html += rowHtml;
@@ -34,9 +34,9 @@ class SectionTableHelpers {
             html += this.generateTableHeaderRow(model.table[0]);
             for (let i = 1; i < model.table.length; i++) {
                 let rowData = model.table[i];
-                let rowHtml = `<tr><th>${escapeHTML(rowData[0])}</th>`;
+                let rowHtml = `<tr><th class="section-table-cell">${escapeHTML(rowData[0])}</th>`;
                 for (let j = 1; j < rowData.length; j++) {
-                    rowHtml += `<td>${escapeHTML(rowData[j])}</td>`;
+                    rowHtml += `<td class="section-table-cell">${escapeHTML(rowData[j])}</td>`;
                 }
                 rowHtml += "</tr>";
                 html += rowHtml;
@@ -50,7 +50,7 @@ class SectionTableHelpers {
     static generateTableHeaderRow(headers) {
         let html = "<tr>";
         for (const header of headers) {
-            html += `<th><span>${escapeHTML(header)}</span></th>`;
+            html += `<th class="section-table-cell">${escapeHTML(header)}</th>`;
         }
         html += "</tr>";
         return html;
@@ -61,7 +61,7 @@ class SectionTableHelpers {
         for (const row of rows) {
             html += "<tr>";
             for (const cell of row) {
-                html += `<td><span>${escapeHTML(cell)}</span></td>`;
+                html += `<td class="section-table-cell">${escapeHTML(cell)}</td>`;
             }
             html += "</tr>";
         }

@@ -41,6 +41,18 @@ async function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+function sleepUntil(targetTime) {
+    const currentTime = new Date().getTime();
+    const delay = targetTime - currentTime;
+
+    if (delay <= 0) {
+        // If the target time is in the past or now, resolve immediately
+        return Promise.resolve();
+    } else {
+        return sleep(delay);
+    }
+}
+
 function generateUniqueId() {
     return Date.now() + Math.random().toString(36).substring(2, 9) + Math.random().toString(36).substring(2, 9);
 }
@@ -253,6 +265,45 @@ function getTextNodesFromArray(elements, settings = null) {
 
 function getTextNodes(element, settings = null) {
     return getTextNodesFromArray([element], settings);
+}
+
+function getTextNodesFast(element) {
+    // Get all text nodes within the element
+    let walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, null);
+    let nodes = [];
+    let node;
+    while ((node = walker.nextNode())) {
+        nodes.push(node);
+    }
+    return nodes;
+}
+
+function getTextFromTextNodes(textNodes) {
+    let text = "";
+    for (let node of textNodes) {
+        text += node.nodeValue;
+    }
+    return text;
+}
+
+// Find text nodes overlapping with a range
+function findTextNodesByIndices(nodes, rangeStart, rangeEnd) {
+    let result = {};
+    let offset = 0;
+    for (let node of nodes) {
+        let start = offset;
+        let end = start + node.nodeValue.length - 1;
+        if (end < rangeStart) {
+            offset += node.nodeValue.length;
+            continue;
+        }
+        if (start > rangeEnd) break;
+
+        let overlapStart = Math.max(start, rangeStart);
+        result[overlapStart] = { node: node, relativeIndex: overlapStart - offset };
+        offset += node.nodeValue.length;
+    }
+    return result;
 }
 
 function applyFunctionToAllNodes(node, fn, nodeFilter = NodeFilter.SHOW_ALL) {
