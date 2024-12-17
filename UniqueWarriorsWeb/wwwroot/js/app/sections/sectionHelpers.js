@@ -300,7 +300,11 @@ class SectionHelpers {
                 attributeList.forEach((attr, index) => {
                     let attributeElement;
                     if (SectionAttributesHelpers.isTag(attr)) {
-                        attributeElement = fromHTML(`<span class="section-attribute section-tag">${escapeHTML(attr)}</span>`);
+                        let isActionTag = attr.includes('Action');
+                        if (isActionTag) attr = attr.split(' + ').map(actionType => `<span class="section-actionType">${escapeHTML(actionType)}</span>`).join(' + ');
+                        else attr = escapeHTML(attr);
+                        attributeElement = fromHTML(`<span class="section-attribute section-tag">${attr}</span>`);
+                        if (isActionTag) attributeElement.classList.add('section-actionTypes');
                     } else if (SectionAttributesHelpers.isHeadValue(attr)) {
                         attributeElement = fromHTML(`<span class="section-attribute section-headValue"><span class="section-headValue-name">${escapeHTML(attr.name)}</span>: <span class="section-headValue-value">${escapeHTML(attr.value)}</span></span>`);
                         attributeElement._headValue = attr;
@@ -358,9 +362,6 @@ class SectionHelpers {
         if (settings.addSearch) {
             searchContainer = fromHTML(`<div class="sticky">`);
             container.appendChild(searchContainer);
-            searchElement = fromHTML(`<input type="search" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Search" aria-label="Search" />`);
-            searchContainer.appendChild(searchElement);
-            searchContainer.appendChild(hb(2));
         }
 
         let sectionListElement;
@@ -372,8 +373,9 @@ class SectionHelpers {
         sectionListElement.setAttribute('placeholder', "Loading...");
         container.appendChild(sectionListElement);
 
-        const overview = new StructuredSectionOverviewHtml(type, container, sectionListElement, searchContainer, searchElement, settings);
+        const overview = new StructuredSectionOverviewHtml(type, container, sectionListElement, searchContainer, settings);
         sections.forEach(section => overview.addSection(section));
+        if (!settings.dontInitSearch) overview.initSearch();
 
         return overview;
     }
@@ -449,22 +451,24 @@ class StructuredSectionHtml {
 
 
 class StructuredSectionOverviewHtml {
-    constructor(type, container, sectionListElement, searchContainer, searchElement, settings = null) {
+    constructor(type, container, sectionListElement, searchContainer, settings = null) {
         this.type = type;
         this.container = container;
         this.sectionListElement = sectionListElement;
+        this.searchContainer = searchContainer;
         this.settings = settings;
         this.sections = new Registry(); // Structured sections
+        this.didSearchInit = false;
 
         container._sectionOverview = this;
         sectionListElement._sectionOverview = this;
+    }
 
-        if (searchContainer) {
-            this.searchContainer = searchContainer;
-            this.searchElement = searchElement;
-            this.search = new SectionSearch(this);
-            searchContainer._search = this.search;
-        }
+    initSearch() {
+        if (!this.searchContainer || this.didSearchInit || this.sections.size == 0) return;
+        this.didSearchInit = true;
+        this.search = new SectionSearch(this);
+        this.searchContainer._search = this.search;
     }
 
     addSection(section, insertSettings) {
@@ -479,6 +483,8 @@ class StructuredSectionOverviewHtml {
         }
 
         this.sections.register(structuredSection, { ...insertSettings, id: structuredSection.section.title });
+
+        if (!this.settings.dontInitSearch) this.initSearch();
     }
 
     removeSection(section) {

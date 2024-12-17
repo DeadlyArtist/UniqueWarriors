@@ -148,6 +148,10 @@ b {
     padding-bottom: 0;
 }
 
+.noLineHeight {
+  line-height: 1;
+}
+
 .flex {
     display: flex;
 }

@@ -190,6 +190,16 @@ class Registry {
         return this.iterateEntries();
     }
 
+    first() {
+        return this.firstEntry()?.obj;
+    }
+
+    firstEntry() {
+        for (const entry of this.entries.values()) {
+            return entry;
+        }
+    }
+
     /**
      * `id` can be id, object, or entry
      */

@@ -3,10 +3,15 @@ class SectionSearch {
     constructor(structuredSectionOverview) {
         let overview = structuredSectionOverview;
         this.overview = overview;
-        this.container = overview.container;
-        this.searchElement = overview.searchElement;
+        this.overviewContainer = overview.container;
+        this.container = overview.searchContainer;
         this.listElement = overview.sectionListElement;
         this.structuredSections = overview.sections;
+
+        // Filters
+        this.filters = [];
+        this.filterChanged = false;
+        this.storageKey = "SectionSearchFilters";
 
         // Search highlight
         this.rangesByNode = new Map(); // Buffers ranges for deferred highlighting
@@ -15,77 +20,335 @@ class SectionSearch {
         this.searchHighlightDisabled = false;
 
         this.setup();
+        this.loadFiltersFromStorage();
+        this.overview.sections.streamBatch(s => this.update(true));
     }
+
+    getPathKey() {
+        // Generate a unique key for this path
+        return getPath();
+    }
+
 
     setup() {
-        this.filterListElement = fromHTML(`<div class="listHorizontal">`);
-        this.filterElements = [];
+        this.searchListElement = fromHTML(`<div class="listContainerHorizontal smallGap">`);
+        this.container.appendChild(this.searchListElement);
 
+        this.filterDropdown = fromHTML(`<select tooltip="Filters of same type are combined with OR, filters of different types are combined with AND.">`);
+        this.searchListElement.appendChild(this.filterDropdown);
+        this.filterDropdown.addEventListener('change', e => {
+            this.filterChanged = true;
+            this.update()
+        });
+        for (let type of this.getFilterTypes()) {
+            let option = fromHTML(`<option>`);
+            option.value = type;
+            option.text = type;
+            option.selected = option.value == "Text";
+            this.filterDropdown.appendChild(option);
+        }
 
+        this.searchElement = fromHTML(`<input type="search" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Search" aria-label="Search" />`);
+        this.searchListElement.appendChild(this.searchElement);
         this.searchElement.addEventListener('search', () => this.update());
-        this.searchElement.addEventListener('keyup', () => this.update());
+        this.searchElement.addEventListener('keyup', (e) => {
+            if (e.key === "Enter") {
+                this.addFilter();
+            } else {
+                this.update();
+            }
+        });
+
+        this.plusButton = fromHTML(`<button class="largeElement bordered hoverable listHorizontal" tooltip="Add as filter (or press Enter)" disabled>`);
+        let plusIcon = icons.add();
+        plusIcon.classList.add('minimalIcon');
+        this.plusButton.appendChild(plusIcon);
+        this.searchListElement.appendChild(this.plusButton);
+        this.plusButton.addEventListener('click', e => this.addFilter());
+
+        this.beforeFilterBreak = hb(1);
+        this.container.appendChild(this.beforeFilterBreak);
+        this.beforeFilterBreak.classList.add('hide');
+
+        this.filterListElement = fromHTML(`<div class="listHorizontal">`);
+        this.container.appendChild(this.filterListElement);
+        this.filters = [];
+
+        this.container.appendChild(hb(2));
     }
 
-    update() {
-        let searchTerm = this.searchElement.value.toLowerCase().trim();
+    getFilterTypes() {
+        let allChoices = ['Text', 'Category', 'Name'];
+        let firstSection = this.overview.sections.first()?.section;
+        let allowedTags = ['Technique', 'Mastery'];
+        let allowedHeadValues = ['Path Core', 'Evolved Path Core'];
+        // For now only gets the first
+        if (firstSection && this.overview.sections.getAll().some(structuredSection => allowedTags.some(tag => structuredSection.section.tags.has(tag)) || allowedHeadValues.some(headValue => structuredSection.section.headValues.has(headValue)))) {
+            allChoices.push('Action Type');
+            allChoices.push('Connections');
+        }
+        return allChoices;
+    }
 
+    loadFiltersFromStorage() {
+        const allFilters = JSON.parse(localStorage.getItem(this.storageKey)) || {};
+        const pathKey = this.getPathKey();
+        const savedData = allFilters[pathKey];
+
+        if (!savedData) return;
+
+        try {
+            const { filters, currentSearch } = savedData;
+
+            // Restore filters
+            for (let filter of filters) {
+                filter.value = filter.rawValue.toLowerCase().trim();
+                this.filters.push(filter);
+                this.renderFilterElement(filter);
+            }
+
+            // Restore the current search term/type
+            if (currentSearch) {
+                this.filterDropdown.value = currentSearch.type || "Text";
+                this.searchElement.value = currentSearch.term || "";
+            }
+
+            this.update();
+        } catch (e) {
+            console.error("Failed to load filters from local storage:", e);
+        }
+    }
+
+    storeFiltersInLocalStorage() {
+        const pathKey = this.getPathKey();
+        const allFilters = JSON.parse(localStorage.getItem(this.storageKey)) || {};
+
+        // Update filters for the current path
+        let trimmedFilters = clone(this.filters);
+        trimmedFilters.forEach(filter => delete filter.value);
+        allFilters[pathKey] = {
+            filters: trimmedFilters,
+            currentSearch: {
+                type: this.filterDropdown.value,
+                term: this.searchElement.value,
+            },
+        };
+
+        // Save back to localStorage
+        localStorage.setItem(this.storageKey, JSON.stringify(allFilters));
+    }
+
+    renderFilterElement(filter) {
+        const { type, value, rawValue } = filter;
+        let filterElement = fromHTML(`<div class="smallElement bordered listHorizontal">`);
+        this.filterListElement.appendChild(filterElement);
+        let filterLabel = fromHTML(`<div class="noLineHeight">`);
+        filterElement.appendChild(filterLabel);
+        filterLabel.textContent = type + ": " + rawValue;
+        let deleteFilterButton = fromHTML(`<button class="listHorizontal" tooltip="Remove filter">`);
+        filterElement.appendChild(deleteFilterButton);
+        deleteFilterButton.addEventListener('click', e => this.removeFilter(filterElement));
+        let closeIcon = icons.close();
+        closeIcon.classList.add('minimalIcon');
+        deleteFilterButton.appendChild(closeIcon);
+
+        this.beforeFilterBreak.classList.remove('hide');
+    }
+
+    isDuplicateFilter() {
+        let type = this.filterDropdown.value;
+        let searchTerm = this.lastSearchTerm;
+        return this.filters.some(filter => filter.type === type && filter.value === searchTerm);
+    }
+
+    addFilter() {
+        let searchTerm = this.lastSearchTerm;
+        if (!searchTerm || this.isDuplicateFilter()) return;
+
+        let filterType = this.filterDropdown.value;
+        let rawValue = this.searchElement.value;
+        let filter = { type: filterType, value: searchTerm, rawValue: rawValue };
+        this.filters.push(filter);
+
+        this.renderFilterElement(filter);
+
+        this.filterChanged = true;
+        this.searchElement.value = "";
+        this.storeFiltersInLocalStorage();
+        this.update();
+    }
+
+    removeFilter(filterElement) {
+        const filterType = filterElement.textContent.split(":")[0].trim();
+        const searchTerm = filterElement.textContent.split(":")[1].trim();
+        this.filters = this.filters.filter(f => !(f.type === filterType && f.rawValue === searchTerm));
+        filterElement.remove();
+
+        if (this.filters.length == 0) this.beforeFilterBreak.classList.add('hide');
+
+        this.filterChanged = true;
+        this.storeFiltersInLocalStorage();
+        this.update();
+    }
+
+    getSearchTerm() {
+        return this.searchElement.value.toLowerCase().trim();;
+    }
+
+    parseSearchTerm(searchTerm) {
+        const isInverse = searchTerm.startsWith('!');
+        if (isInverse) searchTerm = searchTerm.slice(1);
+
+        const isExactMatch = searchTerm.startsWith('?');
+        if (isExactMatch) searchTerm = searchTerm.slice(1);
+
+        return {
+            searchTerm,
+            isInverse,
+            isExactMatch,
+        };
+    }
+
+    update(force = false) {
+        let searchTerm = this.getSearchTerm();
+        if (!force && searchTerm == this.lastSearchTerm && !this.filterChanged) return;
+        this.filterChanged = false;
         this.lastSearchTerm = searchTerm;
         this.lastSearchTimestamp = Date.now();
         this.rangesByNode = new Map();
-        this.unhighlightSections(this.container);
+        this.unhighlightSections(this.overviewContainer);
 
-        for (let structuredSection of this.structuredSections) {
-            let found = this.searchSection(structuredSection, searchTerm);
-            if (found) structuredSection.wrapperElement.classList.remove('hiddenSearchElement');
-            else structuredSection.wrapperElement.classList.add('hiddenSearchElement');
+        if (searchTerm && !this.isDuplicateFilter()) this.plusButton.removeAttribute('disabled');
+        else this.plusButton.setAttribute('disabled', '');
+
+        let filters = [...this.filters];
+        filters.push({ type: this.filterDropdown.value, value: searchTerm });
+        this.storeFiltersInLocalStorage();
+
+        const filtersByType = {};
+        for (let filter of filters) {
+            if (!filtersByType[filter.type]) {
+                filtersByType[filter.type] = [];
+            }
+            filtersByType[filter.type].push(filter);
         }
 
-        if (this.overview.type == SectionHelpers.MasonryType) this.overview.sectionListElement._masonry.resize();
-        if (!searchTerm) return;
+        for (let structuredSection of this.structuredSections) {
+            let visible = this.applyAllFilters(structuredSection, filtersByType);
+            structuredSection.wrapperElement.classList.toggle('hiddenSearchElement', !visible);
+        }
+
+        if (this.overview.type == SectionHelpers.MasonryType) this.overview.sectionListElement._masonry?.resize();
 
         this.tryHighlightSections();
     }
 
-    searchSection(structuredSection, searchTerm) {
-        if (!searchTerm) return true;
-        let targets = [];
-        targets.push(structuredSection.titleElement);
-        structuredSection.attributesElement?.querySelectorAll('.section-attribute').forEach(e => targets.push(e));
-        targets.push(structuredSection.contentElement);
-        structuredSection.tableElement?.querySelectorAll('.section-table-cell').forEach(e => targets.push(e));
+    applyAllFilters(structuredSection, filtersByType) {
+        return Object.entries(filtersByType).every(([type, filters]) => {
+            // Combine same type filters with OR logic
+            return filters.some(filter => this.applyFilter(structuredSection, filter));
+        });
+    }
+
+    applyFilter(structuredSection, filter) {
+        const { type, value } = filter;
+        const { searchTerm, isInverse, isExactMatch } = this.parseSearchTerm(value);
+        if (!searchTerm) return (!isInverse && !isExactMatch) || (isInverse && isExactMatch);
+
+        // Check if the current section matches the filter based on type
+        let targets = this.getFilterTargets(type, structuredSection);
+        let match = this.searchTargets(searchTerm, isExactMatch, targets);
+
+        let subSectionMatch = structuredSection.subSections.getAll().some(subSection =>
+            this.applyFilter(subSection, filter)
+        );
+
+        // If it's a match and not inversed, collect highlight ranges
+        if (!isInverse && match) {
+            this.collectHighlightRangesForSection(searchTerm, isExactMatch, targets);
+        }
+
+        const finalMatch = match || subSectionMatch;
+        return isInverse ? !finalMatch : finalMatch;
+    }
+
+    getFilterTargets(filterType, structuredSection) {
+        if (filterType === "Text") {
+            return [
+                structuredSection.titleElement,
+                ...(structuredSection.attributesElement?.querySelectorAll('.section-attribute') || []),
+                structuredSection.contentElement,
+                ...(structuredSection.tableElement?.querySelectorAll('.section-table-cell') || []),
+            ];
+        }
+        if (filterType === "Name") {
+            return [structuredSection.titleElement];
+        }
+        if (filterType === "Category") {
+            return [...(structuredSection.attributesElement?.querySelectorAll('.section-attribute') || [])]
+                .filter(e => e.classList.contains('section-headValue') &&
+                    ["Weapon", "Weapon Core", "Path", "Path Core", "Mastery", "Summon"].includes(e._headValue?.name))
+                .map(e => e.querySelector('.section-headValue-value'));
+        }
+        if (filterType === "Action Type") {
+            return [...(structuredSection.attributesElement?.querySelectorAll('.section-actionType, .section-actionTypes') || [])];
+        }
+        if (filterType === "Connections") {
+            return [...(structuredSection.attributesElement?.querySelectorAll('.section-attribute') || [])]
+                .filter(e => e.classList.contains('section-headValue') && e._headValue?.name === "Connections")
+                .map(e => e.querySelector('.section-headValue-value'));
+        }
+        return [];
+    }
+
+
+    searchTargets(searchTerm, isExactMatch, targets) {
+        if (!targets) return false;
         targets = targets.filter(t => t);
 
-        let match = targets.some((element) => {
+        return targets.some(element => {
             if (!element || element.textContent == null) return false;
+            const text = element.textContent.toLowerCase();
+            return isExactMatch ? text === searchTerm : text.includes(searchTerm);
+        });
+    }
+
+    collectHighlightRangesForSection(searchTerm, isExactMatch, targets) {
+        if (!targets) return;
+        targets = targets.filter(t => t); // Ensure valid elements exist
+
+        for (let element of targets) {
+            if (!element || element.textContent == null) continue;
 
             let nodes = getTextNodesFast(element);
             let text = getTextFromTextNodes(nodes);
 
-            // Look for the search term in the text content
-            let indices = findAllIndicesInString(text.toLowerCase(), searchTerm);
-            if (indices.length > 0) {
-                for (let index of indices) {
-                    let nodeInfoByIndices = findTextNodesByIndices(nodes, index, index + searchTerm.length - 1);
-                    for (let [_, nodeInfo] of Object.entries(nodeInfoByIndices)) {
-                        const node = nodeInfo.node;
-                        const relativeIndex = nodeInfo.relativeIndex;
-
-                        if (!this.rangesByNode.has(node)) {
-                            this.rangesByNode.set(node, new Set());
-                        }
-
-                        this.rangesByNode.get(node).add(relativeIndex);
-                    }
-                }
-                return true;
+            // Find all indices where the search term matches
+            let indices = [];
+            if (isExactMatch) {
+                if (element.textContent.toLowerCase() === searchTerm) indices.push(0);
+            } else {
+                indices = findAllIndicesInString(text.toLowerCase(), searchTerm);
             }
-            return false;
-        });
 
-        // match comes after to make sure all indices are collected first
-        if (structuredSection.subSections.getAll().some(sub => this.searchSection(sub, searchTerm))) return true;
-        if (match) return true;
+            for (let index of indices) {
+                let nodeInfoByIndices = findTextNodesByIndices(nodes, index, index + searchTerm.length - 1);
+
+                for (let [_, nodeInfo] of Object.entries(nodeInfoByIndices)) {
+                    const node = nodeInfo.node;
+                    const relativeIndex = nodeInfo.relativeIndex;
+
+                    if (!this.rangesByNode.has(node)) {
+                        this.rangesByNode.set(node, []);
+                    }
+
+                    // Store the relative index along with the search term
+                    this.rangesByNode.get(node).push({ relativeIndex, searchTerm });
+                }
+            }
+        }
     }
+
 
     unhighlightSections(container) {
         let highlightedElements = [...container.getElementsByClassName("search-highlight")];
@@ -112,40 +375,76 @@ class SectionSearch {
             return true;
         }
 
-        // Determine whether to highlight based on buffer size
+        // Determine if highlighting is safe to proceed
         let rangeCount = 0;
         for (let ranges of this.rangesByNode.values()) {
-            rangeCount += ranges.size;
+            rangeCount += ranges.length;
         }
         let tooManyHighlightRanges = rangeCount > 500;
         let waitIsOver = this.lastSearchTimestamp + 1000 <= Date.now();
         if (!tooManyHighlightRanges || waitIsOver) {
             this.waitingToHighlight = false;
 
-            // Highlight the sections
+            // Highlight sections with a DOM-safe approach
             for (let [node, ranges] of this.rangesByNode.entries()) {
-                let newHtml = node.nodeValue;
-
-                // Reverse iterate through ranges to avoid interfering indices
-                let sortedRanges = [...ranges].sort((a, b) => a - b);
-                for (let i = sortedRanges.length - 1; i >= 0; i--) {
-                    const start = sortedRanges[i];
-                    const end = start + this.lastSearchTerm.length - 1;
-                    const before = newHtml.slice(0, start);
-                    const match = newHtml.slice(start, end + 1);
-                    const after = newHtml.slice(end + 1);
-                    newHtml = `${before}<span class="search-highlight">${match}</span>${after}`;
+                try {
+                    this.highlightRangesInNode(node, ranges);
+                } catch (error) {
+                    console.error("Error highlighting section:", error, node, ranges);
                 }
-
-                let tempElement = document.createElement("span");
-                node.parentElement.insertBefore(tempElement, node);
-                node.parentElement.removeChild(node);
-                tempElement.outerHTML = newHtml;
             }
             return true;
         } else if (!this.waitingToHighlight) {
             this.waitToHighlightSections();
         }
         return false;
+    }
+
+    highlightRangesInNode(node, ranges) {
+        if (!node || node.nodeType !== Node.TEXT_NODE) {
+            return;
+        }
+
+        // Convert ranges into a stable order
+        const sortedRanges = [...ranges].sort((a, b) => a.relativeIndex - b.relativeIndex);
+
+        // Safely split the text content and wrap matches with a <span>
+        const text = node.nodeValue;
+        const fragments = [];
+        let lastIndex = 0;
+
+        for (let { relativeIndex, searchTerm } of sortedRanges) {
+            const start = relativeIndex;
+            const end = start + searchTerm.length;
+
+            // Ensure no overlap exists
+            if (start < lastIndex) continue;
+
+            // Add non-highlight text before the match
+            if (start > lastIndex) {
+                fragments.push(document.createTextNode(text.slice(lastIndex, start)));
+            }
+
+            // Add highlight span for the matched term
+            let highlightSpan = document.createElement("span");
+            highlightSpan.className = "search-highlight";
+            highlightSpan.textContent = text.slice(start, end);
+            fragments.push(highlightSpan);
+
+            // Update last index to avoid overlapping
+            lastIndex = end;
+        }
+
+        // Add any remaining text after the last match
+        if (lastIndex < text.length) {
+            fragments.push(document.createTextNode(text.slice(lastIndex)));
+        }
+
+        // Replace the original node with the processed fragments
+        const parent = node.parentNode;
+        for (let fragment of fragments) {
+            parent.insertBefore(fragment, node);
+        }
+        parent.removeChild(node);
     }
 }

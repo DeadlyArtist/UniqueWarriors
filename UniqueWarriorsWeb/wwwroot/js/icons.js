@@ -57,6 +57,10 @@ const icons = {
         let path = '<path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z" />';
         return IconHelpers.materialIcon(path, title, useTooltipInstead);
     },
+    add(title = null, useTooltipInstead = false) {
+        let path = '<path d="M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z" />';
+        return IconHelpers.materialIcon(path, title, useTooltipInstead);
+    },
     expandMore(title = null, useTooltipInstead = false) {
         let path = '<path d="M480-345 240-585l56-56 184 184 184-184 56 56-240 240Z"/>';
         return IconHelpers.materialIcon(path, title, useTooltipInstead);
