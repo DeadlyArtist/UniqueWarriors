@@ -80,11 +80,11 @@ class SectionSearch {
     getFilterTypes() {
         let allChoices = ['Text', 'Category', 'Name'];
         let firstSection = this.overview.sections.first()?.section;
-        let allowedTags = ['Technique', 'Mastery'];
-        let allowedHeadValues = ['Path Core', 'Evolved Path Core'];
-        // For now only gets the first
-        if (firstSection && this.overview.sections.getAll().some(structuredSection => allowedTags.some(tag => structuredSection.section.tags.has(tag)) || allowedHeadValues.some(headValue => structuredSection.section.headValues.has(headValue)))) {
+
+        if (firstSection && this.overview.sections.getAll().some(structuredSection => [...structuredSection.section.tags].some(tag => tag.includes('Action')))) {
             allChoices.push('Action Type');
+        }
+        if (firstSection && this.overview.sections.getAll().some(structuredSection => structuredSection.section.headValues.has('Connections'))) {
             allChoices.push('Connections');
         }
         return allChoices;
@@ -364,7 +364,7 @@ class SectionSearch {
 
         do {
             if (!this.tryHighlightSections()) {
-                await sleepUntil(this.lastSearchTimestamp + 1000);
+                await sleep(this.lastWaitTime);
             }
         } while (this.waitingToHighlight);
     }
@@ -380,8 +380,9 @@ class SectionSearch {
         for (let ranges of this.rangesByNode.values()) {
             rangeCount += ranges.length;
         }
-        let tooManyHighlightRanges = rangeCount > 500;
-        let waitIsOver = this.lastSearchTimestamp + 1000 <= Date.now();
+        let tooManyHighlightRanges = rangeCount >= 200;
+        this.lastWaitTime = clamp(rangeCount, 200, 5000) / 2;
+        let waitIsOver = this.lastSearchTimestamp + this.lastWaitTime <= Date.now();
         if (!tooManyHighlightRanges || waitIsOver) {
             this.waitingToHighlight = false;
 
