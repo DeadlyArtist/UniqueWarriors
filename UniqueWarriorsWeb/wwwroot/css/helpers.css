@@ -82,6 +82,14 @@
     word-break: break-word;
 }
 
+.noTextWrap {
+  white-space: nowrap;
+}
+
+.noOverflow {
+  overflow: hidden;
+}
+
 .nestedText {
     display: table;
 }

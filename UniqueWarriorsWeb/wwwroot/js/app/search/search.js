@@ -39,7 +39,7 @@ class SectionSearch {
     }
 
     setup() {
-        this.searchListElement = fromHTML(`<div class="listContainerHorizontal smallGap">`);
+        this.searchListElement = fromHTML(`<div class="listHorizontal smallGap">`);
         this.container.appendChild(this.searchListElement);
 
         this.filterDropdown = fromHTML(`<select tooltip="Filters of same type are combined with OR, filters of different types are combined with AND.">`);
@@ -50,7 +50,7 @@ class SectionSearch {
         });
         this.updateFilterTypes();
 
-        this.searchElement = fromHTML(`<input type="search" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Search" aria-label="Search" />`);
+        this.searchElement = fromHTML(`<input type="search" class="flex section-searchbar" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Search" aria-label="Search" />`);
         this.searchListElement.appendChild(this.searchElement);
         this.searchElement.addEventListener('search', () => this.update());
         this.searchElement.addEventListener('keyup', (e) => {

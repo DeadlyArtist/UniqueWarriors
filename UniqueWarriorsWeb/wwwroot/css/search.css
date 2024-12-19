@@ -1,3 +1,7 @@
 ﻿.hiddenSearchElement {
   display: none;
 }
+
+.section-searchbar {
+  flex: 1 1 200px;
+}
