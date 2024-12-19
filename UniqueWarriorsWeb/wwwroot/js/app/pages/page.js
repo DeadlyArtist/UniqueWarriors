@@ -25,11 +25,12 @@ class Page {
         if (!this.settings.keepCase) this.name = toNormalCase(this.name);
     }
 
-    load(element = pageElement) {
+    load(settings = null) {
+        settings ??= {};
         this.isLoaded = this.pageManager.isLoaded = true;
         this.loadId = this.pageManager.loadId = generateUniqueId();
-        this.pageElement = this.pageManager.pageElement = element;
-        this.pageManager.load();
+        this.pageElement = this.pageManager.pageElement = settings.pageElement ?? pageElement;
+        this.pageManager.load(settings);
     }
 
     unload() {

@@ -16,8 +16,7 @@ class SearchAllPageManager extends PageManager {
             header.textContent = page.name;
             let element = fromHTML(`<div class="children-w-100">`);
             pageContainer.appendChild(element);
-            page.noSearchBar = true;
-            page.load(element);
+            page.load({ pageElement: element, noSearchBar: true});
             promises.push(page.pageManager.onOverviewLoaded());
         }
 

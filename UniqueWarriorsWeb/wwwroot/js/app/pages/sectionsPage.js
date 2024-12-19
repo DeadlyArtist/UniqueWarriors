@@ -1,6 +1,7 @@
 class SectionsPageManager extends PageManager {
     stream = null;
     overview;
+    noSearchBar = false;
 
     constructor(overviewType, settings) {
         super();
@@ -10,9 +11,11 @@ class SectionsPageManager extends PageManager {
         this.sectionsProvider = settings.sectionsProvider ?? [];
     }
 
-    load() {
+    load(settings = null) {
+        settings ??= {};
         let self = this;
         let loadId = this.loadId;
+        this.noSearchBar = !!settings.noSearchBar;
         this.overview = null;
          setTimeout(() => {
              Loader.onCollectionsLoaded(() => {
@@ -29,7 +32,7 @@ class SectionsPageManager extends PageManager {
             this.setupStream(streamProvider);
         } else {
             const sections = isFunction(this.sectionsProvider) ? this.sectionsProvider() : this.sectionsProvider;
-            const overview = SectionHelpers.generateStructuredHtmlForSectionOverview(sections, this.overviewType, { addSearch: !this.page.noSearchBar });
+            const overview = SectionHelpers.generateStructuredHtmlForSectionOverview(sections, this.overviewType, { addSearch: !this.noSearchBar });
             this.overview = overview;
             this.sendOverviewEvent();
             this.pageElement.appendChild(overview.container);
@@ -39,7 +42,7 @@ class SectionsPageManager extends PageManager {
     setupStream(streamProvider) {
         const sections = [];
 
-        const overview = SectionHelpers.generateStructuredHtmlForSectionOverview(sections, this.overviewType, { addSearch: !this.page.noSearchBar, dontInitSearch: true });
+        const overview = SectionHelpers.generateStructuredHtmlForSectionOverview(sections, this.overviewType, { addSearch: !this.noSearchBar, dontInitSearch: true });
         this.stream = streamProvider(event => {
             if (event.registered) overview.addSection(event.obj, { insertBefore: event.insertBefore });
             else overview.removeSection(event.obj);
