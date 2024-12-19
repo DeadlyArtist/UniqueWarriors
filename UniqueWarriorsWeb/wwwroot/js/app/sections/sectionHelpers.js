@@ -358,7 +358,6 @@ class SectionHelpers {
         let container = fromHTML(`<div class="section-overview listContainerVertical children-w-100">`);
 
         let searchContainer;
-        let searchElement;
         if (settings.addSearch) {
             searchContainer = fromHTML(`<div class="sticky">`);
             container.appendChild(searchContainer);
@@ -467,7 +466,7 @@ class StructuredSectionOverviewHtml {
     initSearch() {
         if (!this.searchContainer || this.didSearchInit || this.sections.size == 0) return;
         this.didSearchInit = true;
-        this.search = new SectionSearch(this);
+        this.search = new SectionSearch(this.searchContainer, [this]);
         this.searchContainer._search = this.search;
     }
 

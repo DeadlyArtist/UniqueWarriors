@@ -7,7 +7,7 @@ class HomePageManager extends PageManager {
         element.appendChild(link);
         link.setAttribute('href', "/app/techniques");
 
-        pageElement.appendChild(element);
+        this.pageElement.appendChild(element);
     }
 
     unload() {

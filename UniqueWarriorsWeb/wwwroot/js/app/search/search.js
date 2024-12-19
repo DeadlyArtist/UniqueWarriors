@@ -1,12 +1,10 @@
 
 class SectionSearch {
-    constructor(structuredSectionOverview) {
-        let overview = structuredSectionOverview;
-        this.overview = overview;
-        this.overviewContainer = overview.container;
-        this.container = overview.searchContainer;
-        this.listElement = overview.sectionListElement;
-        this.structuredSections = overview.sections;
+    constructor(searchContainer, structuredSectionOverviews) {
+        structuredSectionOverviews ??= [];
+        let overviews = structuredSectionOverviews;
+        this.overviews = overviews;
+        this.container = searchContainer;
 
         // Filters
         this.filters = [];
@@ -21,14 +19,24 @@ class SectionSearch {
 
         this.setup();
         this.loadFiltersFromStorage();
-        this.overview.sections.streamBatch(s => this.update(true));
+        for (let overview of this.overviews) {
+            overview.sections.streamBatch(s => this.update(true));
+        }
+    }
+
+    addSectionOverviews(overviews) {
+        this.updateFilterTypes();
+
+        for (let overview of overviews) {
+            this.overviews.push(overview);
+            overview.sections.streamBatch(s => this.update(true));
+        }
     }
 
     getPathKey() {
         // Generate a unique key for this path
         return getPath();
     }
-
 
     setup() {
         this.searchListElement = fromHTML(`<div class="listContainerHorizontal smallGap">`);
@@ -40,13 +48,7 @@ class SectionSearch {
             this.filterChanged = true;
             this.update()
         });
-        for (let type of this.getFilterTypes()) {
-            let option = fromHTML(`<option>`);
-            option.value = type;
-            option.text = type;
-            option.selected = option.value == "Text";
-            this.filterDropdown.appendChild(option);
-        }
+        this.updateFilterTypes();
 
         this.searchElement = fromHTML(`<input type="search" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Search" aria-label="Search" />`);
         this.searchListElement.appendChild(this.searchElement);
@@ -77,14 +79,23 @@ class SectionSearch {
         this.container.appendChild(hb(2));
     }
 
+    updateFilterTypes() {
+        this.filterDropdown.innerHTML = "";
+        for (let type of this.getFilterTypes()) {
+            let option = fromHTML(`<option>`);
+            option.value = type;
+            option.text = type;
+            option.selected = option.value == "Text";
+            this.filterDropdown.appendChild(option);
+        }
+    }
+
     getFilterTypes() {
         let allChoices = ['Text', 'Category', 'Name'];
-        let firstSection = this.overview.sections.first()?.section;
-
-        if (firstSection && this.overview.sections.getAll().some(structuredSection => [...structuredSection.section.tags].some(tag => tag.includes('Action')))) {
+        if (this.overviews.some(o => o.sections.getAll().some(structuredSection => [...structuredSection.section.tags].some(tag => tag.includes('Action'))))) {
             allChoices.push('Action Type');
         }
-        if (firstSection && this.overview.sections.getAll().some(structuredSection => structuredSection.section.headValues.has('Connections'))) {
+        if (this.overviews.some(o => o.sections.getAll().some(structuredSection => structuredSection.section.headValues.has('Connections')))) {
             allChoices.push('Connections');
         }
         return allChoices;
@@ -216,7 +227,9 @@ class SectionSearch {
         this.lastSearchTerm = searchTerm;
         this.lastSearchTimestamp = Date.now();
         this.rangesByNode = new Map();
-        this.unhighlightSections(this.overviewContainer);
+        for (let overview of this.overviews) {
+            this.unhighlightSections(overview.sectionListElement);
+        }
 
         if (searchTerm && !this.isDuplicateFilter()) this.plusButton.removeAttribute('disabled');
         else this.plusButton.setAttribute('disabled', '');
@@ -233,12 +246,16 @@ class SectionSearch {
             filtersByType[filter.type].push(filter);
         }
 
-        for (let structuredSection of this.structuredSections) {
-            let visible = this.applyAllFilters(structuredSection, filtersByType);
-            structuredSection.wrapperElement.classList.toggle('hiddenSearchElement', !visible);
+        for (let overview of this.overviews) {
+            for (let structuredSection of overview.sections) {
+                let visible = this.applyAllFilters(structuredSection, filtersByType);
+                structuredSection.wrapperElement.classList.toggle('hiddenSearchElement', !visible);
+            }
         }
 
-        if (this.overview.type == SectionHelpers.MasonryType) this.overview.sectionListElement._masonry?.resize();
+        for (let overview of this.overviews) {
+            if (overview.type == SectionHelpers.MasonryType) overview.sectionListElement._masonry?.resize();
+        }
 
         this.tryHighlightSections();
     }

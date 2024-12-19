@@ -24,7 +24,7 @@ class App {
     }
 
     static async onAppLoaded(callback = doNothing) {
-        new Promise((resolve, reject) => {
+        return new Promise((resolve, reject) => {
             let _callback = () => { callback(); resolve(); }
             if (this.appLoaded) {
                 _callback();
@@ -35,7 +35,7 @@ class App {
     }
 
     static async onAfterAppLoaded(callback = doNothing) {
-        new Promise((resolve, reject) => {
+        return new Promise((resolve, reject) => {
             let _callback = () => { callback(); resolve(); }
             if (this.afterAppLoaded) {
                 _callback();

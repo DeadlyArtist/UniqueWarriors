@@ -3,6 +3,7 @@ class Page {
     name;
     link;
     pageManager;
+    pageElement;
     loadId;
     isLoaded = false;
 
@@ -12,7 +13,7 @@ class Page {
 
     constructor(link, name, pageManager, settings = null) {
         this.name = name;
-        this.link = link ?? `/app/${name}`;
+        this.link = link == '/' ? link : link ? `/app/${link}` : `/app/${name}`;
         this.pageManager = pageManager;
         this.settings = settings ?? {};
 
@@ -24,9 +25,10 @@ class Page {
         if (!this.settings.keepCase) this.name = toNormalCase(this.name);
     }
 
-    load() {
-        this.isLoaded = true;
-        this.loadId = generateUniqueId();
+    load(element = pageElement) {
+        this.isLoaded = this.pageManager.isLoaded = true;
+        this.loadId = this.pageManager.loadId = generateUniqueId();
+        this.pageElement = this.pageManager.pageElement = element;
         this.pageManager.load();
     }
 
@@ -39,13 +41,7 @@ class Page {
 
 class PageManager {
     page;
-    get isLoaded() {
-        return this.page.isLoaded;
-    }
-
-    get loadId() {
-        return this.page.loadId;
-    }
+    pageElement;
 
     load() {
 

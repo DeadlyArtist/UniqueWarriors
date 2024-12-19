@@ -12,6 +12,7 @@ class Pages {
 
     static error = this.register(new Page(null, "error", new ErrorPageManager()));
     static home = this.register(new Page("/", "home", new HomePageManager()));
+    static searchAll = this.register(new Page("search", "Search All", new SearchAllPageManager()));
 
     // Game
     static rules = this.register(new Page(null, "rules", new SectionsPageManager(SectionHelpers.TextType, { registry: Registries.rules })));
@@ -35,13 +36,24 @@ class Pages {
             this.conditions,
         ];
 
-        for (let page of sidebarPages) {
-            let link = fromHTML(`<a class="element sidebarElement hoverable">`);
-            link.setAttribute('href', page.link);
-            link.textContent = page.name;
+        let sidebarBottomPages = [
+            this.searchAll,
+        ];
 
-            sidebarListElement.appendChild(link);
+        for (let page of sidebarPages) {
+            sidebarListElement.appendChild(this.getSidebarElement(page));
         }
+
+        for (let page of sidebarBottomPages) {
+            sidebarBottomListElement.appendChild(this.getSidebarElement(page));
+        }
+    }
+
+    static getSidebarElement(page) {
+        let link = fromHTML(`<a class="element sidebarElement hoverable">`);
+        link.setAttribute('href', page.link);
+        link.textContent = page.name;
+        return link;
     }
 
     static _handleNavigation(event) {
