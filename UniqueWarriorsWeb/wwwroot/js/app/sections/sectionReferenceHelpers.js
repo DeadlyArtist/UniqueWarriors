@@ -187,6 +187,7 @@ class SectionReferenceHelpers {
                 anchor = section.anchor;
                 break;
             }
+            section = section.parent;
         }
         return anchor + '/' + reference;
     }
