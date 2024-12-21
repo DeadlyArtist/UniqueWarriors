@@ -39,7 +39,7 @@ class Collection {
         let allSections = [];
         for (let wrapper of this.sectionResourceWrappers) {
             let sections = await wrapper.resource.getFromJson();
-            sections = SectionHelpers.modify(sections, { ...SectionHelpers.getInitModifySettings(), ...wrapper.settings });
+            sections = SectionHelpers.modify(sections, { ...SectionHelpers.getInitModifySettings(), anchor: this.registry.name,  ...wrapper.settings });
             sections.forEach(s => allSections.push(s));
         }
         return allSections;

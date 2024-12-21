@@ -21,6 +21,8 @@ class SectionHelpers {
             else sections = sections.map(section => section.clone());
         }
 
+        if (settings.anchor) sections.forEach(s => s.anchor = settings.anchor);
+
         if (settings.name && !settings.mutation) sections.forEach(s => s.title = settings.name);
 
         if (settings.addChild) settings.addChildren = [settings.addChild];

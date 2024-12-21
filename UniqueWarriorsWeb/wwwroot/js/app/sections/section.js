@@ -11,6 +11,7 @@ class Section {
 
         // Custom
         this.parent = section.parent ?? null;
+        this.anchor = section.anchor ?? null;
         this.headValues = new Map();
         this.tags = new Set();
 
@@ -177,13 +178,13 @@ class Section {
     }
 
     clone() {
-        return Section.fromJSON(JSON.stringify(this));
+        return Section.fromJSON(clone(this));
     }
 
     cloneWithoutSubSections() {
         let json = this.toJSON();
         json.subSections = [];
-        return Section.fromJSON(JSON.stringify(json));
+        return Section.fromJSON(clone(this));
     }
 
     toJSON() {
@@ -199,11 +200,10 @@ class Section {
         };
     }
 
-    static fromJSON(json) {
-        let section = JSON.parse(json);
+    static fromJSON(section) {
         let newSubSections = [];
         if (section.attributes) section.attributes = SectionAttributesHelpers.fromJSON(section.attributes);
-        if (section.subSections) section.subSections.forEach(s => newSubSections.push(new Section(s)));
+        if (section.subSections) section.subSections.forEach(s => newSubSections.push(Section.fromJSON(s)));
         section.subSections = newSubSections;
         return new Section(section);
     }

@@ -128,6 +128,8 @@ class SectionReferenceHelpers {
 
             let html = "";
             let start = -1, end = -1;
+            let parentSectionElement = HtmlHelpers.getClosestWithProperty(node, "_section");
+            let parentSection = parentSectionElement._section;
 
             let reference = null;
             let path = null;
@@ -150,8 +152,8 @@ class SectionReferenceHelpers {
                     }
                     if (mutation) reference += `*mutation=${mutation}`;
                     if (name) reference += `*name=${name}`;
-                    path = this.findPathFromReference(reference);
                     isLine = start == 0 && end == value.length - 1;
+                    path = isLine ? 'techniques/' + reference : this.findPathFromReference(parentSection, reference);
                     let display = name ?? reference;
                     html += `<span tooltip-path="${escapeHTML(path)}" section-formula>${escapeHTML(isLine ? "<" + display + ">" : display)}</span>`;
                 }
@@ -159,8 +161,6 @@ class SectionReferenceHelpers {
 
             if (isLine) {
                 let section = SectionHelpers.resolveSectionExpression(path);
-                let parentSectionElement = HtmlHelpers.getClosestWithProperty(node, "_section");
-                let parentSection = parentSectionElement._section;
                 if (section && value[0] == '<' && value[value.length - 1] == '>') {
                     let height = 1;
                     if (parentSection) height = parentSection.height + 1;
@@ -179,8 +179,16 @@ class SectionReferenceHelpers {
         }
     }
 
-    static findPathFromReference(reference) {
-        return 'techniques/' + reference;
+    static findPathFromReference(section, reference) {
+        section = section.parent;
+        let anchor = 'techniques';
+        while (section) {
+            if (section.anchor) {
+                anchor = section.anchor;
+                break;
+            }
+        }
+        return anchor + '/' + reference;
     }
 
     static updateSnippets(element = document.documentElement) {

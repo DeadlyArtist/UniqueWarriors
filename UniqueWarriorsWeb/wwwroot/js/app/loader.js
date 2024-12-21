@@ -6,7 +6,8 @@ class Loader {
             new Collection.SectionResourceWrapper(Resources.conditions)
         ]),
         new Collection(Registries.masteries, [
-            new Collection.SectionResourceWrapper(Resources.masteries_path),
+            new Collection.SectionResourceWrapper(Resources.masteries_a),
+            new Collection.SectionResourceWrapper(Resources.masteries_m),
         ], { categories: true }),
         new Collection(Registries.rules, [
             new Collection.SectionResourceWrapper(Resources.rules_character_creation),

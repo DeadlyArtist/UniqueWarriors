@@ -28,9 +28,11 @@ class Snippets {
         new Snippet("Technique", "rules/Techniques*noChildren"),
         new Snippet("Path", "rules/Paths"),
         new Snippet("Path Core", "rules/Paths/Path Core"),
-        new Snippet("Evolved Path Core", "rules/Paths/Path Core/Evolved Path Core"),
+        new Snippet("Evolution", "rules/Paths/Path Core/Evolution"),
         new Snippet("Mastery", "rules/Masteries"),
         new Snippet("Masteries", "rules/Masteries"),
+        new Snippet("Upgrade", "rules/Masteries/Upgrades"),
+        new Snippet("Ascension", "rules/Masteries/Upgrades/Ascension"),
         new Snippet("Mutation", "rules/Techniques/Mutations"),
         new Snippet("learn summon", "rules/Techniques/Summons"),
         new Snippet("learned summon", "rules/Techniques/Summons"),
@@ -55,6 +57,8 @@ class Snippets {
         new Snippet("Unaware", "rules/Attacks/Unaware And Hidden"),
         new Snippet("Hidden", "rules/Attacks/Unaware And Hidden"),
         new Snippet("Damage", "rules/Attacks/Damage*noChildren"),
+        new Snippet("Damage Modifier Order", "rules/Attacks/Damage/Damage Modifier Order"),
+        new Snippet("Damage Type", "rules/Attacks/Damage/Damage Types"),
         new Snippet("Explode", "rules/Attacks/Damage/Explode"),
 
         // Tag only

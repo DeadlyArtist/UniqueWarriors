@@ -14,7 +14,8 @@ class Resources {
     static index_html = this.register(new Resource("/", true));
 
     static conditions = this.register(new Resource("/data/conditions.json", true));
-    static masteries_path = this.register(new Resource("/data/masteries_path.json", true));
+    static masteries_a = this.register(new Resource("/data/masteries_a.json", true));
+    static masteries_m = this.register(new Resource("/data/masteries_m.json", true));
     static rules_attacks = this.register(new Resource("/data/rules_attacks.json", true));
     static rules_character_creation = this.register(new Resource("/data/rules_character_creation.json", true));
     static rules_character_leveling = this.register(new Resource("/data/rules_character_leveling.json", true));
