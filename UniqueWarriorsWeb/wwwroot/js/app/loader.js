@@ -10,6 +10,7 @@ class Loader {
             new Collection.SectionResourceWrapper(Resources.masteries_m),
         ], { categories: true }),
         new Collection(Registries.rules, [
+            new Collection.SectionResourceWrapper(Resources.rules_introduction),
             new Collection.SectionResourceWrapper(Resources.rules_character_creation),
             new Collection.SectionResourceWrapper(Resources.rules_character_leveling),
             new Collection.SectionResourceWrapper(Resources.rules_main),

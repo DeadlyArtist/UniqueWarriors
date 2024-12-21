@@ -11,7 +11,7 @@ title = None
 # !!!CHANGE ABOVE BEFORE RUNNING!!!
 
 # Can change below if needed
-outputdirectorypath = 'SkillOutput'
+outputdirectorypath = 'SectionOutput'
 # Can change above if needed
 
 class RawSection:
@@ -111,6 +111,14 @@ def rawsectionize(htmlsection: str) -> RawSection:
         htmlsection = substring_before_first(htmlsection, nextHeader)
     htmlsection = htmlsection.replace('\n', ' ').replace('\r', '').replace('&nbsp;', '')
     htmlsection = htmlHelpers.unescape(htmlsection)
+    
+    # Transform html links to markdown syntax
+    htmlsection = re.sub(
+        r'<a href="(.*?)">(.*?)</a>',
+        r'[\2](\1)',  # \2 is the content, \1 is the link
+        htmlsection
+    )
+    
     title = substring_before_first(htmlsection, "</")
     title = substring_after_last(title, ">")
     rawtable = ""
@@ -282,7 +290,6 @@ while "<span" in clip:
 
 
 extractOptions(clip)
-
 htmlsections = gethtmlsections(clip)
 
 rawsections = [] # type: list[RawSection]

@@ -143,6 +143,7 @@ class SectionReferenceHelpers {
                     }
                     start = i;
                 } else if (value[i] === '>') {
+                    if (start == -1) continue;
                     end = i;
                     const parts = value.substring(start + 1, end).split('|');
                     reference = parts.shift();

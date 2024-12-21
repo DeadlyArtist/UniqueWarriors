@@ -329,7 +329,12 @@ class SectionHelpers {
         if (section.content) {
             needsBreak = true;
             contentElement = fromHTML(`<div class="section-content fixText applySnippets markTooltips">`);
-            contentElement.textContent = section.content;
+
+            // Convert markdown links to html
+            const markdownLinkRegex = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g;
+            const htmlContent = escapeHTML(section.content).replace(markdownLinkRegex, '<a class="textLink" href="$2">$1</a>');
+
+            contentElement.innerHTML = htmlContent;
             sectionElement.appendChild(contentElement);
         }
 
