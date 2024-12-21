@@ -170,10 +170,13 @@ class SectionHelpers {
     static adjustHeightLevel(sections, heightLevel = 1) {
         if (!sections) return sections;
 
+        let lowestHeight = 99999;
+        for (let section of sections) if (section.height < lowestHeight) lowestHeight = section.height;
+        let offset = lowestHeight - heightLevel;
+
         for (let section of sections) {
-            const heightOffset = section.height - heightLevel;
-            section.height -= heightOffset;
-            if (section.subSections) section.subSections.forEach(s => this.adjustHeightLevel([s], s.height - heightOffset));
+            section.height -= offset;
+            if (section.subSections) section.subSections.forEach(s => this.adjustHeightLevel([s], s.height - offset));
         }
 
         return sections;
@@ -320,7 +323,7 @@ class SectionHelpers {
         let contentElement = null;
         if (section.content) {
             needsBreak = true;
-            contentElement = fromHTML(`<div class="section-content applySnippets markTooltips">`);
+            contentElement = fromHTML(`<div class="section-content fixText applySnippets markTooltips">`);
             contentElement.textContent = section.content;
             sectionElement.appendChild(contentElement);
         }
