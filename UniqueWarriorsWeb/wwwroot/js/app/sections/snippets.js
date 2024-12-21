@@ -40,7 +40,7 @@ class Snippets {
         new Snippet("attribute increase", "rules/Attributes"),
         new Snippet("boon", "rules/Boons And Banes"),
         new Snippet("bane", "rules/Boons And Banes"),
-        new Snippet("Attack", "rules/Attacks/Attack Resolution*noChildren"),
+        new Snippet("Attack", "rules/Attacks/Attack Resolution*noChildren*addChild=rules/Attacks/Attack Resolution/Common Rules"),
         new Snippet("Natural", "rules/Attacks/Attack Resolution/Natural Rolls And Modifiers"),
         new Snippet("Success Level", "rules/Attacks/Attack Resolution/Success Level"),
         new Snippet("Miss", "rules/Attacks/Attack Resolution/Success Level"),

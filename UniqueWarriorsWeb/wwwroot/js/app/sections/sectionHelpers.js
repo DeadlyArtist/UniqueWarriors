@@ -94,11 +94,14 @@ class SectionHelpers {
         }
 
         if (settings.addChild) settings.addChildren = settings.addChild;
+        delete settings.addChild;
         if (settings.removeChild) settings.removeChildren = settings.removeChild;
+        delete settings.removeChild;
 
         if (settings.replaceChildren) {
             settings.noChildren = true;
             settings.addChildren = settings.replaceChildren;
+            delete settings.replaceChildren;
         }
         if (settings.addChildren) settings.addChildren = this.resolveMultipleSectionsExpression(settings.addChildren);
         if (settings.removeChildren) settings.removeChildren = this.resolveMultipleSectionsExpression(settings.removeChildren);
