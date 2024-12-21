@@ -109,7 +109,7 @@ def rawsectionize(htmlsection: str) -> RawSection:
     nextHeader = findNextHeader(htmlsection)
     if (nextHeader != -1):
         htmlsection = substring_before_first(htmlsection, nextHeader)
-    htmlsection = htmlsection.replace('\n', ' ').replace('\r', '').replace('&nbsp;', '')
+    htmlsection = htmlsection.replace('\r\n  ', ' ').replace('\n', ' ').replace('\r', '').replace('&nbsp;', '')
     htmlsection = htmlHelpers.unescape(htmlsection)
     
     # Transform html links to markdown syntax

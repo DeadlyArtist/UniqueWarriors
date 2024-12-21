@@ -259,7 +259,11 @@ class SectionReferenceHelpers {
             for (let node of nodes) {
                 const oldHtml = escapeHTML(node.textContent);
                 const newHtml = oldHtml.replace(regex, function (matched, matchedTarget, maybeS) {
-                    return `<span class="snippetTarget" tooltip-path="${escapeHTML(pathsByTarget[matchedTarget.toLowerCase()])}">${matchedTarget + maybeS}</span>`;
+                    let targetPath = pathsByTarget[matchedTarget.toLowerCase()];
+                    let section = HtmlHelpers.getClosestProperty(node, '_section');
+                    let sectionPath = section.getSectionPath();
+                    if (sectionPath == targetPath) return matched;
+                    return `<span class="snippetTarget" tooltip-path="${escapeHTML(targetPath)}">${matchedTarget + maybeS}</span>`;
                 });
 
                 if (oldHtml !== newHtml) {

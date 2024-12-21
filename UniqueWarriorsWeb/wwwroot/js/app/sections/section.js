@@ -177,6 +177,21 @@ class Section {
         this.attributes = this.attributes.map(line => line.filter(a => a !== tag));
     }
 
+    getSectionPath() {
+        let parts = [];
+        let section = this;
+        while (section) {
+            if (section.anchor) {
+                parts.push(section.anchor);
+                break;
+            }
+            parts.push(section.title);
+            section = section.parent;
+        }
+
+        return parts.reverse().map(p => SectionReferenceHelpers.pathEncoder.escape(p)).join('/');
+    }
+
     clone() {
         return Section.fromJSON(clone(this));
     }
