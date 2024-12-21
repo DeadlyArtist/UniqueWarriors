@@ -138,6 +138,7 @@ class Pages {
         pageElement.innerHTML = '';
 
         this.currentPage = page;
+        document.title = `${page.name} - Unique Warriors | Cyberfantasy`
         page.load();
     }
 
