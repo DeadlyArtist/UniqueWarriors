@@ -85,6 +85,22 @@
   border-color: transparent var(--tooltip-background-color) transparent transparent;
 }
 
+[color-scheme="light"] .tooltip[tooltip-position="top"]::after {
+  border-color: var(--border-color) transparent transparent transparent;
+}
+
+[color-scheme="light"] .tooltip[tooltip-position="bottom"]::after {
+  border-color: transparent transparent var(--border-color) transparent;
+}
+
+[color-scheme="light"] .tooltip[tooltip-position="left"]::after {
+  border-color: transparent transparent transparent var(--border-color);
+}
+
+[color-scheme="light"] .tooltip[tooltip-position="right"]::after {
+  border-color: transparent var(--border-color) transparent transparent;
+}
+
 .colorTooltips .markTooltips .tooltipTarget {
   color: var(--stress-color);
 }
