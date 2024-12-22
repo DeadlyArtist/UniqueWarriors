@@ -18,10 +18,10 @@ Official Settings: None (for now)
 Satisfying progression over the course of 30 levels.
 
 ### Customizability
-You can choose from dozens of weapons, hundreds of weapon abilities (techniques), 9 paths, dozens of path abilities (masteries) each with multiple upgrades, as well as additional customizability at higher levels via mutations (both weapon abilities and summons), path evolutions, and path ascendancies. Beyond that, lots of optional customizability in terms of flavor, as well as campaign dependent customizability via items and runes is provided.
+You can choose from dozens of weapons, hundreds of weapon abilities (techniques), 9 paths, dozens of path abilities (masteries) each with multiple upgrades, as well as additional customizability at higher levels via mutations (both weapon abilities and summons), path evolutions, and path ascendancies. Beyond that, lots of optional customizability in terms of flavor, as well as campaign dependent customizability via items and runes is available.
 
 ### Homebrew
-Straightforward design makes this game super simple to do homebrew for. Homebrew is split into simple homebrew (campaign level, personal homebrew) and advanced homebrew (replace or add entire new systems).
+Straightforward design makes this game super simple to create homebrew for. Homebrew is split into simple homebrew (campaign level, personal homebrew) and advanced homebrew (replace or add entire new systems).
 
 ## License
 This project uses two separate licenses:
