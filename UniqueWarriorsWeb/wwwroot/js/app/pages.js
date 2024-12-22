@@ -50,7 +50,7 @@ class Pages {
     }
 
     static getSidebarElement(page) {
-        let link = fromHTML(`<a class="element sidebarElement hoverable">`);
+        let link = fromHTML(`<a class="element sidebarElement borderedHoverable">`);
         link.setAttribute('href', page.link);
         link.textContent = page.name;
         return link;

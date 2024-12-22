@@ -47,6 +47,7 @@
   --sidebar-background-color: var(--background-color);
   --navbar-background-color: var(--background-color);
   --tooltip-background-color: var(--lowered-background-color);
+  --tooltip-border-color: var(--brand-color);
   --code-bar-background-color: var(--raised-background-color);
   --codeblock-color: var(--text-color);
   --codeblock-background-color: var(--lowered-background-color);
@@ -98,6 +99,7 @@
   --sidebar-background-color: var(--background-color);
   --navbar-background-color: var(--background-color);
   --tooltip-background-color: var(--background-color);
+  --tooltip-border-color: var(--brand-color);
   --code-bar-background-color: var(--raised-background-color);
   --codeblock-background-color: var(--lowered-background-color);
   --codeblock-color: var(--text-color);

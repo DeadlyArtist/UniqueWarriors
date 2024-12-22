@@ -10,10 +10,11 @@
   width: max-content;
   max-width: calc(100vw - 12px);
   background-color: var(--tooltip-background-color);
+  border: 1px solid var(--tooltip-border-color);
 }
 
 [color-scheme="light"] .tooltip {
-  border: 2px solid var(--border-color);
+  border: 1px solid var(--brand-color);
 }
 
 
@@ -46,7 +47,7 @@
   margin-left: -5px;
   border-width: 5px;
   border-style: solid;
-  border-color: var(--tooltip-background-color) transparent transparent transparent;
+  border-color: var(--tooltip-border-color) transparent transparent transparent;
 }
 
 .tooltip[tooltip-position="bottom"]::after {
@@ -58,7 +59,7 @@
   margin-left: -5px;
   border-width: 5px;
   border-style: solid;
-  border-color: transparent transparent var(--tooltip-background-color) transparent;
+  border-color: transparent transparent var(--tooltip-border-color) transparent;
 }
 
 .tooltip[tooltip-position="left"]::after {
@@ -70,7 +71,7 @@
   margin-top: -5px;
   border-width: 5px;
   border-style: solid;
-  border-color: transparent transparent transparent var(--tooltip-background-color);
+  border-color: transparent transparent transparent var(--tooltip-border-color);
 }
 
 .tooltip[tooltip-position="right"]::after {
@@ -82,23 +83,7 @@
   margin-top: -5px;
   border-width: 5px;
   border-style: solid;
-  border-color: transparent var(--tooltip-background-color) transparent transparent;
-}
-
-[color-scheme="light"] .tooltip[tooltip-position="top"]::after {
-  border-color: var(--border-color) transparent transparent transparent;
-}
-
-[color-scheme="light"] .tooltip[tooltip-position="bottom"]::after {
-  border-color: transparent transparent var(--border-color) transparent;
-}
-
-[color-scheme="light"] .tooltip[tooltip-position="left"]::after {
-  border-color: transparent transparent transparent var(--border-color);
-}
-
-[color-scheme="light"] .tooltip[tooltip-position="right"]::after {
-  border-color: transparent var(--border-color) transparent transparent;
+  border-color: transparent var(--tooltip-border-color) transparent transparent;
 }
 
 .colorTooltips .markTooltips .tooltipTarget {

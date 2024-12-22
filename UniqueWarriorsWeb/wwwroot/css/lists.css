@@ -43,6 +43,10 @@
   gap: 10px;
 }
 
+.nogap {
+  gap: 0;
+}
+
 .smallGap {
   gap: 4px;
 }
