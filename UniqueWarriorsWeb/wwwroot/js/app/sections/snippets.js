@@ -37,6 +37,8 @@ class Snippets {
         new Snippet("Mutation", "rules/Techniques/Mutations"),
         new Snippet("learn summon", "rules/Techniques/Summons"),
         new Snippet("learned summon", "rules/Techniques/Summons"),
+        new Snippet("Weapon Item", "rules/Items/Weapon Items*noChildren"),
+        new Snippet("Rune", "rules/Items/Weapon Items/Runes*noChildren"),
         new Snippet("Stats", "rules/Stats"),
         new Snippet("Scaling Stats", "rules/Stats/Scaling Stats"),
         new Snippet("Attribute Stats", "rules/Stats/Attribute Stats"),
