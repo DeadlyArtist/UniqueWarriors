@@ -181,11 +181,11 @@ class Section {
         let parts = [];
         let section = this;
         while (section) {
+            parts.push(section.title);
             if (section.anchor) {
                 parts.push(section.anchor);
                 break;
             }
-            parts.push(section.title);
             section = section.parent;
         }
 
