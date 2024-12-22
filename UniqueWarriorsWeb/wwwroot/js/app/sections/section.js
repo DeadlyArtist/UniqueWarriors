@@ -193,13 +193,17 @@ class Section {
     }
 
     clone() {
-        return Section.fromJSON(clone(this));
+        let clone = Section.fromJSON(this.toJSON());
+        clone.parent = this.parent;
+        return clone;
     }
 
     cloneWithoutSubSections() {
         let json = this.toJSON();
         json.subSections = [];
-        return Section.fromJSON(clone(this));
+        let clone = Section.fromJSON(json);
+        clone.parent = this.parent;
+        return clone;
     }
 
     toJSON() {
@@ -210,8 +214,8 @@ class Section {
             content: this.content,
             table: this.table,
             tableHeaderLocation: this.tableHeaderLocation,
-            title: this.title,
-            subSections: this.subSections.getAll(),
+            anchor: this.anchor,
+            subSections: this.subSections.getAll().map(s => s.toJSON()),
         };
     }
 

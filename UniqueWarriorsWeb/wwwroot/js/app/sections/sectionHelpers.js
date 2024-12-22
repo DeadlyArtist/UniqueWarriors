@@ -33,7 +33,11 @@ class SectionHelpers {
             settings.addChildren = settings.replaceChildren;
         }
         if (settings.noChildren) sections.forEach(s => s.clearSubSections());
-        if (settings.addChildren) sections.forEach(s => settings.addChildren.forEach(c => s.addSubSection(c)));
+        if (settings.addChildren) sections.forEach(s => {
+            if (sections.length > 1) settings.addChildren = clone(settings.addChildren);
+            this.adjustHeightLevel(settings.addChildren, s.height + 1);
+            settings.addChildren.forEach(c => s.addSubSection(c));
+        });
         if (settings.removeChildren) sections.forEach(s => settings.removeChildren.forEach(c => s.removeSubSection(c)));
         if (settings.remove) sections.forEach(s => s.removeSubSection(settings.remove));
 
