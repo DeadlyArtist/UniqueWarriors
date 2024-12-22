@@ -128,6 +128,8 @@ class Tooltip {
             if (!yFitsTop) {
                 if (yFitsBottom) {
                     position = 'bottom';
+                } else {
+                    position = 'bottom'; // so you can at least read the start
                 }
             }
         }
