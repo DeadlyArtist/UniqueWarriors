@@ -262,7 +262,7 @@ class SectionReferenceHelpers {
                     let targetPath = pathsByTarget[matchedTarget.toLowerCase()];
                     let section = HtmlHelpers.getClosestProperty(node, '_section');
                     let sectionPath = section.getSectionPath();
-                    if (sectionPath == targetPath) return matched;
+                    if (sectionPath.split('*')[0] == targetPath.split('*')[0]) return matched;
                     return `<span class="snippetTarget" tooltip-path="${escapeHTML(targetPath)}">${matchedTarget + maybeS}</span>`;
                 });
 
