@@ -18,7 +18,8 @@ class MasonryGrid {
         this.gapX = +this.grid.getAttribute('gap-x') || +this.grid.getAttribute('gap') || this.gapDefault;
         this.gapY = +this.grid.getAttribute('gap-y') || +this.grid.getAttribute('gap') || this.gapDefault;
         this.minWidth = +this.grid.getAttribute('min-width') || this.widthDefault;
-        this.centerAtStart = this.grid.getAttribute('center-at-start') !== "false";
+        this.centerAtStart = this.grid.getAttribute('center-at-start');
+        this.centerAtStart = this.centerAtStart != null && this.centerAtStart != "false";
     }
 
     initObservers() {

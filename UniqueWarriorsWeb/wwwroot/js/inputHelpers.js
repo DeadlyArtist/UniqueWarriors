@@ -6,6 +6,13 @@ class InputHelpers {
         return newValue;
     }
 
+    static constrainInput(element, contrainFunc) {
+        let newValue = parseInt(element.value);
+        newValue = contrainFunc(newValue) ?? newValue;
+        if (element.value !== newValue) element.value = newValue;
+        return newValue;
+    }
+
     static replaceTextWithUndo(targetElement, newText) {
         targetElement.focus();
 

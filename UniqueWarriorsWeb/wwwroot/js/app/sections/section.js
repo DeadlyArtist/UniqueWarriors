@@ -177,11 +177,18 @@ class Section {
         this.attributes = this.attributes.map(line => line.filter(a => a !== tag));
     }
 
+    getHeadValueParts(name) {
+        let value = this.getHeadValueValue(name);
+        if (!value) return [];
+        if (value[value.length - 1] == ".") value = value.substring(0, value.length - 1);
+        return value.split(", ");
+    }
+
     getSectionPath() {
         let parts = [];
         let section = this;
         while (section) {
-            parts.push(section.title);
+            if (section.title) parts.push(section.title);
             if (section.anchor) {
                 parts.push(section.anchor);
                 break;
@@ -192,6 +199,7 @@ class Section {
         return parts.reverse().map(p => SectionReferenceHelpers.pathEncoder.escape(p)).join('/');
     }
 
+    // Cloning
     clone() {
         let clone = Section.fromJSON(this.toJSON());
         clone.parent = this.parent;

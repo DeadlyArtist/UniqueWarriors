@@ -43,26 +43,6 @@
   gap: 10px;
 }
 
-.nogap {
-  gap: 0;
-}
-
-.smallGap {
-  gap: 4px;
-}
-
-.halfMediumGap {
-  gap: 16px;
-}
-
-.mediumGap {
-  gap: 32px;
-}
-
-.largeGap {
-    gap: 96px;
-}
-
 .flexFill {
     flex: 1;
     flex-basis: max-content;

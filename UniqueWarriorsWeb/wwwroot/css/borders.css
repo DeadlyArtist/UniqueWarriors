@@ -13,11 +13,13 @@
 }
 
 hr {
-    border: 0;
-    border-bottom: 1px solid var(--raised-text-color);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid var(--raised-text-color);
 }
 
 .vr {
-    height: 100%;
-    border-right: 1px solid var(--raised-text-color);
+  height: 100%;
+  border-right: 1px solid var(--raised-text-color);
 }

@@ -2,10 +2,10 @@ class SearchAllPageManager extends PageManager {
     static pages;
 
     load() {
-        let container = fromHTML(`<div class="listVertical smallGap children-w-100">`);
+        let container = fromHTML(`<div class="listVertical gap-1 children-w-100">`);
         let searchContainer = fromHTML(`<div class="sticky">`);
         container.appendChild(searchContainer);
-        let subContainer = fromHTML(`<div class="listVertical largeGap children-w-100">`);
+        let subContainer = fromHTML(`<div class="listVertical gap-10 children-w-100">`);
         container.appendChild(subContainer);
         let promises = [];
         for (let page of SearchAllPageManager.pages) {

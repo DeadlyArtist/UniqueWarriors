@@ -2,7 +2,7 @@ class CustomMath {
     constructor(settings = null) {
         // Merge passed settings with defaults
         settings ??= {};
-        defaultSettings = CustomMath.getDefaultSettings();
+        let defaultSettings = CustomMath.getDefaultSettings();
         this.operators = settings.operators || defaultSettings.operators;
         this.functions = settings.functions || defaultSettings.functions;
         this.variables = settings.variables || defaultSettings.variables;
@@ -37,7 +37,6 @@ class CustomMath {
             // Convert tokens to abstract syntax tree (AST)
             const ast = this.buildAST(tokens);
             if (ast === null) return null;
-
             // Return an evaluation function (closure over the AST)
             return this.evaluateAST(ast);
         } catch (error) {
@@ -89,13 +88,24 @@ class CustomMath {
     }
 
     tokenize(formula) {
-        const sortedOperators = Object.keys(this.operators)
+        const sortedVariables = Object.keys(this.variables)
+            .map(op => this.tryIgnoreCase(op))
             .sort((a, b) => b.length - a.length) // Longer operators first
-            .map(op => op.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')); // Escape special characters
+            .map(op => escapeRegex(op));
+        const allVariables = sortedVariables.join('|');
+        const variableRegex = new RegExp(`\\b${allVariables}\\b`, 'g');
+        formula = formula.replace(variableRegex, (matched) => {
+            return this.getVariable(matched);
+        });
+
+        const sortedOperators = Object.keys(this.operators)
+            .map(op => this.tryIgnoreCase(op))
+            .sort((a, b) => b.length - a.length) // Longer operators first
+            .map(op => escapeRegex(op));
 
         // Dynamically build the regex pattern for brackets and operators
         const allOperators = sortedOperators.join('|');
-        const bracketChars = this.brackets.map(b => `\\${b.open}\\${b.close}`).join('');
+        const bracketChars = this.brackets.map(b => `\\${this.tryIgnoreCase(b.open)}\\${this.tryIgnoreCase(b.close)}`).join('');
         const regexPattern = `\\s*(${allOperators}|[A-Za-z_][A-Za-z_0-9]*|\\d*\\.?\\d+|[${bracketChars}])\\s*`;
         const regex = new RegExp(regexPattern, 'g');
 
@@ -112,7 +122,6 @@ class CustomMath {
             if (
                 !this.getOperator(token) &&
                 !this.getFunction(token) &&
-                !this.getVariable(token) &&
                 isNaN(token) &&
                 !this.getBracket(token)
             ) {
@@ -132,8 +141,6 @@ class CustomMath {
         for (const token of tokens) {
             if (!isNaN(token)) {
                 outputQueue.push({ type: 'number', value: parseFloat(token) });
-            } else if (this.getVariable(token)) {
-                outputQueue.push({ type: 'variable', name: token });
             } else if (this.getFunction(token)) {
                 operatorStack.push({ type: 'function', name: token });
             } else if (this.getOperator(token)) {

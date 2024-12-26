@@ -135,8 +135,8 @@ class SectionAttributesHelpers {
 
 class HeadValue {
     constructor(name, value) {
-        this.name = name;
-        this.value = value;
+        this.name = String(name);
+        this.value = String(value);
     }
 
     toString() {

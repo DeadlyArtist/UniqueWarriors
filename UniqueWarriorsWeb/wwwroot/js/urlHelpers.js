@@ -108,6 +108,20 @@ function getUrlWithChangedProtocol(newProtocol, url = null) {
     return `${newProtocol}//${domain}${path}${modifiers}`;
 }
 
+function getQueryVariable(variable, url = null) {
+    url ??= window.location.href;
+    const query = url.split('?')[1];
+    if (!query) return undefined;
+
+    const vars = query.split('&');
+    for (const pair of vars) {
+        const [key, value] = pair.split('=');
+        if (key == variable) return decodeURIComponent(value);
+    }
+    return undefined;
+}
+
+
 
 function goToUrl(url) {
     window.location.href = url;

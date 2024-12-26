@@ -40,9 +40,7 @@ class SectionsPageManager extends PageManager {
     }
 
     setupStream(streamProvider) {
-        const sections = [];
-
-        const overview = SectionHelpers.generateStructuredHtmlForSectionOverview(sections, this.overviewType, { addSearch: !this.noSearchBar, dontInitSearch: true });
+        const overview = SectionHelpers.generateStructuredHtmlForSectionOverview([], this.overviewType, { addSearch: !this.noSearchBar, dontInitSearch: true });
         this.stream = streamProvider(event => {
             if (event.registered) overview.addSection(event.obj, { insertBefore: event.insertBefore });
             else overview.removeSection(event.obj);

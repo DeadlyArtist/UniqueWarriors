@@ -40,7 +40,7 @@ const _htmlStringHelpers = {
 _htmlStringHelpers.escapeHtmlRegex = _htmlStringHelpers.getEscapeHtmlRegex();
 
 function escapeHTML(str) {
-    return str.replace(_htmlStringHelpers.escapeHtmlRegex, function (m) {
+    return String(str).replace(_htmlStringHelpers.escapeHtmlRegex, function (m) {
         return '&' + _htmlStringHelpers.escapeHtmlChars[m] + ';';
     });
 }
@@ -180,9 +180,16 @@ function getSubstringStartingWithLastOrNull(string, searchTerm, endIndex = null)
 }
 
 
-function toNormalCase(text) {
+function toNormalCase(text, makeLowerCase = false) {
+    if (makeLowerCase) text = text.toLowerCase();
     text = text.replace(/_/g, ' ');
-    return text.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
+    return text.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+}
+
+function toTextCase(text) {
+    text = toNormalCase(text);
+    text = text.replace(/([A-Z])/g, ' $1').trim();
+    return text;
 }
 
 function findAllIndicesInString(str, subString) {

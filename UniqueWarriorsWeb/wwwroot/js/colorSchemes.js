@@ -89,8 +89,9 @@ class ColorSchemeHelpers {
                     mutation.addedNodes.forEach(node => ColorSchemeHelpers.processAddedNode(node));
                 } else if (mutation.type === 'attributes' && (mutation.attributeName === 'class')) {
                     const target = mutation.target;
+                    if (!target.classList.split) continue; // Weird svg animated string
                     const oldClasses = (mutation.oldValue ?? '').split(/\s+/);
-                    const newClasses = target.className.split(/\s+/);
+                    const newClasses = target.className.split(/\s+/) ?? [];
                     const addedClasses = newClasses.filter(cls => !oldClasses.includes(cls));
                     const removedClasses = oldClasses.filter(cls => !newClasses.includes(cls));
                     const relevantClasses = [...addedClasses, ...removedClasses].filter(cls => cls.startsWith('light-only-') || cls.startsWith('dark-only-'));

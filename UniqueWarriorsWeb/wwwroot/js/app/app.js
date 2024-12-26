@@ -2,6 +2,7 @@ class App {
     static isRunning = false;
     static appLoaded = false;
     static afterAppLoaded = false;
+    static titleSuffix = " - Unique Warriors | Cyberfantasy";
 
     static setup() {
         window.addEventListener('hashchange', this.#onHashChange);
@@ -43,6 +44,11 @@ class App {
                 window.addEventListener('after-app-loaded', e => _callback());
             }
         });
+    }
+
+    static setTitle(title, addTitleSuffix = true) {
+        if (addTitleSuffix) title += this.titleSuffix;
+        document.title = title;
     }
 
     static run() {

@@ -1,5 +1,5 @@
 class DamageHelpers {
-    static damageTypes = ["Bludgeoning, Piercing, Slashing, Cryo, Thermal, Shock, Necrotic, Psychic, Sonic, Holy, Unholy, Metablism"];
+    static damageTypes = ["Bludgeoning, Piercing, Slashing, Cryo, Thermal, Shock, Necrotic, Psychic, Sonic, Holy, Unholy, Metabolism"];
 
     // Utility: Parse dice damage and types
     static parseAttribute(attributeValue) {

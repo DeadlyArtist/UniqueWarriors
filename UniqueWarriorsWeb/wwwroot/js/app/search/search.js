@@ -1,7 +1,9 @@
 
 class SectionSearch {
-    constructor(searchContainer, structuredSectionOverviews) {
+    static storageKey = "SectionSearchFilters";
+    constructor(searchContainer, structuredSectionOverviews, settings = null) {
         structuredSectionOverviews ??= [];
+        this.settings = settings ??= {};
         let overviews = structuredSectionOverviews;
         this.overviews = overviews;
         this.container = searchContainer;
@@ -9,7 +11,8 @@ class SectionSearch {
         // Filters
         this.filters = [];
         this.filterChanged = false;
-        this.storageKey = "SectionSearchFilters";
+        this.storageKey = settings.storageKey ?? SectionSearch.storageKey;
+        this.filterKey = settings.filterKey ?? getPath();
 
         // Search highlight
         this.rangesByNode = new Map(); // Buffers ranges for deferred highlighting
@@ -33,13 +36,8 @@ class SectionSearch {
         }
     }
 
-    getPathKey() {
-        // Generate a unique key for this path
-        return getPath();
-    }
-
     setup() {
-        this.searchListElement = fromHTML(`<div class="listHorizontal smallGap">`);
+        this.searchListElement = fromHTML(`<div class="listHorizontal gap-1">`);
         this.container.appendChild(this.searchListElement);
 
         this.filterDropdown = fromHTML(`<select tooltip="Filters of same type are combined with OR, filters of different types are combined with AND.">`);
@@ -50,7 +48,7 @@ class SectionSearch {
         });
         this.updateFilterTypes();
 
-        this.searchElement = fromHTML(`<input type="search" class="flex section-searchbar" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Search" aria-label="Search" />`);
+        this.searchElement = fromHTML(`<input type="search" class="flex section-searchbar" tooltip="? for exact, ! to negate" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Search" aria-label="Search" />`);
         this.searchListElement.appendChild(this.searchElement);
         this.searchElement.addEventListener('search', () => this.update());
         this.searchElement.addEventListener('keyup', (e) => {
@@ -91,20 +89,24 @@ class SectionSearch {
     }
 
     getFilterTypes() {
-        let allChoices = ['Text', 'Category', 'Name'];
-        if (this.overviews.some(o => o.sections.getAll().some(structuredSection => [...structuredSection.section.tags].some(tag => tag.includes('Action'))))) {
+        let allChoices = ['Text', 'Category', 'Name', 'Tag', 'Head', 'Attribute'];
+        if (this.overviews.some(o => o.sections.getAll().some(structuredSection => AbilitySectionHelpers.getActionCostTag(structuredSection.section)))) {
             allChoices.push('Action Type');
         }
-        if (this.overviews.some(o => o.sections.getAll().some(structuredSection => structuredSection.section.headValues.has('Connections')))) {
-            allChoices.push('Connections');
-        }
+
+        ['Connection', 'Trigger', 'Limit'].forEach(name => {
+            if (this.overviews.some(o => o.sections.getAll().some(structuredSection => structuredSection.section.headValues.has(name)))) {
+                allChoices.push(name);
+            }
+        });
+
         return allChoices;
     }
 
     loadFiltersFromStorage() {
         const allFilters = JSON.parse(localStorage.getItem(this.storageKey)) || {};
-        const pathKey = this.getPathKey();
-        const savedData = allFilters[pathKey];
+        const filterKey = this.filterKey;
+        const savedData = allFilters[filterKey];
 
         if (!savedData) return;
 
@@ -131,13 +133,13 @@ class SectionSearch {
     }
 
     storeFiltersInLocalStorage() {
-        const pathKey = this.getPathKey();
+        const filterKey = this.filterKey;
         const allFilters = JSON.parse(localStorage.getItem(this.storageKey)) || {};
 
         // Update filters for the current path
         let trimmedFilters = clone(this.filters);
         trimmedFilters.forEach(filter => delete filter.value);
-        allFilters[pathKey] = {
+        allFilters[filterKey] = {
             filters: trimmedFilters,
             currentSearch: {
                 type: this.filterDropdown.value,
@@ -145,6 +147,13 @@ class SectionSearch {
             },
         };
 
+        // Save back to localStorage
+        localStorage.setItem(this.storageKey, JSON.stringify(allFilters));
+    }
+
+    static removeFiltersFromLocalStorage(filterKey) {
+        const allFilters = JSON.parse(localStorage.getItem(this.storageKey)) || {};
+        delete allFilters[filterKey];
         // Save back to localStorage
         localStorage.setItem(this.storageKey, JSON.stringify(allFilters));
     }
@@ -228,7 +237,7 @@ class SectionSearch {
         this.lastSearchTimestamp = Date.now();
         this.rangesByNode = new Map();
         for (let overview of this.overviews) {
-            this.unhighlightSections(overview.sectionListElement);
+            this.unhighlightSections(overview.listElement);
         }
 
         if (searchTerm && !this.isDuplicateFilter()) this.plusButton.removeAttribute('disabled');
@@ -254,7 +263,7 @@ class SectionSearch {
         }
 
         for (let overview of this.overviews) {
-            if (overview.type == SectionHelpers.MasonryType) overview.sectionListElement._masonry?.resize();
+            if (overview.type == SectionHelpers.MasonryType) overview.listElement._masonry?.resize();
         }
 
         this.tryHighlightSections();
@@ -304,15 +313,24 @@ class SectionSearch {
         if (filterType === "Category") {
             return [...(structuredSection.attributesElement?.querySelectorAll('.section-attribute') || [])]
                 .filter(e => e.classList.contains('section-headValue') &&
-                    ["Weapon", "Weapon Core", "Path", "Path Core", "Mastery", "Summon"].includes(e._headValue?.name))
+                    AbilitySectionHelpers.categoryHeadValueNames.includes(e._headValue?.name))
                 .map(e => e.querySelector('.section-headValue-value'));
         }
         if (filterType === "Action Type") {
             return [...(structuredSection.attributesElement?.querySelectorAll('.section-actionType, .section-actionTypes') || [])];
         }
-        if (filterType === "Connections") {
+        if (filterType === "Tag") {
+            return [...(structuredSection.attributesElement?.querySelectorAll('.section-tag') || [])];
+        }
+        if (filterType === "Head") {
+            return [...(structuredSection.attributesElement?.querySelectorAll('.section-headValue-value') || [])];
+        }
+        if (filterType === "Attribute") {
+            return [...(structuredSection.attributesElement?.querySelectorAll('.section-attribute') || [])];
+        }
+        if (['Connection', 'Trigger', 'Limit'].includes(filterType)) {
             return [...(structuredSection.attributesElement?.querySelectorAll('.section-attribute') || [])]
-                .filter(e => e.classList.contains('section-headValue') && e._headValue?.name === "Connections")
+                .filter(e => e.classList.contains('section-headValue') && e._headValue?.name === filterType)
                 .map(e => e.querySelector('.section-headValue-value'));
         }
         return [];

@@ -75,6 +75,40 @@ class ObjectHelpers {
     static clearKeys(obj) {
         Object.keys(obj).forEach(key => delete obj[key]);
     }
+
+    static filterProperties(obj, filterFunc) {
+        Object.keys(obj).forEach(key => {
+            if (!filterFunc(key, obj[key])) {
+                delete obj[key];
+            }
+        });
+        return obj;
+    }
+
+    static fromArray(array, keySelector, valueSelector) {
+        return array.reduce((accum, item) => {
+            const key = typeof keySelector === 'function' ? keySelector(item) : item[keySelector];
+            const value = valueSelector ? (typeof valueSelector === 'function' ? valueSelector(item) : item[valueSelector]) : item;
+            accum[key] = value;
+            return accum;
+        }, {});
+    }
+
+    static fromMap(map) {
+        let obj = {};
+        for (let [key, value] of map.entries()) {
+            obj[key] = value;
+        }
+        return obj;
+    }
+
+    static toMap(obj) {
+        let map = new Map();
+        for (let [key, value] of Object.entries(obj)) {
+            map.set(key, value);
+        }
+        return map;
+    }
 }
 
 function isNumber(obj) {

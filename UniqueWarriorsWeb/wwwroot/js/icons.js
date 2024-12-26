@@ -177,4 +177,8 @@ const icons = {
         let path = '<path stroke-linecap="round" stroke-linejoin="round" d="m15 15 6-6m0 0-6-6m6 6H9a6 6 0 0 0 0 12h3" />';
         return IconHelpers.heroIcon(path, title, useTooltipInstead);
     },
+    check(title = null, useTooltipInstead = false) {
+        let path = '<path d="m382-393 321-321q20.09-20 48.55-20Q780-734 800-714.21q20 19.79 20 48.5T800-617L430-248q-19.82 20-47.91 20Q354-228 334-248L161-420q-20-20.73-20-48.87Q141-497 160.79-517q20.79-21 49-21T258-517l124 124Z"/>';
+        return IconHelpers.materialIcon(path, title, useTooltipInstead);
+    },
 }

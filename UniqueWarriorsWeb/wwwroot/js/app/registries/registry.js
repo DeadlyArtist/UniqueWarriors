@@ -330,4 +330,96 @@ class Registry {
     tagExists(tag) {
         return this.tags.get(tag)?.size > 0;
     }
+
+    // JSON
+    toJSON() {
+        return this.getAllEntries().map(entry => ({
+            id: entry.id,
+            tags: [...entry.tags],
+            obj: entry.obj,
+        }));
+    }
+
+    static fromJSON(json) {
+        let registry = new Registry();
+        json.forEach(e => registry.register(e.obj, { id: e.id, tags: e.tags }));
+        return registry;
+    }
+
+    // List method wrappers
+    filter(callback, thisArg = undefined) {
+        const result = [];
+        for (const obj of this) {
+            if (callback.call(thisArg, obj, this.getEntryForObject(obj), this)) {
+                result.push(obj);
+            }
+        }
+        return result;
+    }
+
+    find(callback, thisArg = undefined) {
+        for (const obj of this) {
+            if (callback.call(thisArg, obj, this.getEntryForObject(obj), this)) {
+                return obj;
+            }
+        }
+        return undefined;
+    }
+
+    some(callback, thisArg = undefined) {
+        for (const obj of this) {
+            if (callback.call(thisArg, obj, this.getEntryForObject(obj), this)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    every(callback, thisArg = undefined) {
+        for (const obj of this) {
+            if (!callback.call(thisArg, obj, this.getEntryForObject(obj), this)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    map(callback, thisArg = undefined) {
+        const result = [];
+        for (const obj of this) {
+            result.push(callback.call(thisArg, obj, this.getEntryForObject(obj), this));
+        }
+        return result;
+    }
+
+    reduce(callback, initialValue) {
+        let accumulator = initialValue;
+        for (const obj of this) {
+            accumulator = callback(accumulator, obj, this.getEntryForObject(obj), this);
+        }
+        return accumulator;
+    }
+
+    includes(obj) {
+        return this.contains(obj);
+    }
+
+    indexOf(obj) {
+        let index = 0;
+        for (const entry of this) {
+            if (entry === obj) return index;
+            index++;
+        }
+        return -1;
+    }
+
+    flatMap(callback, thisArg = undefined) {
+        const result = [];
+        for (const obj of this) {
+            const value = callback.call(thisArg, obj, this.getEntryForObject(obj), this);
+            result.push(...value);
+        }
+        return result;
+    }
+
 }

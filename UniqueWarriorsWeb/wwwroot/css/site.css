@@ -67,6 +67,18 @@ p {
   text-shadow: 0 0 5px var(--background-color), 0 0 10px #d500ff;
 }*/
 
+input:focus-visible {
+  border-color: var(--brand-color);
+}
+
 .sidebarElement.borderedHoverable:hover:not(:disabled) {
+  box-shadow: inset 0 0 0 1px var(--brand-color);
+}
+
+.dialogInnerContent.bordered {
+  border-color: var(--brand-color);
+}
+
+.brand-bordered-inset {
   box-shadow: inset 0 0 0 1px var(--brand-color);
 }

@@ -14,6 +14,7 @@ class Tooltip {
     static tooltipStyleContainer;
     static tooltipStack = [];
     static tooltipsByTarget = new Map();
+
     static get currentTooltip() {
         if (this.tooltipStack.length == 0) return null;
         return this.tooltipStack[this.tooltipStack.length - 1];
@@ -39,6 +40,7 @@ class Tooltip {
         document.addEventListener('scroll', Tooltip.updateAllPositions, true);
         window.addEventListener('resize', Tooltip.updateAllPositions, true);
         document.addEventListener('mousemove', Tooltip.onMousemove, true);
+        document.addEventListener('mousemove-polled', Tooltip.onMousemove, true);
 
         // MutationObserver to watch for newly added elements and attribute changes
         const observer = new MutationObserver((mutationsList) => {
@@ -301,14 +303,14 @@ class Tooltip {
     }
 
     static onMousemove(event) {
-        let target = event.toElement.closest(Tooltip.tooltipQuery);
+        let target = event.target.closest(Tooltip.tooltipQuery);
         if (target) Tooltip.tryAddTooltip(target);
 
         if (pressedKeys[Tooltip.keepTooltipsOpenKey]) return;
 
         let currentTarget = Tooltip.currentTarget;
         if (!currentTarget) return;
-        if (currentTarget.contains(event.toElement) || currentTarget == event.toElement) return;
+        if (currentTarget.contains(event.target) || currentTarget == event.target) return;
         if (Tooltip.eventWithinDistance(event, currentTarget)) return;
         if (Tooltip.eventWithinDistance(event, Tooltip.currentTooltip.element)) return;
 

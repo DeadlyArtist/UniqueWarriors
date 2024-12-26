@@ -287,16 +287,22 @@ class SectionHelpers {
             type,
             section,
             sectionElement,
-            sectionElement,
+            settings.wrapperElement ?? sectionElement,
             settings,
         );
+        let newVariables = settings.variables ??= new Map();
+        if (SummonHelpers.isSummon(section)) {
+
+        }
 
         let needsBreak = false;
 
         let titleElement = null;
         if (section.title) {
-            const headerLevel = Math.min(Math.max(1, section.height), 6);
-            titleElement = fromHTML(`<h${headerLevel} class="section-title">`);
+            const maxHeaderLevel = 6;
+            const headerLevel = Math.min(Math.max(1, section.height), maxHeaderLevel);
+            const tag = section.height > maxHeaderLevel ? "div" : `h${headerLevel}`;
+            titleElement = fromHTML(`<${tag} class="section-title">`);
             titleElement.textContent = section.title;
             sectionElement.appendChild(titleElement);
         } 
@@ -356,6 +362,7 @@ class SectionHelpers {
         structuredSection.attributesElement = attributesElement;
         structuredSection.contentElement = contentElement;
         structuredSection.tableElement = tableElement;
+        structuredSection.newVariables = newVariables;
 
         if (section.subSections?.length > 0) {
             section.subSections.forEach(subSection => {
@@ -374,22 +381,28 @@ class SectionHelpers {
         settings ??= {};
         let container = fromHTML(`<div class="section-overview listContainerVertical children-w-100">`);
 
+        if (settings.title) {
+            let titleElement = fromHTML(`<h1 class="xl-title">`);
+            container.appendChild(titleElement);
+            titleElement.textContent = title;
+        }
+
         let searchContainer;
         if (settings.addSearch) {
             searchContainer = fromHTML(`<div class="sticky">`);
             container.appendChild(searchContainer);
         }
 
-        let sectionListElement;
+        let listElement;
         if (type === this.TextType) {
-            sectionListElement = fromHTML(`<div class="listContainerVertical mediumGap children-w-100">`);
+            listElement = fromHTML(`<div class="listContainerVertical gap-6 children-w-100">`);
         } else if (type === this.MasonryType) {
-            sectionListElement = fromHTML(`<div class="masonryGrid" gap-x="20" gap-y="20" min-width="400">`);
+            listElement = fromHTML(`<div class="masonryGrid" gap-x="20" gap-y="20" min-width="400">`);
         }
-        sectionListElement.setAttribute('placeholder', "Loading...");
-        container.appendChild(sectionListElement);
+        listElement.setAttribute('placeholder', "Loading...");
+        container.appendChild(listElement);
 
-        const overview = new StructuredSectionOverviewHtml(type, container, sectionListElement, searchContainer, settings);
+        const overview = new StructuredSectionOverviewHtml(type, container, listElement, searchContainer, settings);
         sections.forEach(section => overview.addSection(section));
         if (!settings.dontInitSearch) overview.initSearch();
 
@@ -397,12 +410,18 @@ class SectionHelpers {
     }
 
     static wrapSectionForOverview(section, type, settings = null) {
+        settings ??= {};
         const structuredSection = this.generateStructuredHtmlForSection(section, type, settings);
         if (type === this.TextType) {
             structuredSection.wrapperElement = structuredSection.element;
         } else if (type === this.MasonryType) {
-            structuredSection.wrapperElement = fromHTML(`<div class="masonryGridItem largeElement raised">`);
+            let tag = settings.link ? "a" : "div";
+            structuredSection.wrapperElement = fromHTML(`<${tag} class="masonryGridItem largeElement raised">`);
             structuredSection.wrapperElement.appendChild(structuredSection.element);
+        }
+        if (settings.link) {
+            structuredSection.wrapperElement.setAttribute('href', settings.link);
+            structuredSection.wrapperElement.classList.add('hoverable');
         }
         return structuredSection;
     }
@@ -430,7 +449,7 @@ class StructuredSectionHtml {
 
     addSubSection(subSection, insertSettings = {}) {
         if (!this.subSectionContainer) {
-            this.subSectionContainer = fromHTML(`<div class="section-subSections listVertical halfMediumGap children-w-100">`);
+            this.subSectionContainer = fromHTML(`<div class="section-subSections listVertical gap-4 children-w-100">`);
             this.wrapperElement.appendChild(this.subSectionContainer);
         }
 
@@ -439,7 +458,7 @@ class StructuredSectionHtml {
             this.element.insertBefore(hb(this.section.height > 1 ? 2 : 4), this.subSectionContainer);
         }
 
-        const structuredSubSection = SectionHelpers.generateStructuredHtmlForSection(subSection, this.type, this.settings);
+        const structuredSubSection = SectionHelpers.generateStructuredHtmlForSection(subSection, this.type, { ...this.settings, variables: this.newVariables });
 
         const index = this.subSections.getInsertIndex(insertSettings.insertBefore, insertSettings.insertAfter);
         if (index !== null) {
@@ -467,17 +486,17 @@ class StructuredSectionHtml {
 
 
 class StructuredSectionOverviewHtml {
-    constructor(type, container, sectionListElement, searchContainer, settings = null) {
+    constructor(type, container, listElement, searchContainer, settings = null) {
         this.type = type;
         this.container = container;
-        this.sectionListElement = sectionListElement;
+        this.listElement = listElement;
         this.searchContainer = searchContainer;
         this.settings = settings;
         this.sections = new Registry(); // Structured sections
         this.didSearchInit = false;
 
         container._sectionOverview = this;
-        sectionListElement._sectionOverview = this;
+        listElement._sectionOverview = this;
     }
 
     initSearch() {
@@ -493,9 +512,9 @@ class StructuredSectionOverviewHtml {
 
         let index = this.sections.getInsertIndex(insertSettings.insertBefore, insertSettings.insertAfter);
         if (index !== null) {
-            HtmlHelpers.insertAt(this.sectionListElement, index, structuredSection.wrapperElement);
+            HtmlHelpers.insertAt(this.listElement, index, structuredSection.wrapperElement);
         } else {
-            this.sectionListElement.appendChild(structuredSection.wrapperElement);
+            this.listElement.appendChild(structuredSection.wrapperElement);
         }
 
         this.sections.register(structuredSection, { ...insertSettings, id: structuredSection.section.title });

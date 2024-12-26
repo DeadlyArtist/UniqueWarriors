@@ -20,6 +20,11 @@ class Pages {
     static masteries = this.register(new Page(null, "masteries", new SectionsPageManager(SectionHelpers.MasonryType, { registry: Registries.masteries })));
     static summons = this.register(new Page(null, "summons", new SectionsPageManager(SectionHelpers.MasonryType, { registry: Registries.summons })));
     static conditions = this.register(new Page(null, "conditions", new SectionsPageManager(SectionHelpers.MasonryType, { registry: Registries.conditions })));
+    static characters = this.register(new Page(null, "characters", new CharactersPageManager({ registry: Registries.characters })));
+    static character = this.register(new Page(null, "character", new CharacterPageManager()));
+    static characterCreator = this.register(new Page("character/creator", "character creator", new CharacterCreatorPageManager()));
+
+    static snippet = this.register(new Page(null, "snippet", new SnippetPageManager()));
 
     static setup() {
         document.addEventListener('click', e => this._handleNavigation(e));
@@ -34,6 +39,7 @@ class Pages {
             this.masteries,
             this.summons,
             this.conditions,
+            this.characters,
         ];
 
         let sidebarBottomPages = [
@@ -57,10 +63,10 @@ class Pages {
     }
 
     static _handleNavigation(event) {
-        var target = event.target.closest('a[href]');
+        let target = event.target.closest('a[href]');
         if (!target) return;
-        var href = target.getAttribute('href');
-        var domain = getDomain(href);
+        let href = target.getAttribute('href');
+        let domain = getDomain(href);
         if (domain != null && domain != getDomain()) return;
         if (!this.isPagePath(href)) return;
 
@@ -89,7 +95,7 @@ class Pages {
     }
 
     static goTo(page) {
-        goToPath(page.link);
+        this.goToPath(page.link);
     }
 
     static goToError(message) {
@@ -108,7 +114,7 @@ class Pages {
             replaceUrl(getUrlWithChangedPath(path));
         }
 
-        var newServerUrl = getServerUrl();
+        let newServerUrl = getServerUrl();
         if (newServerUrl == this.lastServerUrl) return;
         this.lastServerUrl = newServerUrl;
 
@@ -138,17 +144,17 @@ class Pages {
         pageElement.innerHTML = '';
 
         this.currentPage = page;
-        document.title = `${page.name} - Unique Warriors | Cyberfantasy`
+        App.setTitle(page.name);
         page.load();
     }
 
     static loadError(message) {
+        App.setTitle("Error");
         this.error.pageManager.errorMessage = message;
         this.load(this.error);
     }
 }
 Pages.setup();
 App.onAppLoaded(() => Pages.loadFromPath());
-
 
 const pageElement = Pages.element;

@@ -7,24 +7,26 @@ class SectionReferenceHelpers {
         "*": "mul",
     }
 
-    static parseFormula(formula, variables) {
-        var settings = CustomMath.getDefaultSettings();
-        for (let variable in variables) {
-            settings.variables[variable.key] = variable.value;
-        }
-        return CustomMath.parse(formula, settings);
-    }
+    static parseFormula(formula, variables, specialLetters = null, specialLetterRegex = null) {
+        specialLetters ??= this.getSpecialLetters(variables);
+        specialLetterRegex ??= this.getSpecialLetterRegex(specialLetters);
+        if (specialLetterRegex) formula = this.replaceSpecialLettersInFormula(formula, specialLetters, specialLetterRegex);
 
-    static getFormulaTooltip(formula, variables) {
-        return this.parseFormula(formula, variables) ?? this.invalidFormulaTooltip;
+        let settings = CustomMath.getDefaultSettings();
+        for (let [key, value] of variables.entries()) {
+            settings.variables[key] = value;
+        }
+
+        let result = CustomMath.parse(formula, settings);
+        return result;
     }
 
     static addTooltips(element, variables = null) {
         if (!element) return;
         this.addIncreaseDecreaseTooltips(element);
         this.addSectionReferenceTooltip(element);
-        if (variables) {
-            this.addSpecialVariableTooltips(element, variables);
+        if (variables && variables.size != 0) {
+            this.addSpecialWithinVariableTooltips(element, variables);
             this.addVariableTooltips(element, variables);
         }
         this.addSnippets(element);
@@ -54,7 +56,7 @@ class SectionReferenceHelpers {
         }
     }
 
-    static addSpecialVariableTooltips(element, variables) {
+    static addSpecialWithinVariableTooltips(element, variables) {
         let textNodes = getTextNodes(element);
         let special = {};
         if (variables.has('Range')) special['within range'] = 'Range';
@@ -71,7 +73,51 @@ class SectionReferenceHelpers {
         }
     }
 
+    static getSpecialLetters(variables) {
+        let specialLetters = {};
+        if (variables.has('Level')) specialLetters['L'] = 'Level';
+        if (variables.has('Rank')) specialLetters['R'] = 'Rank';
+        if (variables.has('Tier')) specialLetters['T'] = 'Tier';
+        if (variables.has('Importance')) specialLetters['M'] = 'Importance';
+        if (variables.has('Severity')) specialLetters['S'] = 'Severity';
+        return specialLetters;
+    }
+
+    static getSpecialLetterRegex(specialLetters) {
+        if (!specialLetters || Object.keys(specialLetters).length == 0) return null;
+        return new RegExp("\\b(" + Object.keys(specialLetters).map(k => escapeRegex(k)).join("|") + ")(\\d+)", "gi"); // Boundary doesn't appear in matched
+    }
+
+    static replaceSpecialLettersWithFormulas(html, variables, specialLetters, specialLetterRegex) {
+        if (Object.keys(specialLetters).length == 0) return html;
+        html = html.replace(specialLetterRegex, (formula, letter, number) => {
+            const result = this.parseFormula(formula, variables, specialLetters, specialLetterRegex);
+            if (result != null) return `<span tooltip="[${escapeHTML(formula)}]" section-formula>${escapeHTML(result)}</span>`;
+            else return formula;
+        });
+        return html;
+    }
+
+    static replaceSpecialLettersInFormula(formula, specialLetters, specialLetterRegex) {
+        if (Object.keys(specialLetters).length == 0) return html;
+        formula = formula.replace(specialLetterRegex, (matched, letter, number) => {
+            return `${specialLetters[letter]} * ${number}`;
+        });
+        return formula;
+    }
+
+    static getFormulaTooltip(formula, variables, specialLetters, specialLetterRegex) {
+        let html;
+        const result = this.parseFormula(formula, variables, specialLetters, specialLetterRegex);
+        if (result != null) html = `<span tooltip="[${escapeHTML(formula)}]" section-formula>${escapeHTML(result)}</span>`;
+        else html = `[${this.replaceSpecialLettersWithFormulas(escapeHTML(formula), variables, specialLetters, specialLetterRegex) }]`;
+        return html;
+    }
+
     static addVariableTooltips(element, variables) {
+        const specialLetters = this.getSpecialLetters(variables);
+        const specialLetterRegex = this.getSpecialLetterRegex(specialLetters);
+
         let textNodes = getTextNodes(element);
         for (let node of textNodes) {
             let value = node.nodeValue;
@@ -81,18 +127,17 @@ class SectionReferenceHelpers {
             for (let i = 0; i < value.length; i++) {
                 if (value[i] === '[') {
                     if (i > start + 1) {
-                        html += escapeHTML(value.substring(end + 1, i));
+                        html += this.replaceSpecialLettersWithFormulas(escapeHTML(value.substring(end + 1, i)), variables, specialLetters, specialLetterRegex);
                     }
                     start = i;
                 } else if (value[i] === ']') {
                     end = i;
-                    const formula = value.substring(start, end + 1);
-                    const tooltip = this.getFormulaTooltip(formula, variables);
-                    html += `<span tooltip="${escapeHTML(tooltip)}" section-formula>${escapeHTML(formula)}</span>`;
+                    const formula = value.substring(start + 1, end);
+                    html += this.getFormulaTooltip(formula, variables, specialLetters, specialLetterRegex);
                 }
             }
             if (end < value.length - 1) {
-                html += escapeHTML(value.substring(end + 1));
+                html += this.replaceSpecialLettersWithFormulas(escapeHTML(value.substring(end + 1)), variables, specialLetters, specialLetterRegex);
             }
 
             if (html !== value) replaceTextNodeWithHTML(node, html);
@@ -246,7 +291,7 @@ class SectionReferenceHelpers {
                     let targetPath = pathsByTarget[matchedTarget.toLowerCase()];
                     let section = HtmlHelpers.getClosestProperty(node, '_section');
                     let sectionPath = section.getSectionPath();
-                    if (sectionPath.split('*')[0] == targetPath.split('*')[0]) return matched;
+                    if (sectionPath.split('*')[0] == SectionReferenceHelpers.pathEncoder.encode(targetPath.split('*')[0])) return matched;
                     return `<span class="snippetTarget" tooltip-path="${escapeHTML(targetPath)}">${matchedTarget + maybeS}</span>`;
                 });
 

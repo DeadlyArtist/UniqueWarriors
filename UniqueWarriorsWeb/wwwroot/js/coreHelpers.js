@@ -37,6 +37,32 @@ window.addEventListener('focus', () => {
     Object.keys(pressedKeys).forEach(key => delete pressedKeys[key]); // Delete all keys upon gaining focus to prevent missing a keyup from outside the window
 });
 
+
+let lastMousePosition = null;
+onBodyCreated(() => {
+    const dispatchFakeMousemove = () => {
+        if (lastMousePosition) {
+            const { x, y } = lastMousePosition;
+            let targetElement = document.elementFromPoint(x, y);
+            if (!targetElement) targetElement = document.body;
+
+            const fakeMouseEvent = new MouseEvent('mousemove-polled', {
+                clientX: x,
+                clientY: y,
+                bubbles: true,
+                cancelable: true,
+            });
+
+            targetElement.dispatchEvent(fakeMouseEvent);
+        }
+
+        requestAnimationFrame(dispatchFakeMousemove); // Post during each rerender
+    };
+
+    dispatchFakeMousemove();
+});
+document.addEventListener('mousemove', e => lastMousePosition = {x: e.clientX, y: e.clientY}, true);
+
 async function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
@@ -53,8 +79,23 @@ function sleepUntil(targetTime) {
     }
 }
 
+const letterCharacters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+function generateRandomLetters(length, alphabet = letterCharacters) {
+    const charactersLength = alphabet.length;
+    let result = "";
+    let counter = 0;
+    while (counter < length) {
+        result += alphabet.charAt(Math.floor(Math.random() * charactersLength));
+        counter += 1;
+    }
+    return result;
+}
+const letterAndDigitCharacters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+function generateRandomLettersOrDigits(length) {
+    return generateRandomLetters(length, letterAndDigitCharacters);
+}
 function generateUniqueId() {
-    return Date.now() + Math.random().toString(36).substring(2, 9) + Math.random().toString(36).substring(2, 9);
+    return Date.now() + "_" + generateRandomLettersOrDigits(20);
 }
 
 function preventDefaults(e) {
@@ -352,3 +393,33 @@ function debounce(func, delay) {
 }
 
 function doNothing() { }
+
+onBodyCreated(() => {
+    (function () {
+        const observer = new MutationObserver((mutationsList) => {
+            for (const mutation of mutationsList) {
+                mutation.addedNodes.forEach((node) => {
+                    if (node.nodeType === Node.ELEMENT_NODE) {
+                        const addedEvent = new CustomEvent('added');
+                        node.dispatchEvent(addedEvent);
+                        node.querySelectorAll('*').forEach((child) => {
+                            child.dispatchEvent(addedEvent);
+                        });
+                    }
+                });
+                mutation.removedNodes.forEach((node) => {
+                    if (node.nodeType === Node.ELEMENT_NODE) {
+                        const removedEvent = new CustomEvent('removed');
+                        node.dispatchEvent(removedEvent);
+                        node.querySelectorAll('*').forEach((child) => {
+                            child.dispatchEvent(removedEvent);
+                        });
+                    }
+                });
+            }
+        });
+
+        observer.observe(document.body, { childList: true, subtree: true });
+    })();
+
+});

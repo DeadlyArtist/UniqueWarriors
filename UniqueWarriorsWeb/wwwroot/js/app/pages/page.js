@@ -22,7 +22,7 @@ class Page {
 
     setup() {
         this.pageManager.page = this;
-        if (!this.settings.keepCase) this.name = toNormalCase(this.name);
+        if (!this.settings.keepCase) this.name = toTextCase(this.name);
     }
 
     load(settings = null) {
@@ -35,7 +35,7 @@ class Page {
 
     unload() {
         this.pageManager.unload();
-        this.loadId = null;
+        this.loadId = this.pageManager.loadId = null;
         this.isLoaded = false;
     }
 }

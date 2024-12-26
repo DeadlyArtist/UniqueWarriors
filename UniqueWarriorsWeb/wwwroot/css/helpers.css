@@ -72,11 +72,6 @@
     z-index: 10;
 }
 
-.vr {
-    height: 100%;
-    border-left: 1px solid var(--border-color);
-}
-
 .fixText {
     white-space: pre-wrap;
     word-break: break-word;
@@ -100,6 +95,10 @@
 
 b {
     font-weight: bold;
+}
+
+.s-font {
+  font-size: 0.8rem;
 }
 
 .xl-font {
@@ -173,8 +172,8 @@ b {
     font-style: italic;
 }
 
-*:disabled, [disabled] {
-    opacity: 0.3;
+*:disabled:not(.hideDisabled), [disabled]:not(.hideDisabled) {
+  opacity: 0.3;
 }
 
 .maxHeight-1 {
@@ -256,4 +255,16 @@ b {
 
 .centerContentHorizontally {
     justify-content: center;
+}
+
+.italic {
+
+}
+
+.w-max {
+  width: max-content;
+}
+
+.children-w-max > * {
+  width: max-content;
 }

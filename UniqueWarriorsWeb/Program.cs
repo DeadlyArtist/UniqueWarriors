@@ -4,7 +4,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorPages().AddRazorPagesOptions(options =>
 {
     // Route all app related routes to the Index.cshtml page
-    options.Conventions.AddPageRoute("/Index", "/app/{route?}");
+    options.Conventions.AddPageRoute("/Index", "/app/{**route}");
 });
 
 var app = builder.Build();

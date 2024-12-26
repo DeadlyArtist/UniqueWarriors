@@ -15,6 +15,12 @@
   background: inherit;
 }
 
+.mediumElement {
+  border-radius: 10px;
+  padding: 2px 10px;
+  background: inherit;
+}
+
 .largeElement {
     border-radius: 10px;
     padding: 8px 16px;
@@ -32,6 +38,10 @@
 
 .outlined {
     outline: var(--border-color) auto 1px;
+}
+
+.bordered-inset {
+  box-shadow: inset 0 0 0 1px var(--border-color);
 }
 
 .raised {
