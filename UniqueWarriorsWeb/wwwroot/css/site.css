@@ -36,16 +36,16 @@ body {
 .container {
   width: 100%;
   max-width: 1000px;
-  padding-right: var(--bs-gutter-x, .75rem);
-  padding-left: var(--bs-gutter-x, .75rem);
-  padding-bottom: 16px;
+  padding-right: 12px;
+  padding-left: 12px;
+  padding-bottom: 10vh;
   margin-right: auto;
   margin-left: auto;
 }
 
-@media (min-width: 750px) {
+@media (min-width: 1024px) {
   .container {
-    padding-left: calc(var(--bs-gutter-x, 0.75rem) + calc(calc(100vw - 100%) / 2));
+    padding-left: calc(12px + calc(calc(100vw - 100%) / 2));
   }
 }
 
@@ -81,4 +81,20 @@ input:focus-visible {
 
 .brand-bordered-inset {
   box-shadow: inset 0 0 0 1px var(--brand-color);
+}
+
+.brand-border-color {
+  border-color: var(--brand-color);
+}
+
+/*.colorTooltips .markTooltips .tooltipTarget.section-formula {
+  color: var(--brand-color);
+}*/
+
+.w-50 {
+  width: 50%;
+}
+
+.w-80 {
+  width: 80%;
 }

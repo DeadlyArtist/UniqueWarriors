@@ -17,7 +17,7 @@ class App {
     }
 
     static #onHashChange() {
-        _tryRemoveEmptyHash();
+        Pages.onHashChange();
     }
 
     static #onLoad() {

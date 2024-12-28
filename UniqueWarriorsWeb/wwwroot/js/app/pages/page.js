@@ -38,6 +38,10 @@ class Page {
         this.loadId = this.pageManager.loadId = null;
         this.isLoaded = false;
     }
+
+    onHashChange() {
+        this.pageManager.onHashChange?.();
+    }
 }
 
 class PageManager {

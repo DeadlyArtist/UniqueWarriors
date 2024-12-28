@@ -34,10 +34,19 @@ class CharacterCreatorPageManager extends PageManager {
     }
 
     delayedLoad() {
-        this.pageElement.appendChild(CharacterCreatorHelpers.generateStructuredHtmlForCharacterCreator(this.character).element);
+        this.structuredCharacterCreator = CharacterCreatorHelpers.generateStructuredHtmlForCharacterCreator(this.character, { startTab: this.getTab(), updateHash: true });
+        this.pageElement.appendChild(this.structuredCharacterCreator.element);
     }
 
     unload() {
 
+    }
+
+    onHashChange() {
+        this.structuredCharacterCreator?.openPageFromHash();
+    }
+
+    getTab() {
+        return getHashQueryVariable('tab');
     }
 }

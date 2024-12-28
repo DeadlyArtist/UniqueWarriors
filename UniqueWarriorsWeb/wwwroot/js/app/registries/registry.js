@@ -1,5 +1,5 @@
 class Registry {
-    entries = new Map();
+    entries = new LinkedMap();
     entriesByObjects = new Map();
     streams = new Set();
     batchStreams = new Set();
@@ -15,7 +15,7 @@ class Registry {
     }
 
     [Symbol.iterator]() {
-        return this.iterate();
+        return this.values();
     }
 
     constructor(name = null) {
@@ -45,13 +45,8 @@ class Registry {
 
         if (entry.id == null) return null;
 
-        let insertInfo = {};
-        let index = this.getInsertIndex(settings.replace ?? settings.insertBefore, settings.insertAfter);
-        if (index != null) {
-            MapHelpers.insertAtIndex(this.entries, index, entry.id, entry, insertInfo);
-        } else {
-            this.entries.set(entry.id, entry);
-        }
+        let insertInfo = { insertFirst: settings.insertFirst, insertBefore: settings.replace ?? settings.insertBefore, insertAfter: settings.insertAfter };
+        this.insertEntryAt(entry, insertInfo);
 
         // Add entry to the primary registries
         this.entriesByObjects.set(entry.obj, entry);
@@ -59,7 +54,7 @@ class Registry {
 
         // Handle tags
         if (entry.tags) {
-            for (let tag of this.tags) this.addToTag(tag, entry);
+            for (let tag of entry.tags) this.addToTag(tag, entry, false);
         }
 
         // Notify any active streams
@@ -72,6 +67,32 @@ class Registry {
         if (settings.replace != null) this.unregister(settings.replace);
 
         return entry;
+    }
+
+    insertEntryAt(entry, settings) {
+        const { insertFirst, insertBefore, insertAfter } = settings;
+
+        let success = false;
+        if (insertBefore) {
+            const keyBefore = this.getInsertTargetKey(insertBefore);
+            if (keyBefore !== undefined) {
+                this.entries.setBefore(keyBefore, entry.id, entry);
+                success = true;
+            }
+        } else if (insertAfter) {
+            const keyAfter = this.getInsertTargetKey(insertAfter);
+            if (keyAfter !== undefined) {
+                this.entries.setAfter(keyAfter, entry.id, entry);
+                success = true;
+            }
+        } else if (insertFirst) {
+            this.entries.setFirst(entry.id, entry);
+            success = true;
+        }
+
+        if (!success) {
+            this.entries.set(entry.id, entry); // Default to adding at the end
+        }
     }
 
     /**
@@ -88,7 +109,7 @@ class Registry {
 
         // Remove entry from tag registries
         if (entry.tags) {
-            for (let tag of this.tags) this.removeFromTag(tag, entry);
+            for (let tag of entry.tags) this.removeFromTag(tag, entry, false);
         }
 
         // Notify streams
@@ -109,6 +130,7 @@ class Registry {
      * `id` can be id, object, or entry
      */
     getId(id) {
+        if (id == null) return null;
         let entry = this.getEntryForObject(id);
         if (entry != null) id = entry.id;
         else id = RegistryEntry.extractId(id);
@@ -137,36 +159,25 @@ class Registry {
      * `id` can be id, object, or entry
      */
     getIndex(id) {
-        id = this.getId(id);
-        let index = 0;
-        for (let key of this.entries.keys()) {
-            if (key == id) return index;
-            index++;
-        }
+        return this.entries.getKeyIndex(this.getId(id));
     }
 
-    /**
-     * `insertBefore` and `insertAfter` can be index, id, object, or entry
-     */
-    getInsertIndex(insertBefore, insertAfter = null) {
-        let index = null;
-        if (insertBefore) {
-            index = ObjectHelpers.isNumber(insertBefore) ? insertBefore : this.get(insertBefore);
-        } else if (insertAfter) {
-            index = ObjectHelpers.isNumber(insertAfter) ? insertAfter : this.get(insertAfter);
-            index++;
+    getInsertTargetKey(target) {
+        if (typeof target === 'number') {
+            return this.entries.getKeyAtIndex(target);
+        } else {
+            const id = this.getId(target);
+            return id;
         }
-        return index;
     }
 
     getAll() {
-        return this.getAllEntries().map(e => e.obj);
+        return [...this.entries.values()].map(entry => entry.obj);
     }
 
     getAllEntries() {
         return [...this.entries.values()];
     }
-
 
     forEach(callback, thisArg = undefined) {
         for (const obj of this) {
@@ -174,37 +185,66 @@ class Registry {
         }
     }
 
-    *iterate() {
+    *values() {
         for (const entry of this.entries.values()) {
             yield entry.obj;
         }
     }
 
-    *iterateEntries() {
+    *entries() {
         for (const entry of this.entries.values()) {
             yield entry;
         }
     }
 
-    getEntryIterator() {
-        return this.iterateEntries();
+    get first() {
+        return this.entries.first?.obj;
     }
 
-    first() {
-        return this.firstEntry()?.obj;
+    get firstEntry() {
+        return this.entries.first;
     }
 
-    firstEntry() {
-        for (const entry of this.entries.values()) {
-            return entry;
-        }
+    get last() {
+        return this.entries.last?.obj;
+    }
+
+    get lastEntry() {
+        return this.entries.last;
+    }
+
+    getBefore(id) {
+        const keyBefore = this.entries.getKeyBefore(this.getId(id));
+        return this.entries.get(keyBefore)?.obj;
+    }
+
+    getEntryBefore(id) {
+        const keyBefore = this.entries.getKeyBefore(this.getId(id));
+        return this.entries.get(keyBefore);
+    }
+
+    getAfter(id) {
+        const keyAfter = this.entries.getKeyAfter(this.getId(id));
+        return this.entries.get(keyAfter)?.obj;
+    }
+
+    getEntryAfter(id) {
+        const keyAfter = this.entries.getKeyAfter(this.getId(id));
+        return this.entries.get(keyAfter);
     }
 
     /**
      * `id` can be id, object, or entry
      */
-    contains(id) {
+    has(id) {
         return this.entries.has(this.getId(id));
+    }
+
+    /**
+     * use has instead
+     */
+    contains(id) {
+        return this.has(id);
     }
 
     stream(callback) {
@@ -306,15 +346,15 @@ class Registry {
         return this.tags.get(tag);
     }
 
-    addToTag(tag, entry) {
+    addToTag(tag, entry, addToEntry = true) {
         this.tryInitTag(tag);
         const tagRegistry = this.getTagRegistry(tag);
         tagRegistry.register(entry.obj);
-        entry.tags.add(tag);
+        if (addToEntry) entry.tags.add(tag);
     }
 
-    removeFromTag(tag, entry) {
-        entry.tags.delete(tag);
+    removeFromTag(tag, entry, removeFromEntry = true) {
+        if (removeFromEntry) entry.tags.delete(tag);
 
         const tagRegistry = this.getTagRegistry(tag);
         if (!tagRegistry) return;
@@ -322,9 +362,14 @@ class Registry {
         tagRegistry.unregister(entry);
     }
 
-    getEntriesByTag(tag) {
+    getAllByTag(tag) {
         const tagRegistry = this.getTagRegistry(tag);
         return tagRegistry ? tagRegistry.getAll() : [];
+    }
+
+    getAllEntriesByTag(tag) {
+        const tagRegistry = this.getTagRegistry(tag);
+        return tagRegistry ? tagRegistry.getAllEntries() : [];
     }
 
     tagExists(tag) {
@@ -401,7 +446,7 @@ class Registry {
     }
 
     includes(obj) {
-        return this.contains(obj);
+        return this.has(obj);
     }
 
     indexOf(obj) {

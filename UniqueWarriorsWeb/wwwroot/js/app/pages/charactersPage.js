@@ -18,7 +18,7 @@ class CharactersPageManager extends PageManager {
         this.overview = null;
 
         let titleBar = fromHTML(`<div class="listHorizontal centerContentHorizontally gap-2">`);
-        let createButton = fromHTML(`<button class="listHorizontal largeElement bordered hoverable gap-1" tooltip="Create a new character."><div>Create`);
+        let createButton = fromHTML(`<button class="listHorizontal largeElement bordered brand-border-color hoverable gap-1" tooltip="Create a new character."><div>Create`);
         titleBar.appendChild(createButton);
         createButton.addEventListener('click', () => CharacterHelpers.createCharacter());
         let plusIcon = icons.add();

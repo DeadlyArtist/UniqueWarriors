@@ -84,7 +84,8 @@ function getUrlWithChangedPath(newPath, url = null) {
 function getUrlWithChangedHash(newHash, url = null) {
     url ??= window.location.href;
     const base = getUrlBase(url), query = getSubstringBefore(getUrlModifiers(url), '#');
-    if (!newHash.startsWith('#')) newHash = '#' + newHash;
+    if (newHash == '#') newHash = '';
+    else if (!newHash.startsWith('#')) newHash = '#' + newHash;
     return base + query + newHash;
 }
 
@@ -110,6 +111,7 @@ function getUrlWithChangedProtocol(newProtocol, url = null) {
 
 function getQueryVariable(variable, url = null) {
     url ??= window.location.href;
+    url = url.split('#')[0];
     const query = url.split('?')[1];
     if (!query) return undefined;
 
@@ -128,14 +130,29 @@ function goToUrl(url) {
 }
 
 function replaceUrl(newUrl) {
+    if (newUrl == getUrl()) return;
     history.replaceState(null, "", newUrl);
 }
 
 const loadWithoutRequestEvent = new CustomEvent('load-silently');
 // Update the browser's URL without reloading the page
-function goToUrlWithoutRequest(url) {
+function goToUrlWithoutRequest(url, dispatchEvent = true) {
+    if (url == getUrl()) return;
     window.history.pushState({}, '', url);
-    window.dispatchEvent(loadWithoutRequestEvent);
+    if (dispatchEvent) window.dispatchEvent(loadWithoutRequestEvent);
+}
+
+function changeHash(hash, url = null) {
+    const newUrl = getUrlWithChangedHash(hash, url);
+    const oldUrl = getUrl();
+    if (newUrl == oldUrl) return;
+    goToUrlWithoutRequest(newUrl, false);
+
+    const hashChangeEvent = new HashChangeEvent('hashchange', {
+        oldURL: oldUrl,
+        newURL: newUrl,
+    });
+    window.dispatchEvent(hashChangeEvent);
 }
 
 function createObjectUrl(object, options = undefined) {

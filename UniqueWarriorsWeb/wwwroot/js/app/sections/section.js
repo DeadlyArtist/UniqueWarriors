@@ -1,5 +1,6 @@
 class Section {
     constructor(section) {
+        section ??= {};
         this.title = section.title;
         this.height = section.height ?? 0;
         this.attributes = section.attributes ?? [];
@@ -30,6 +31,7 @@ class Section {
     }
 
     static classify(section) {
+        if (section instanceof Section) return section;
         let classified = ObjectHelpers.lowerFirstCharOfKeys(section, false);
         if (classified.subSections) classified.subSections = SectionHelpers.classify(classified.subSections);
         if (classified.attributes) classified.attributes = SectionAttributesHelpers.classify(classified.attributes);
@@ -184,7 +186,7 @@ class Section {
         return value.split(", ");
     }
 
-    getSectionPath() {
+    getPath() {
         let parts = [];
         let section = this;
         while (section) {

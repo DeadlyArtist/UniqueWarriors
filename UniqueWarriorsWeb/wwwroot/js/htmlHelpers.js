@@ -47,6 +47,12 @@ class HtmlHelpers {
 
     static insertAt(parentElement, index, elementToInsert, output = null) {
         output ??= {};
+        if (index == null || index == parentElement.children.length) {
+            parentElement.appendChild(elementToInsert);
+            output.insertBefore = null;
+            output.insertedAfter = parentElement.lastChild;
+            return;
+        }
 
         const children = Array.from(parentElement.children);
 

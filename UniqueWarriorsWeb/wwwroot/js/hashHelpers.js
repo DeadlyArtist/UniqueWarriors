@@ -56,8 +56,13 @@ function getHashParams() {
     return hashSearchParams;
 }
 
-function getHash() {
-    return window.location.hash == '' ? '#' : window.location.hash;
+function getHash(url = null) {
+    url ??= window.location.href;
+    let parts = url.split('#', 2);
+    let hash;
+    if (parts.length == 1) hash = '';
+    else hash = parts[1];
+    return '#' + hash;
 }
 
 function getHashUrl() {
@@ -75,24 +80,32 @@ function getPathPartFromHash(index) {
 }
 
 function buildUrlWithNewHashParams(hashSearchParams) {
+    let hashSearchParamsString = hashSearchParams.toString();
+
     let url = new URL(window.location);
     url.hash = '';
     let hashParts = window.location.hash.split("?");
     let baseHash = hashParts[0];
-    let hashSearchParamsString = hashSearchParams.toString();
+    if (baseHash == '' && hashSearchParamsString != '') baseHash = '#';
     let urlString = url.toString() + baseHash + (hashSearchParamsString === '' ? '' : ('?' + hashSearchParamsString));
     return urlString;
 }
 
 function getUrlWithChangedHashParam(name, value) {
-    const hashParams = this.getHashParams();
+    const hashParams = getHashParams();
     if (value == null || value == "") {
         hashParams.delete(name);
     } else {
         hashParams.set(name, value);
     }
-    const url = this.buildUrlWithNewHashParams(hashParams);
+
+    const url = buildUrlWithNewHashParams(hashParams);
     return url;
+}
+
+function getHashWithChangedParam(name, value) {
+    const url = getUrlWithChangedHashParam(name, value);
+    return getHash(url);
 }
 
 function escapeHashParameter(param) {

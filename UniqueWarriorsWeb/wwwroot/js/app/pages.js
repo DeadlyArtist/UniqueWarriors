@@ -153,6 +153,10 @@ class Pages {
         this.error.pageManager.errorMessage = message;
         this.load(this.error);
     }
+
+    static onHashChange() {
+        this.currentPage?.onHashChange();
+    }
 }
 Pages.setup();
 App.onAppLoaded(() => Pages.loadFromPath());

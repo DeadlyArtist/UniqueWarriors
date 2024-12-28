@@ -92,7 +92,7 @@ class SectionReferenceHelpers {
         if (Object.keys(specialLetters).length == 0) return html;
         html = html.replace(specialLetterRegex, (formula, letter, number) => {
             const result = this.parseFormula(formula, variables, specialLetters, specialLetterRegex);
-            if (result != null) return `<span tooltip="[${escapeHTML(formula)}]" section-formula>${escapeHTML(result)}</span>`;
+            if (result != null) return `<span class="section-formula" tooltip="[${escapeHTML(formula)}]">${escapeHTML(result)}</span>`;
             else return formula;
         });
         return html;
@@ -109,7 +109,7 @@ class SectionReferenceHelpers {
     static getFormulaTooltip(formula, variables, specialLetters, specialLetterRegex) {
         let html;
         const result = this.parseFormula(formula, variables, specialLetters, specialLetterRegex);
-        if (result != null) html = `<span tooltip="[${escapeHTML(formula)}]" section-formula>${escapeHTML(result)}</span>`;
+        if (result != null) html = `<span class="section-formula" tooltip="[${escapeHTML(formula)}]">${escapeHTML(result)}</span>`;
         else html = `[${this.replaceSpecialLettersWithFormulas(escapeHTML(formula), variables, specialLetters, specialLetterRegex) }]`;
         return html;
     }
@@ -290,7 +290,7 @@ class SectionReferenceHelpers {
                 const newHtml = oldHtml.replace(regex, function (matched, matchedTarget, maybeS) {
                     let targetPath = pathsByTarget[matchedTarget.toLowerCase()];
                     let section = HtmlHelpers.getClosestProperty(node, '_section');
-                    let sectionPath = section.getSectionPath();
+                    let sectionPath = section.getPath();
                     if (sectionPath.split('*')[0] == SectionReferenceHelpers.pathEncoder.encode(targetPath.split('*')[0])) return matched;
                     return `<span class="snippetTarget" tooltip-path="${escapeHTML(targetPath)}">${matchedTarget + maybeS}</span>`;
                 });

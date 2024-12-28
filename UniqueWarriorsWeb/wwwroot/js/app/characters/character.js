@@ -12,20 +12,39 @@ class Character {
 
         this.items = new Registry();
         this.techniques = new Registry();
-        this.masteries = new Registry();
+        this.masteryManager = new MasteryManager({ masteries: settings.masteries });
         this.weapons = new Registry();
         this.paths = new Registry();
         this.ancestry = settings.ancestry ?? null;
         this.characteristics = new Registry();
         this.passions = new Registry();
 
-        settings.items?.forEach(e => this.items.register(e));
-        settings.techniques?.forEach(e => this.techniques.register(e));
-        settings.masteries?.forEach(e => this.masteries.register(e));
+        settings.items?.forEach(e => this.items.register(e.clone()));
+        settings.techniques?.forEach(e => this.techniques.register(e.clone()));
         settings.weapons?.forEach(e => this.weapons.register(e));
         settings.paths?.forEach(e => this.paths.register(e));
         settings.characteristics?.forEach(e => this.characteristics.register(e));
         settings.passions?.forEach(e => this.passions.register(e));
+    }
+
+    get masteries() {
+        return this.masteryManager.masteries;
+    }
+
+    get splitMasteries() {
+        return this.masteryManager.splitMasteries;
+    }
+
+    get upgrades() {
+        return this.masteryManager.upgrades;
+    }
+
+    get evolutions() {
+        return this.masteryManager.evolutions;
+    }
+
+    get ascendancies() {
+        return this.masteryManager.ascendancies;
     }
 
     getStats() {
@@ -126,7 +145,7 @@ class Character {
 
     getMaxTechniques() {
         let level = this.stats.level;
-        let techniques = 3;
+        let techniques = 3; // one of which is a weapon core technique
         if (level >= 2) techniques += 2;
         if (level >= 3) techniques += 2;
         if (level >= 4) techniques += 2;
@@ -152,7 +171,7 @@ class Character {
 
     getMaxMasteries() {
         let level = this.stats.level;
-        let masteries = 0;
+        let masteries = 0; // does not include the free path core
         if (level >= 3) masteries += 1;
         if (level >= 5) masteries += 1;
         if (level >= 8) masteries += 1;
@@ -203,6 +222,122 @@ class Character {
     }
 
     static fromJSON(json) {
+        json.items = SectionHelpers.initSections(json.items);
+        json.techniques = SectionHelpers.initSections(json.techniques);
+        json.masteries = SectionHelpers.initSections(json.masteries);
         return new Character(json);
     }
+}
+
+class MasteryManager {
+    constructor(settings = null) {
+        settings ??= {};
+
+        let data = AbilitySectionHelpers.splitMasteries(settings.masteries ?? []);
+        this.splitMasteries = data.splitMasteries;
+        this.masteries = data.masteries;
+        this.upgrades = data.upgrades;
+        this.evolutions = data.evolutions;
+        this.ascendancies = data.ascendancies;
+    }
+
+    getSplitRegistry(splitMastery, subMastery) {
+        if (AbilitySectionHelpers.isUpgrade(subMastery)) {
+            return splitMastery.upgrades;
+        } else if (AbilitySectionHelpers.isEvolution(subMastery)) {
+            return splitMastery.evolutions;
+        } else if (AbilitySectionHelpers.isAscendancy(subMastery)) {
+            return splitMastery.ascendancies;
+        }
+    }
+
+    getSubRegistry(subMastery) {
+        return this.getSplitRegistry(this, subMastery);
+    }
+
+    learn(masteryLike) {
+        if (AbilitySectionHelpers.isTopMastery(masteryLike)) {
+            if (this.masteries.has(masteryLike)) return;
+            let splitMastery = AbilitySectionHelpers.splitMastery(masteryLike, { mainOnly: true });
+            this.splitMasteries.register(splitMastery);
+            this.masteries.register(splitMastery.mastery);
+        } else {
+            let splitMastery = this.splitMasteries.get(masteryLike?.parent);
+            if (!splitMastery) return;
+
+            let splitRegistry = this.getSplitRegistry(splitMastery, masteryLike);
+            let subRegistry = this.getSubRegistry(masteryLike);
+            if (!splitRegistry || splitRegistry.has(masteryLike)) return;
+            subRegistry.register(masteryLike, { id: masteryLike.getPath() });
+            splitRegistry.register(masteryLike);
+
+            const fullMastery = Registries.masteries.get(masteryLike.parent);
+            const parentSubSections = fullMastery?.subSections;
+            const settings = {};
+            if (parentSubSections) {
+                // Traverse the sub-sections to find the closest preceding mastery for insertAfter
+                for (const subSection of parentSubSections) {
+                    if (subSection === masteryLike) break;
+
+                    if (splitRegistry.has(subSection)) {
+                        settings.insertAfter = subSection; // Update insertion target if the subSection exists in subRegistry
+                    }
+                }
+            }
+            if (!settings.insertAfter) {
+                if (AbilitySectionHelpers.isUpgrade(masteryLike)) {
+                    const lastMainSubSection = splitMastery.main.subSections.last;
+                    if (lastMainSubSection) {
+                        settings.insertAfter = lastMainSubSection;
+                    } else {
+                        settings.insertFirst = true;
+                    }
+                } else if (AbilitySectionHelpers.isEvolution(masteryLike)) {
+                    const firstAscendancy = [...splitMastery.mastery.subSections].find(sub =>
+                        AbilitySectionHelpers.isAscendancy(sub)
+                    );
+                    if (firstAscendancy) {
+                        settings.insertBefore = firstAscendancy; // Insert before this ascendancy
+                    } else {
+                        // No ascendancies, insert last
+                    }
+                } else if (AbilitySectionHelpers.isAscendancy(masteryLike)) {
+                    // Ascendancies: Always insert last
+                }
+            }
+            console.log(splitMastery.mastery.subSections, masteryLike, settings);
+            splitMastery.mastery.subSections.register(masteryLike, settings);
+        }
+    }
+
+    learnWithChildren(mastery) {
+        let splitMastery = AbilitySectionHelpers.splitMastery(mastery);
+        this.splitMasteries.register(splitMastery);
+        splitMastery.upgrades.forEach(m => this.upgrades.register(m, { id: m.getPath() }));
+        splitMastery.evolutions.forEach(m => this.evolutions.register(m, { id: m.getPath() }));
+        splitMastery.ascendancies.forEach(m => this.ascendancies.register(m, { id: m.getPath() }));
+    }
+
+    unlearn(masteryLike) {
+        if (AbilitySectionHelpers.isTopMastery(masteryLike)) {
+            let splitMastery = this.splitMasteries.get(masteryLike);
+            if (!splitMastery) return;
+            this.masteries.unregister(masteryLike);
+            this.splitMasteries.unregister(splitMastery);
+            splitMastery.upgrades.forEach(m => this.upgrades.unregister(m, { id: m.getPath() }));
+            splitMastery.evolutions.forEach(m => this.evolutions.unregister(m, { id: m.getPath() }));
+            splitMastery.ascendancies.forEach(m => this.ascendancies.unregister(m, { id: m.getPath() }));
+        } else {
+            let splitMastery = this.splitMasteries.get(masteryLike?.parent);
+            if (!splitMastery) return;
+
+            let splitRegistry = this.getSplitRegistry(splitMastery, masteryLike);
+            let subRegistry = this.getSubRegistry(masteryLike);
+            if (!splitRegistry) return;
+            splitRegistry.unregister(masteryLike);
+            subRegistry.unregister(masteryLike, { id: masteryLike.getPath() });
+        }
+    }
+
+    // No toJSON or fromJSON because you shouldn't serialize this class.
 }

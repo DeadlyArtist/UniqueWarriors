@@ -56,6 +56,7 @@ class CharacterHelpers {
                 characters.push(Character.fromJSON(character));
             }
         } catch (e) {
+            console.log(`Failed to load characters:\n`, e);
             return;
         }
 
@@ -87,7 +88,7 @@ class CharacterHelpers {
         let character = new Character();
         Registries.characters.register(character);
         this.saveCharacter(character);
-        if (openInPage) CharacterHelpers.openCharacter(character);
+        if (openInPage) CharacterHelpers.openCharacterCreator(character);
         return character;
     }
 
@@ -192,9 +193,9 @@ class CharacterHelpers {
         titleElement.textContent = character.name;
         let openMenuElement = fromHTML(`<div class="character-menu listHorizontal">`);
         titleBarElement.appendChild(openMenuElement);
-        let openMenuButton = fromHTML(`<button class="listHorizontal gap-1" tooltip="Open menu">`);
+        let openMenuButton = fromHTML(`<button class="listHorizontal gap-1 element hoverable" tooltip="Open menu">`);
         openMenuElement.appendChild(openMenuButton);
-        let closeMenuButton = fromHTML(`<button class="listHorizontal gap-1 hide" tooltip="Close menu">`);
+        let closeMenuButton = fromHTML(`<button class="listHorizontal gap-1 element hoverable hide" tooltip="Close menu">`);
         openMenuElement.appendChild(closeMenuButton);
         openMenuButton.addEventListener('click', () => {
             openMenuButton.classList.add('hide');
@@ -213,7 +214,7 @@ class CharacterHelpers {
 
         const section = CharacterHelpers.getCharacterSection(character);
         section.title = null;
-        const structuredSection = SectionHelpers.generateStructuredHtmlForSection(section, SectionHelpers.TextType, settings);
+        const structuredSection = SectionHelpers.generateStructuredHtmlForSection(section, settings);
         element.appendChild(structuredSection.element);
         structuredSection.element.classList.add("character-summary");
 
@@ -426,7 +427,7 @@ class CharacterHelpers {
 
         let expandedArea = fromHTML(`<div class="hide" style="margin-left: 40px;">`);
         element.appendChild(expandedArea);
-        let structuredSection = SectionHelpers.generateStructuredHtmlForSection(ability, SectionHelpers.TextType, {variables: settings.variables, wrapperElement: element});
+        let structuredSection = SectionHelpers.generateStructuredHtmlForSection(ability, {variables: settings.variables, wrapperElement: element});
         expandedArea.appendChild(structuredSection.element);
 
         let isExpanded = false;
@@ -459,7 +460,7 @@ class CharacterHelpers {
 
     static getCharacterSection(character) {
         let attributes = [];
-        let firstLine = [new HeadValue("Level", character.stats.level), new HeadValue("Ancestry", character.ancestry ?? "?"), new HeadValue("Weapons", character.weapons.size == 0 ? '?' : character.weapons.getAll().join(', ').concat('.')), new HeadValue("Paths", character.paths.size == 0 ? '?' : character.paths.getAll().join(', ').concat('.')), new HeadValue("Characteristics", character.characteristics.size == 0 ? '?' : character.characteristics.getAll().join(', ').concat('.')), new HeadValue("Passions", character.passions.size == 0 ? '?' : character.passions.getAll().join(', ').concat('.'))];
+        let firstLine = [new HeadValue("Level", character.stats.level), new HeadValue("Ancestry", character.ancestry ?? "?"), new HeadValue("Weapons", character.weapons.size == 0 ? '?' : character.weapons.getAll().join(' + ')), new HeadValue("Path", character.paths.size == 0 ? '?' : character.paths.getAll().join(' + ')), new HeadValue("Characteristics", character.characteristics.size == 0 ? '?' : character.characteristics.getAll().join(' + ')), new HeadValue("Passions", character.passions.size == 0 ? '?' : character.passions.getAll().join(' + '))];
         attributes.push(firstLine);
 
         return new Section({
@@ -527,18 +528,13 @@ class StructuredAbilityListHtml {
 
     addAbility(ability, insertSettings) {
         insertSettings ??= {};
-        const structuredSection = CharacterHelpers.wrapAbilitySectionForList(this.character, ability, this.settings);
-
-        let index = this.sections.getInsertIndex(insertSettings.insertBefore, insertSettings.insertAfter);
-        if (index !== null) {
-            HtmlHelpers.insertAt(this.listElement, index, structuredSection.wrapperElement);
-        } else {
-            this.listElement.appendChild(structuredSection.wrapperElement);
-        }
+        const structuredSection = CharacterHelpers.wrapAbilitySectionForList(this.character, ability, { ...this.insertSettings, variables: this.settings.variables });
 
         this.sections.register(structuredSection, { ...insertSettings, id: ability.title });
-
+        HtmlHelpers.insertAt(this.listElement, this.sections.getIndex(structuredSection), structuredSection.wrapperElement);
         if (!this.settings.dontInitSearch) this.initSearch();
+
+        return structuredSection;
     }
 
     removeAbility(ability) {
@@ -573,19 +569,14 @@ class StructuredCharacterSectionOverviewHtml {
     addCharacter(character, insertSettings) {
         insertSettings ??= {};
         const section = CharacterHelpers.getCharacterSection(character);
-        const structuredSection = SectionHelpers.wrapSectionForOverview(section, this.type, { ...this.settings, link: `/app/character?id=${character.id}` });
+        const structuredSection = SectionHelpers.wrapSectionForOverview(section, this.type, { ...this.insertSettings, link: `/app/character?id=${character.id}` });
         structuredSection.element._character = character;
 
-        let index = this.sections.getInsertIndex(insertSettings.insertBefore, insertSettings.insertAfter);
-        if (index !== null) {
-            HtmlHelpers.insertAt(this.listElement, index, structuredSection.wrapperElement);
-        } else {
-            this.listElement.appendChild(structuredSection.wrapperElement);
-        }
-
         this.sections.register(structuredSection, { ...insertSettings, id: structuredSection.section.title });
-
+        HtmlHelpers.insertAt(this.listElement, this.sections.getIndex(structuredSection), structuredSection.wrapperElement);
         if (!this.settings.dontInitSearch) this.initSearch();
+
+        return structuredSection;
     }
 
     removeCharacter(character) {

@@ -423,7 +423,7 @@ class SectionSearch {
 
             // Highlight sections with a DOM-safe approach
             for (let [node, ranges] of this.rangesByNode.entries()) {
-                if (window.getComputedStyle(node.parentElement).display == "none") continue;
+                if (node.parentElement.closest('.hiddenSearchElement') != null) continue;
                 try {
                     this.highlightRangesInNode(node, ranges);
                 } catch (error) {

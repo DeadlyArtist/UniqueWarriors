@@ -8,7 +8,7 @@ class RegistryEntry {
         settings ??= {};
         this.obj = obj;
         this.id = settings.id ?? RegistryEntry.extractId(obj);
-        this.tags = new Set([...(settings.tags ?? obj.tags ?? [])]);
+        this.tags = new Set([...(settings.tags ?? [])]);
     }
 
     static extractId(obj) {

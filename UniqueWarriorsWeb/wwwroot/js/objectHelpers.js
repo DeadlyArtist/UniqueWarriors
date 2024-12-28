@@ -8,7 +8,6 @@ class ObjectHelpers {
                 if (overwrite) delete obj[key];
             }
         }
-
         if (!overwrite) return temp;
 
         for (const key in temp) {

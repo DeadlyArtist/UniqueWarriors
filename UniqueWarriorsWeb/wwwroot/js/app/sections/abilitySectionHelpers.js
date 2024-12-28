@@ -97,12 +97,24 @@ class AbilitySectionHelpers {
         return section.headValues.has("Path Core");
     }
 
+    static isTopMastery(section) {
+        return this.isMastery(section) || this.isPathCore(section);
+    }
+
+    static isSubMastery(section) {
+        return this.isUpgrade(section) || this.isEvolution(section) || this.isAscendancy(section);
+    }
+
     static isMasteryLike(section) {
-        return this.isMastery(section) || this.isPathCore(section) || this.isUpgrade(section) || this.isEvolution(section) || this.isAscendancy(section);
+        return this.isTopMastery(section) || this.isSubMastery(section);
     }
 
     static isTechnique(section) {
         return section.tags.has("Technique");
+    }
+
+    static isWeaponCore(section) {
+        return section.headValues.has("Weapon Core");
     }
 
     static isUpgrade(section) {
@@ -149,11 +161,11 @@ class AbilitySectionHelpers {
 
     static categoryHeadValueNames = ["Weapon", "Weapon Core", "Weapon Mutation", "Path", "Path Core", "Summon"];
     static getCategories(section) {
-        this.categoryHeadValueNames.forEach(headValueName => {
+        for (let headValueName of this.categoryHeadValueNames) {
             let values = section.getHeadValueParts(headValueName);
             if (values.length != 0) return values;
-        });
-        return null;
+        }
+        return [];
     }
 
     static getMainCategory(section) {
@@ -189,5 +201,60 @@ class AbilitySectionHelpers {
             if (modifier) statModifiers.set(stat, modifier);
         });
         return statModifiers;
+    }
+
+    static splitMasteries(masteries) {
+        let splitMasteries = new Registry();
+        let newMasteries = new Registry();
+        let masteryLikes = new Registry();
+        let upgrades = new Registry();
+        let evolutions = new Registry();
+        let ascendancies = new Registry();
+        for (let mastery of masteries) {
+            mastery = mastery.clone();
+            let splitMastery = { title: mastery.title, mastery, main: mastery.cloneWithoutSubSections(), upgrades: new Registry(), evolutions: new Registry(), ascendancies: new Registry() };
+            for (let subSection of mastery.subSections) {
+                let path = subSection.getPath();
+                if (this.isUpgrade(subSection)) {
+                    splitMastery.upgrades.register(subSection);
+                    upgrades.register(subSection, { id: path });
+                }
+                else if (this.isEvolution(subSection)) {
+                    splitMastery.evolutions.register(subSection);
+                    evolutions.register(subSection, { id: path });
+                }
+                else if (this.isAscendancy(subSection)) {
+                    splitMastery.ascendancies.register(subSection);
+                    ascendancies.register(subSection, { id: path });
+                }
+                else {
+                    splitMastery.main.subSections.register(subSection);
+                }
+            }
+            newMasteries.register(mastery);
+            splitMasteries.register(splitMastery);
+        }
+        return { splitMasteries, masteries: newMasteries, upgrades, evolutions, ascendancies };
+    }
+
+    static splitMastery(mastery, settings = null) {
+        settings ??= {};
+        if (!settings.mainOnly) mastery = mastery.clone();
+        let splitMastery = { title: mastery.title, mastery, main: mastery.cloneWithoutSubSections(), upgrades: new Registry(), evolutions: new Registry(), ascendancies: new Registry() };
+        for (let subSection of mastery.subSections) {
+            if (this.isUpgrade(subSection)) splitMastery.upgrades.register(subSection);
+            else if (this.isEvolution(subSection)) splitMastery.evolutions.register(subSection);
+            else if (this.isAscendancy(subSection)) splitMastery.ascendancies.register(subSection);
+            else splitMastery.main.subSections.register(subSection);
+        }
+
+        if (settings.mainOnly) {
+            splitMastery.mastery = splitMastery.main.clone();
+            splitMastery.upgrades.clear();
+            splitMastery.evolutions.clear();
+            splitMastery.ascendancies.clear();
+        }
+
+        return splitMastery;
     }
 }

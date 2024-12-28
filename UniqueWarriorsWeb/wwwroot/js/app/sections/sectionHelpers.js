@@ -78,6 +78,11 @@ class SectionHelpers {
         return sections;
     }
 
+    static initSections(sections, settings = null) {
+        settings ??= {};
+        return this.modify(sections, { ...this.getInitModifySettings(), ...settings });
+    }
+
     static getInitModifySettings() {
         return {
             classify: true,
@@ -166,10 +171,11 @@ class SectionHelpers {
     }
 
     static classify(sections) {
-        sections.forEach(s => s.SubSections = s.SubSections?.filter(sub => !sub.Title?.includes("(Example Mutation)")));
+        sections.forEach(s => {
+            if (s.SubSections) s.SubSections = s.SubSections?.filter(sub => !sub.Title?.includes("(Example Mutation)"))
+        });
         let newSections = [];
         for (const section of sections) {
-            if (section instanceof Section) continue;
             newSections.push(Section.classify(section));
         }
 
@@ -280,11 +286,10 @@ class SectionHelpers {
         }
     }
 
-    static generateStructuredHtmlForSection(section, type, settings = null) {
+    static generateStructuredHtmlForSection(section, settings = null) {
         settings ??= {};
         const sectionElement = fromHTML(`<div class="section">`);
         const structuredSection = new StructuredSectionHtml(
-            type,
             section,
             sectionElement,
             settings.wrapperElement ?? sectionElement,
@@ -328,7 +333,7 @@ class SectionHelpers {
                         attributeElement._headValue = attr;
                     }
                     attributesLine.appendChild(attributeElement);
-                    if (index < attributeList.length - 1) attributesLine.appendChild(document.createTextNode(", "));
+                    if (index < attributeList.length - 1) attributesLine.appendChild(document.createTextNode(attributesLine.textContent.endsWith('.')  ? " " : ", "));
                 });
             });
             sectionElement.appendChild(attributesElement);
@@ -357,11 +362,15 @@ class SectionHelpers {
             sectionElement.appendChild(tableElement);
         }
 
+        let subSectionContainer = fromHTML(`<div class="section-subSections listVertical gap-4 children-w-100">`);
+        sectionElement.appendChild(subSectionContainer);
+
 
         structuredSection.titleElement = titleElement;
         structuredSection.attributesElement = attributesElement;
         structuredSection.contentElement = contentElement;
         structuredSection.tableElement = tableElement;
+        structuredSection.subSectionContainer = subSectionContainer;
         structuredSection.newVariables = newVariables;
 
         if (section.subSections?.length > 0) {
@@ -411,7 +420,7 @@ class SectionHelpers {
 
     static wrapSectionForOverview(section, type, settings = null) {
         settings ??= {};
-        const structuredSection = this.generateStructuredHtmlForSection(section, type, settings);
+        const structuredSection = this.generateStructuredHtmlForSection(section, settings);
         if (type === this.TextType) {
             structuredSection.wrapperElement = structuredSection.element;
         } else if (type === this.MasonryType) {
@@ -428,8 +437,7 @@ class SectionHelpers {
 }
 
 class StructuredSectionHtml {
-    constructor(type, section, element, wrapperElement, settings = null) {
-        this.type = type;
+    constructor(section, element, wrapperElement, settings = null) {
         this.section = section;
         this.element = element;
         this.wrapperElement = wrapperElement;
@@ -448,26 +456,16 @@ class StructuredSectionHtml {
     }
 
     addSubSection(subSection, insertSettings = {}) {
-        if (!this.subSectionContainer) {
-            this.subSectionContainer = fromHTML(`<div class="section-subSections listVertical gap-4 children-w-100">`);
-            this.wrapperElement.appendChild(this.subSectionContainer);
-        }
-
         let needsBreak = this.contentElement || this.attributesElement || this.tableElement;
         if (needsBreak && this.subSections.length == 0) {
             this.element.insertBefore(hb(this.section.height > 1 ? 2 : 4), this.subSectionContainer);
         }
 
-        const structuredSubSection = SectionHelpers.generateStructuredHtmlForSection(subSection, this.type, { ...this.settings, variables: this.newVariables });
-
-        const index = this.subSections.getInsertIndex(insertSettings.insertBefore, insertSettings.insertAfter);
-        if (index !== null) {
-            HtmlHelpers.insertAt(this.subSectionContainer, index, structuredSubSection.wrapperElement);
-        } else {
-            this.subSectionContainer.appendChild(structuredSubSection.wrapperElement);
-        }
-
+        const structuredSubSection = SectionHelpers.generateStructuredHtmlForSection(subSection, { ...this.insertSettings, variables: this.newVariables });
         this.subSections.register(structuredSubSection, { ...insertSettings, id: structuredSubSection.section.title });
+        HtmlHelpers.insertAt(this.subSectionContainer, this.subSections.getIndex(structuredSubSection), structuredSubSection.wrapperElement);
+
+        return structuredSubSection;
     }
 
     removeSubSection(subSection) {
@@ -497,10 +495,18 @@ class StructuredSectionOverviewHtml {
 
         container._sectionOverview = this;
         listElement._sectionOverview = this;
+        this.updateSearchDisplay();
+    }
+
+    updateSearchDisplay() {
+        if (!this.settings.showSearchIfEmpty) {
+            if (this.sections.size == 0) this.searchContainer?.classList.add('hide');
+            else this.searchContainer?.classList.remove('hide');
+        }
     }
 
     initSearch() {
-        if (!this.searchContainer || this.didSearchInit || this.sections.size == 0) return;
+        if (!this.searchContainer || this.didSearchInit) return;
         this.didSearchInit = true;
         this.search = new SectionSearch(this.searchContainer, [this]);
         this.searchContainer._search = this.search;
@@ -509,17 +515,13 @@ class StructuredSectionOverviewHtml {
     addSection(section, insertSettings) {
         insertSettings ??= {};
         const structuredSection = SectionHelpers.wrapSectionForOverview(section, this.type, this.settings);
-
-        let index = this.sections.getInsertIndex(insertSettings.insertBefore, insertSettings.insertAfter);
-        if (index !== null) {
-            HtmlHelpers.insertAt(this.listElement, index, structuredSection.wrapperElement);
-        } else {
-            this.listElement.appendChild(structuredSection.wrapperElement);
-        }
+        if (this.settings.removeTopLineHeight) structuredSection.titleElement?.classList.add('top-line');
 
         this.sections.register(structuredSection, { ...insertSettings, id: structuredSection.section.title });
+        HtmlHelpers.insertAt(this.listElement, this.sections.getIndex(structuredSection), structuredSection.wrapperElement);
 
-        if (!this.settings.dontInitSearch) this.initSearch();
+        this.updateSearchDisplay();
+        return structuredSection;
     }
 
     removeSection(section) {
@@ -527,5 +529,6 @@ class StructuredSectionOverviewHtml {
         if (!structuredSection) return;
         structuredSection.wrapperElement.remove();
         this.sections.unregister(structuredSection);
+        this.updateSearchDisplay();
     }
 }

@@ -70,14 +70,22 @@ class MasonryGrid {
         if (this.resizeDisabled || MasonryGrid.allResizeDisabled) return;
 
         const grid = this.grid;
-        if (grid.children.length === 0) return;
+        if (grid.children.length === 0) {
+            grid.style.height = ``;
+            return;
+        }
 
         // Measure container and calculate layout - reading phase
         const isScrollbarPresent = isYScrollbarPresent() || rerun;
-        const scrollbarWidth = window.innerWidth < 750 ? 0 : getScrollbarWidth(); // Special handling for container window width
+        const scrollbarWidth = getScrollbarWidth();
+        let scrollbarOffset = 0;
+        const maxContainerWidth = 1000;
+        const leftPaddingMediaSize = 1024;
+        if (window.innerWidth >= leftPaddingMediaSize) scrollbarOffset += Math.floor(scrollbarWidth / 2);
+        scrollbarOffset += clamp(maxContainerWidth + scrollbarWidth - window.innerWidth, 0, scrollbarWidth);
         // We just assume that a scrollbar will become present upon resize
         // This way, we only resize twice when there weren't many items to begin with
-        const containerWidth = grid.clientWidth - (isScrollbarPresent ? 0 : Math.floor(scrollbarWidth / 2));
+        const containerWidth = grid.clientWidth - (isScrollbarPresent ? 0 : scrollbarOffset);
         const columnCount = Math.max(
             1,
             Math.floor((containerWidth + this.gapX) / (this.minWidth + this.gapX))

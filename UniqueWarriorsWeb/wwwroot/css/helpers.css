@@ -268,3 +268,8 @@ b {
 .children-w-max > * {
   width: max-content;
 }
+
+.top-line {
+  line-height: 1;
+  padding-bottom: 0.25em;
+}

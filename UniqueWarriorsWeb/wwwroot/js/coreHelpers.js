@@ -7,15 +7,22 @@ function _tryRemoveIndexHtml() {
         pathname = pathname.substring(0, pathname.length - 'index.html'.length);
         const newUrl = `${pathname}${search}${hash}`;
         window.history.replaceState(null, "", newUrl);
+        return true;
     }
+    return false;
 }
 _tryRemoveIndexHtml();
 
 function _tryRemoveEmptyHash() {
     let urlWithoutHash = window.location.href.split('#')[0];
     let hash = window.location.hash;
-    if (hash != null && hash.length < 2) history.replaceState(null, "", urlWithoutHash);
+    if (hash != null && hash.length < 2) {
+        history.replaceState(null, "", urlWithoutHash);
+        return true;
+    }
+    return false;
 }
+// No need to stop propagation because it replaces state, which doesn't cause any events
 window.addEventListener('hashchange', _tryRemoveEmptyHash);
 window.addEventListener('load-silently', _tryRemoveEmptyHash);
 _tryRemoveEmptyHash();

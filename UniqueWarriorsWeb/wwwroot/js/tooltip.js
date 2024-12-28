@@ -220,7 +220,7 @@ class Tooltip {
             }
         } else if (attribute == 'tooltip-path') {
             let sections = SectionHelpers.resolveMultipleSectionsExpression(value);
-            Tooltip.cardTooltip(tooltip, SectionHelpers.generateStructuredHtmlForSectionOverview(sections, SectionHelpers.TextType).container);
+            Tooltip.cardTooltip(tooltip, SectionHelpers.generateStructuredHtmlForSectionOverview(sections, SectionHelpers.TextType, { removeTopLineHeight: true }).container);
         }
     }
 
