@@ -113,9 +113,7 @@ class ObjectHelpers {
 function isNumber(obj) {
     return typeof obj == 'number';
 }
-function isString(obj) {
-    return typeof obj == 'string';
-}
+// For isString see stringHelpers.js
 function isFunction(obj) {
     return typeof obj == 'function';
 }

@@ -1,6 +1,7 @@
 class Section {
     constructor(section) {
         section ??= {};
+        this.id = section.id;
         this.title = section.title;
         this.height = section.height ?? 0;
         this.attributes = section.attributes ?? [];
@@ -17,6 +18,13 @@ class Section {
         this.tags = new Set();
 
         this.#setup();
+    }
+
+    get id() {
+        return this._overrideId ?? this.title;
+    }
+    set id(id) {
+        this._overrideId = id;
     }
 
     #setup() {
@@ -190,7 +198,7 @@ class Section {
         let parts = [];
         let section = this;
         while (section) {
-            if (section.title) parts.push(section.title);
+            if (section.id) parts.push(section.id);
             if (section.anchor) {
                 parts.push(section.anchor);
                 break;
@@ -218,6 +226,7 @@ class Section {
 
     toJSON() {
         return {
+            id: this._overrideId,
             title: this.title,
             height: this.height,
             attributes: SectionAttributesHelpers.toJSON(this.attributes),

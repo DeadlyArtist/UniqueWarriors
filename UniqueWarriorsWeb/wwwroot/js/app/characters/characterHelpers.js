@@ -336,6 +336,7 @@ class CharacterHelpers {
         let actionAbilities = [];
         let quickActionAbilities = [];
         let otherAbilities = [];
+        let summons = character.summons.getAll();
         for (let ability of abilities) {
             if (AbilitySectionHelpers.isTrigger(ability)) {
                 triggeredAbilities.push(ability);
@@ -365,8 +366,10 @@ class CharacterHelpers {
         abilitiesContainer.appendChild(quickActionAbilityList.container);
         let otherAbilityList = this.generateAbilityListHtml(character, otherAbilities, { title: "Other", variables });
         abilitiesContainer.appendChild(otherAbilityList.container);
+        let summonsList = this.generateAbilityListHtml(character, summons, { title: "Summons", variables });
+        abilitiesContainer.appendChild(summonsList.container);
 
-        new SectionSearch(searchContainer, [triggeredAbilityList, moveActionAbilityList, actionAbilityList, quickActionAbilityList, otherAbilityList], { filterKey: character.id });
+        new SectionSearch(searchContainer, [triggeredAbilityList, moveActionAbilityList, actionAbilityList, quickActionAbilityList, otherAbilityList, summonsList], { filterKey: character.id });
 
         return element;
     }

@@ -23,6 +23,8 @@ class Collection {
                 if (section.subSections && section.subSections.length > 0) {
                     let subSections = SectionHelpers.modify(section.subSections.getAll(), { height:1 });
                     for (let subSection of subSections) {
+                        subSection.anchor = section.anchor;
+                        subSection.parent = null;
                         this.registry.register(subSection);
                     }
                 }

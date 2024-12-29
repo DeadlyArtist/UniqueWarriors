@@ -156,6 +156,7 @@ class CharacterCreatorHelpers {
         let maxTechniques = character.getMaxTechniques(); // one of which is a weapon core technique
         let maxOtherTechniques = maxTechniques - 1;
         let chosenTechniques = character.techniques;
+        let chosenSummons = character.summons;
         function getHasWeaponCore() {
             return chosenTechniques.some(t => AbilitySectionHelpers.isWeaponCore(t));
         }
@@ -164,16 +165,130 @@ class CharacterCreatorHelpers {
             hasWeaponCore ??= getHasWeaponCore();
             return maxOtherTechniques - (hasWeaponCore ? chosenTechniques.size - 1 : chosenTechniques.size);
         }
+
+        function getMutations() {
+            return character.techniques.filter(t => AbilitySectionHelpers.isMutation(t));
+        }
+        function getRemainingFreeMutations(mutations = null) {
+            mutations ??= getMutations();
+            let remaining = new Map();
+            for (let mutation of mutations) {
+                remaining.set(mutation, 1);
+                for (let chosen of [chosenTechniques, chosenSummons]) {
+                    for (let techniqueLike of chosen) {
+                        let mutatedMutation = AbilitySectionHelpers.getMutatedMutation(techniqueLike);
+                        if (mutatedMutation == mutation.title) remaining.set(mutation, 0);
+                    }
+                }
+            }
+            return remaining;
+        }
+
+        let chosenMutations = getMutations();
         let remainingOtherTechniques = getRemainingOtherTechniques(hasWeaponCore);
+        let remainingFreeMutations = getRemainingFreeMutations(chosenMutations);
+
+        let mutationDialog = DialogHelpers.create(dialog => {
+            let dialogElement = fromHTML(`<div class="divList">`);
+            let dialogTitleElement = dialog.dialogTitleElement = fromHTML(`<h1>`);
+            dialogElement.appendChild(dialogTitleElement);
+
+            let dialogMutationInputContainer = fromHTML(`<div class="listHorizontal">`);
+            dialogElement.appendChild(dialogMutationInputContainer);
+            dialogMutationInputContainer.appendChild(fromHTML(`<div>Mutation:`));
+            let dialogMutationInput = dialog.dialogMutationInput = fromHTML(`<select class="largeElement w-max">`);
+            dialogMutationInputContainer.appendChild(dialogMutationInput);
+
+            dialogElement.appendChild(hb(2));
+            let dialogNameContainer = fromHTML(`<div class="listHorizontal">`);
+            dialogElement.appendChild(dialogNameContainer);
+            dialogNameContainer.appendChild(fromHTML(`<div>Name:`));
+            let dialogNameInput = dialog.dialogNameInput = fromHTML(`<input type="text" class="largeElement" placeholder="Enter mutation name..." style="width: 400px;">`);
+            dialogNameContainer.appendChild(dialogNameInput);
+
+            dialogElement.appendChild(hb(4));
+            let dialogMutationPreviewContainer = dialog.dialogMutationPreviewContainer = fromHTML(`<div class="w-100">`);
+            dialogElement.appendChild(dialogMutationPreviewContainer);
+
+            dialogElement.appendChild(hb(6));
+            let dialogButtonList = fromHTML(`<div class="listHorizontal">`);
+            dialogElement.appendChild(dialogButtonList);
+            let dialogCancelButton = fromHTML(`<button class="largeElement bordered hoverable flexFill w-100">Cancel`);
+            dialogButtonList.appendChild(dialogCancelButton);
+            dialog.addCloseButton(dialogCancelButton);
+            let dialogLearnButton = fromHTML(`<button class="largeElement bordered hoverable flexFill w-100">Learn`);
+            dialogButtonList.appendChild(dialogLearnButton);
+
+            dialog.onMutationChange = () => {
+                let mutation = dialogMutationInput.value;
+                let section = SectionHelpers.getMutated(dialog._originalSection, mutation);
+                let structuredSection = dialog._structuredSection = SectionHelpers.generateStructuredHtmlForSection(section, {variables});
+                dialogNameInput.value = section.title;
+                dialogMutationPreviewContainer.innerHTML = "";
+                dialogMutationPreviewContainer.appendChild(structuredSection.wrapperElement);
+            }
+            dialogMutationInput.addEventListener('change', () => {
+                dialog.onMutationChange();
+            });
+            dialogNameInput.addEventListener('input', () => {
+                let value = dialogNameInput.value;
+                if (!value) value = dialog._structuredSection.section.title;
+                dialog._structuredSection.titleElement.textContent = value;
+            });
+            dialogLearnButton.addEventListener('click', () => {
+                dialog._structuredSection.section.title = dialogNameInput.value;
+                learn(dialog._structuredSection.section);
+                dialog.close();
+            });
+
+            return dialogElement;
+        });
+
+        function getAllowedMutations(techniqueLike, mutations, remainingOtherTechniques, remainingFreeMutations) {
+            let isSummon = SummonHelpers.isSummon(techniqueLike);
+            let chosen = chosenTechniques;
+            if (isSummon) chosen = chosenSummons;
+            let category = AbilitySectionHelpers.getMainCategory(techniqueLike);
+            return mutations.filter(mutation =>
+                !chosen.has(SectionHelpers.getMutationId(techniqueLike, mutation)) &&
+                AbilitySectionHelpers.getMainCategory(mutation) != category &&
+                (remainingOtherTechniques > 0 || remainingFreeMutations.get(mutation) != 0)
+            );
+        }
+
+        function openMutationDialog(techniqueLike, mutations, remainingOtherTechniques, remainingFreeMutations) {
+            let isSummon = SummonHelpers.isSummon(techniqueLike);
+            mutationDialog.dialogTitleElement.textContent = `Mutate: ${techniqueLike.title}`;
+
+            mutations = getAllowedMutations(techniqueLike, mutations, remainingOtherTechniques, remainingFreeMutations);
+            mutationDialog._originalSection = techniqueLike;
+            mutationDialog.dialogMutationInput.innerHTML = "";
+            mutations.forEach(mutation => mutationDialog.dialogMutationInput.appendChild(fromHTML(`<option>${escapeHTML(mutation.title)}`)));       
+            mutationDialog.dialogMutationInput.value = mutations[0].title;
+            mutationDialog.onMutationChange();
+            mutationDialog.open();
+        }
 
         element.appendChild(fromHTML(`<h1>Choose Techniques`));
         let descriptionElement = fromHTML(`<div>`);
         element.appendChild(descriptionElement);
-        function updateDescription(hasWeaponCore = null, remainingOtherTechniques = null) {
+        function updateDescription(hasWeaponCore = null, remainingOtherTechniques = null, mutations = null, remainingFreeMutations = null, maxSummonUnlocks = null, remainingSummonUnlocks = null) {
             hasWeaponCore ??= getHasWeaponCore();
             remainingOtherTechniques ??= getRemainingOtherTechniques(hasWeaponCore);
+            mutations ??= getMutations();
+            remainingFreeMutations ??= getRemainingFreeMutations(mutations);
+            maxSummonUnlocks ??= getMaxSummonUnlocks();
+            remainingSummonUnlocks ??= getRemainingSummonUnlocks(maxSummonUnlocks);
+            let other = '';
+            remainingFreeMutations.forEach((amount, mutation) => {
+                other += `, ${amount}/1 ${mutation.title.toLowerCase()}`;
+            });
+            remainingSummonUnlocks.forEach((amount, category) => {
+                other += `, ${amount}/${maxSummonUnlocks.get(category)} ${category.toLowerCase()} summon`;
+            });
+            if (other.length != 0) other += ',';
             let structuredSection = SectionHelpers.generateStructuredHtmlForSection(new Section({
-                content: `Choose ${hasWeaponCore ? 0 : 1}/1 weapon core and ${remainingOtherTechniques}/${maxOtherTechniques} other techniques.`
+                content: `Choose ${hasWeaponCore ? 0 : 1}/1 weapon core${other} and ${remainingOtherTechniques}/${maxOtherTechniques} other techniques.`
             }));
             descriptionElement.replaceWith(structuredSection.wrapperElement);
             descriptionElement = structuredSection.wrapperElement;
@@ -184,6 +299,34 @@ class CharacterCreatorHelpers {
         let chosenOverview = SectionHelpers.generateStructuredHtmlForSectionOverview(chosenTechniques.getAll(), SectionHelpers.MasonryType, { addSearch: true, variables });
         element.appendChild(chosenOverview.container);
         chosenOverview.listElement.setAttribute('placeholder', 'No techniques learned yet...');
+
+        function updateChosenOverview(hasWeaponCore = null, remainingOtherTechniques = null, mutations = null, remainingFreeMutations = null) {
+            hasWeaponCore ??= getHasWeaponCore();
+            remainingOtherTechniques ??= getRemainingOtherTechniques(hasWeaponCore);
+            mutations ??= getMutations();
+            remainingFreeMutations ??= getRemainingFreeMutations(mutations);
+
+            for (let structuredSection of chosenOverview.sections) {
+                let element = structuredSection.wrapperElement;
+                let technique = structuredSection.section;
+                let allowedMutations = getAllowedMutations(technique, mutations, remainingOtherTechniques, remainingFreeMutations);
+                if (!AbilitySectionHelpers.isMutated(technique) && !AbilitySectionHelpers.isMutation(technique) && allowedMutations.length != 0) {
+                    if (!structuredSection.mutateButton) {
+                        addMutateButton(structuredSection);
+                    }
+                    if (remainingOtherTechniques <= 0 && !allowedMutations.some(am => remainingFreeMutations.get())) {
+
+                    }
+                } else {
+                    if (structuredSection.mutateButton) {
+                        structuredSection.mutateButton.remove();
+                        structuredSection.mutateButton = null;
+                    }
+                }
+            }
+
+            chosenOverview.listElement._masonry?.resize();
+        }
 
         element.appendChild(hb(4));
         element.appendChild(fromHTML(`<h1>Available Techniques`));
@@ -205,7 +348,7 @@ class CharacterCreatorHelpers {
                 else if (character.settings.validate) {
                     if (hasWeaponCore && remainingOtherTechniques <= 0) isAvailable = false;
                     else if (!hasWeaponCore && !AbilitySectionHelpers.isWeaponCore(technique)) isAvailable = false;
-                    else if (!CharacterCreatorHelpers.canConnectToAbility(chosenTechniques, technique)) isAvailable = false;
+                    else if (!CharacterCreatorHelpers.canConnectToAbility(chosenTechniques, technique, chosenTechniques)) isAvailable = false;
                 }
 
                 if (isAvailable) {
@@ -227,28 +370,147 @@ class CharacterCreatorHelpers {
             availableOverview.listElement._masonry?.resize();
         }
 
-        function learnTechnique(technique, update = true) {
-            if (chosenTechniques.has(technique)) return;
-            chosenTechniques.register(technique);
-            let structuredSection = chosenOverview.addSection(technique);
+
+        let summonsContainer = fromHTML(`<div class="w-100">`);
+        element.appendChild(summonsContainer);
+        summonsContainer.appendChild(hb(4));
+        summonsContainer.appendChild(fromHTML(`<h1>Learned Summons`));
+        let chosenSummonsOverview = SectionHelpers.generateStructuredHtmlForSectionOverview(chosenSummons.getAll(), SectionHelpers.MasonryType, { addSearch: true, variables });
+        summonsContainer.appendChild(chosenSummonsOverview.container);
+        chosenSummonsOverview.listElement.setAttribute('placeholder', 'No summons learned yet...');
+
+        function updateChosenSummonsOverview(hasWeaponCore = null, remainingOtherTechniques = null, mutations = null, remainingFreeMutations = null) {
+            hasWeaponCore ??= getHasWeaponCore();
+            remainingOtherTechniques ??= getRemainingOtherTechniques(hasWeaponCore);
+            mutations ??= getMutations();
+            remainingFreeMutations ??= getRemainingFreeMutations(mutations);
+
+            for (let structuredSection of chosenSummonsOverview.sections) {
+                let element = structuredSection.wrapperElement;
+                let summon = structuredSection.section;
+                let allowedMutations = getAllowedMutations(summon, mutations, remainingOtherTechniques, remainingFreeMutations);
+                if (!AbilitySectionHelpers.isMutated(summon) && !AbilitySectionHelpers.isMutation(summon) && allowedMutations.length != 0) {
+                    if (!structuredSection.mutateButton) {
+                        addMutateButton(structuredSection);
+                    }
+                } else {
+                    if (structuredSection.mutateButton) {
+                        structuredSection.mutateButton.remove();
+                        structuredSection.mutateButton = null;
+                    }
+                }
+            }
+
+            chosenSummonsOverview.listElement._masonry?.resize();
+        }
+
+        function getMaxSummonUnlocks() {
+            let unlocks = new Map();
+            chosenTechniques.filter(t => AbilitySectionHelpers.hasUnlocks(t)).map(s => AbilitySectionHelpers.getUnlocks(s)).forEach(unlocksList => {
+                unlocksList.filter(u => u.type == "Summon").forEach(unlock => {
+                    let oldAmount = unlocks.get(unlock.target) ?? 0;
+                    unlocks.set(unlock.target, oldAmount + unlock.amount);
+                });
+            });
+            return unlocks;
+        }
+        let maxSummonUnlocks = getMaxSummonUnlocks();
+        let availableSummons = Registries.summons.getAll();
+        function getRemainingSummonUnlocks(maxSummonUnlocks = null) {
+            maxSummonUnlocks ??= getMaxSummonUnlocks();
+            let remaining = new Map();
+            for (let [category, maxAmount] of maxSummonUnlocks.entries()) {
+                let hasAmount = chosenSummons.filter(s => AbilitySectionHelpers.getMainCategory(s) == category).length;
+                remaining.set(category, clamp(maxAmount - hasAmount, 0, maxAmount));
+            }
+            return remaining;
+        }
+        let remainingSummonUnlocks = getRemainingSummonUnlocks();
+
+        summonsContainer.appendChild(hb(4));
+        summonsContainer.appendChild(fromHTML(`<h1>Available Summons`));
+        let availableSummonsOverview = SectionHelpers.generateStructuredHtmlForSectionOverview(availableSummons, SectionHelpers.MasonryType, { addSearch: true, variables });
+        summonsContainer.appendChild(availableSummonsOverview.container);
+        let noSummonsElement = fromHTML(`<div class="hide" placeholder="No more summons available...">`);
+        summonsContainer.appendChild(noSummonsElement);
+
+        function updateAvailableSummonsOverview(hasWeaponCore = null, remainingOtherTechniques = null, maxSummonUnlocks = null, remainingSummonUnlocks = null) {
+            hasWeaponCore ??= getHasWeaponCore();
+            remainingOtherTechniques ??= getRemainingOtherTechniques(hasWeaponCore);
+            maxSummonUnlocks ??= getMaxSummonUnlocks();
+            remainingSummonUnlocks ??= getRemainingSummonUnlocks();
+
+            let somethingAvailable = false;
+            for (let structuredSection of availableSummonsOverview.sections) {
+                let element = structuredSection.wrapperElement;
+                let summon = structuredSection.section;
+                let isAvailable = true;
+                if (chosenSummons.has(summon)) isAvailable = false;
+                else if (character.settings.validate) {
+                    let category = AbilitySectionHelpers.getMainCategory(summon);
+                    if (!maxSummonUnlocks.has(category)) isAvailable = false;
+                    else if (remainingOtherTechniques <= 0 && maxSummonUnlocks.get(category) <= 0) isAvailable = false;
+                    else if (!CharacterCreatorHelpers.canConnectToAbility(chosenSummons, summon, chosenTechniques)) isAvailable = false;
+                }
+
+                if (isAvailable) {
+                    somethingAvailable = true;
+                    element.classList.remove('hide');
+                }
+                else element.classList.add('hide');
+            }
+
+            if (somethingAvailable) {
+                noSummonsElement.classList.add('hide');
+                availableSummonsOverview.searchContainer.classList.remove('hide');
+            }
+            else {
+                noSummonsElement.classList.remove('hide');
+                availableSummonsOverview.searchContainer.classList.add('hide');
+            }
+
+            availableSummonsOverview.listElement._masonry?.resize();
+        }
+
+        function learn(techniqueLike, update = true) {
+            let isSummon = SummonHelpers.isSummon(techniqueLike);
+            let chosen = chosenTechniques;
+            let overview = chosenOverview;
+            if (isSummon) {
+                chosen = chosenSummons;
+                overview = chosenSummonsOverview;
+            }
+
+            if (chosen.has(techniqueLike)) return;
+            chosen.register(techniqueLike);
+            let structuredSection = overview.addSection(techniqueLike);
             addUnlearnButton(structuredSection);
+
             if (update) {
                 updateAll();
                 CharacterHelpers.saveCharacter(character);
             }
         }
 
-        function unlearnTechnique(technique, update = true) {
-            if (!chosenTechniques.has(technique)) return;
-            chosenTechniques.unregister(technique);
-            chosenOverview.removeSection(technique);
+        function unlearn(techniqueLike, update = true) {
+            let isSummon = SummonHelpers.isSummon(techniqueLike);
+            let chosen = chosenTechniques;
+            let overview = chosenOverview;
+            if (isSummon) {
+                chosen = chosenSummons;
+                overview = chosenSummonsOverview;
+            }
+
+            if (!chosen.has(techniqueLike)) return;
+            chosen.unregister(techniqueLike);
+            overview.removeSection(techniqueLike);
             if (character.settings.validate) {
                 let repeat = update;
                 while (repeat) {
                     repeat = false;
-                    for (let technique of chosenTechniques) {
-                        if (!CharacterCreatorHelpers.canConnectToAbility(chosenTechniques, technique)) {
-                            unlearnTechnique(technique, false);
+                    for (let techniqueLike of chosen) {
+                        if (!CharacterCreatorHelpers.canConnectToAbility(chosen, techniqueLike, chosenTechniques)) {
+                            unlearn(techniqueLike, false);
                             repeat = true;
                         }
                     }
@@ -261,42 +523,96 @@ class CharacterCreatorHelpers {
             }
         }
 
-        for (let structuredSection of chosenOverview.sections) {
-            addUnlearnButton(structuredSection);
+        function mutate(techniqueLike) {
+            let mutations = getMutations();
+            let remainingOtherTechniques = getRemainingOtherTechniques();
+            let remainingFreeMutations = getRemainingFreeMutations(mutations);
+            openMutationDialog(techniqueLike, mutations, remainingOtherTechniques, remainingFreeMutations)
         }
 
         function addUnlearnButton(structuredSection) {
             let technique = structuredSection.section;
-
-            let button = structuredSection.learnButton = fromHTML(`<button class="listHorizontal gap-2 largeElement bordered brand-border-color hoverable w-100 centerContentHorizontally">Unlearn`);
+            let container = structuredSection.learnButtonContainer = fromHTML(`<div>`);
+            container.appendChild(hb(2));
+            let wrapper = fromHTML(`<div class="listHorizontal centerContentHorizontally">`);
+            container.appendChild(wrapper);
+            let button = structuredSection.learnButton = fromHTML(`<button class="listHorizontal gap-2 largeElement bordered brand-border-color hoverable centerContentHorizontally w-100">Unlearn`);
+            wrapper.appendChild(button);
             if (character.settings.validate) button.setAttribute('tooltip', "Warning: If other techniques depend on this, you will unlearn them as well.");
-            button.addEventListener('click', () => unlearnTechnique(technique));
-            structuredSection.subSectionContainer.after(button);
-            button.before(hb(2));
+            button.addEventListener('click', () => unlearn(technique));
+            structuredSection.subSectionContainer.after(container);
+        }
+
+        for (let structuredSection of chosenOverview.sections) {
+            addUnlearnButton(structuredSection);
+        }
+
+        for (let structuredSection of chosenSummonsOverview.sections) {
+            addUnlearnButton(structuredSection);
+        }
+
+        function addLearnButton(structuredSection) {
+            let technique = structuredSection.section;
+            let container = structuredSection.learnButtonContainer = fromHTML(`<div>`);
+            container.appendChild(hb(2));
+            let wrapper = fromHTML(`<div class="listHorizontal centerContentHorizontally">`);
+            container.appendChild(wrapper);
+            let button = structuredSection.learnButton = fromHTML(`<button class="listHorizontal gap-2 largeElement bordered brand-border-color hoverable centerContentHorizontally w-100">Learn`);
+            wrapper.appendChild(button);
+            button.addEventListener('click', () => learn(technique));
+            structuredSection.subSectionContainer.after(container);
         }
 
         for (let structuredSection of availableOverview.sections) {
             addLearnButton(structuredSection);
         }
 
-        function addLearnButton(structuredSection) {
-            let technique = structuredSection.section;
-
-            let button = structuredSection.learnButton = fromHTML(`<button class="listHorizontal gap-2 largeElement bordered brand-border-color hoverable w-100 centerContentHorizontally">Learn`);
-            button.addEventListener('click', () => learnTechnique(technique));
-            structuredSection.subSectionContainer.after(button);
-            button.before(hb(2));
+        for (let structuredSection of availableSummonsOverview.sections) {
+            addLearnButton(structuredSection);
         }
 
-        function updateAll(hasWeaponCore = null, remainingOtherTechniques = null) {
+        function addMutateButton(structuredSection) {
+            let technique = structuredSection.section;
+            let container = structuredSection.mutateButtonContainer = fromHTML(`<div>`);
+            container.appendChild(hb(2));
+            let wrapper = fromHTML(`<div class="listHorizontal centerContentHorizontally">`);
+            container.appendChild(wrapper);
+            let button = structuredSection.mutateButton = fromHTML(`<button class="listHorizontal gap-2 largeElement bordered brand-border-color hoverable centerContentHorizontally w-100">Mutate`);
+            wrapper.appendChild(button);
+            button.addEventListener('click', () => mutate(technique));
+            structuredSection.subSectionContainer.after(container);
+        }
+
+        function updateAll(hasWeaponCore = null, remainingOtherTechniques = null, mutations = null, maxSummonUnlocks = null, remainingSummonUnlocks = null, remainingFreeMutations = null) {
             hasWeaponCore ??= getHasWeaponCore();
             remainingOtherTechniques ??= getRemainingOtherTechniques(hasWeaponCore);
+            mutations ??= getMutations();
+            maxSummonUnlocks ??= getMaxSummonUnlocks();
+            remainingFreeMutations ??= getRemainingFreeMutations(mutations);
 
-            updateDescription(hasWeaponCore, remainingOtherTechniques);
-            chosenOverview.listElement._masonry?.resize();
+            if (character.settings.validate) {
+                let summonsWithoutUnlocks = chosenSummons.filter(s => !maxSummonUnlocks.has(AbilitySectionHelpers.getMainCategory(s)));
+                if (summonsWithoutUnlocks.length != 0) {
+                    summonsWithoutUnlocks.forEach(s => chosenSummons.unregister(s));
+                    maxSummonUnlocks = getMaxSummonUnlocks();
+                    remainingSummonUnlocks = getRemainingSummonUnlocks();
+                }
+            }
+
+            remainingSummonUnlocks ??= getRemainingSummonUnlocks();
+
+            updateDescription(hasWeaponCore, remainingOtherTechniques, mutations, remainingFreeMutations, maxSummonUnlocks, remainingSummonUnlocks);
+            updateChosenOverview(hasWeaponCore, remainingOtherTechniques, mutations, remainingFreeMutations);
             updateAvailableOverview(hasWeaponCore, remainingOtherTechniques);
+            if (maxSummonUnlocks.size != 0) {
+                summonsContainer.classList.remove('hide');
+                updateChosenSummonsOverview(hasWeaponCore, remainingOtherTechniques, mutations, remainingFreeMutations);
+                updateAvailableSummonsOverview(hasWeaponCore, remainingOtherTechniques, maxSummonUnlocks, remainingSummonUnlocks);
+            } else {
+                summonsContainer.classList.add('hide');
+            }
         }
-        updateAll(hasWeaponCore, remainingOtherTechniques);
+        updateAll(hasWeaponCore, remainingOtherTechniques, chosenMutations, maxSummonUnlocks, remainingSummonUnlocks, remainingFreeMutations);
 
         return element;
     }
@@ -484,6 +800,7 @@ class CharacterCreatorHelpers {
                 if (chosenMasteries.has(mastery)) isAvailable = false;
                 else if (character.settings.validate) {
                     if (hasPathCore && remainingMasteries <= 0) isAvailable = false;
+                    else if (hasPathCore && AbilitySectionHelpers.isPathCore(mastery) && remainingMasteries < 2) isAvailable = false;
                     else if (!hasPathCore && !AbilitySectionHelpers.isPathCore(mastery)) isAvailable = false;
                     else if (!CharacterCreatorHelpers.canConnectToAbility(chosenMasteries, mastery)) isAvailable = false;
                 }
@@ -645,7 +962,13 @@ class CharacterCreatorHelpers {
         return element;
     }
 
-    static canConnectToAbility(targetRegistry, ability) {
+    static canConnectToAbility(targetRegistry, ability, techniqueRegistry = null) {
+        if (AbilitySectionHelpers.isMutated(ability)) {
+            let mutationInfo = AbilitySectionHelpers.getMutatedInfo(ability);
+            if (!targetRegistry.has(mutationInfo.original) || !(techniqueRegistry ?? targetRegistry).has(mutationInfo.mutation)) return false;
+            return true;
+        }
+
         let connections = AbilitySectionHelpers.getConnections(ability);
         if (connections.has('Category')) return true;
         for (let connection of connections) {

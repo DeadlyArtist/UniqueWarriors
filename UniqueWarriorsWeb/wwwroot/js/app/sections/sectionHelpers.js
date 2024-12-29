@@ -223,42 +223,95 @@ class SectionHelpers {
         if (section instanceof Section) return;
     }
 
-    static setupMutation(section, mutation, mutationTitle) {
+    static getMutationId(section, mutation) {
+        if (!isString(mutation)) mutation = mutation.title;
+        if (!isString(section)) section = section.title;
+        mutation = mutation.replace(/ Mutation$/, "");
+        return `${mutation}___Mutated___${section}`;
+    }
+
+    static getDefaultMutationTitle(section, mutation) {
+        if (!isString(mutation)) mutation = mutation.title;
+        if (!isString(section)) section = section.title;
+        mutation = mutation.replace(/ Mutation$/, "");
+        return `${mutation} Mutated ${section}`;
+    }
+
+    static getMutated(section, mutation, mutationTitle = null) {
+        section = section.clone();
+        this.setupMutation(section, mutation, mutationTitle);
+        return section;
+    }
+
+    static setupMutation(section, mutation, mutationTitle = null) {
+        let mutationSection = null;
+        if (!isString(mutation)) {
+            mutationSection = mutation;
+            mutation = mutation.title;
+        }
         mutation = mutation.replace(/ Mutation$/, "");
         section.removeHeadValue("Connections");
         section.addHeadValue("Mutation", `<${section.title}> + <${mutation} Mutation>`, { lineIndex: 0 });
-        section.title = mutationTitle;
+        section.id = this.getMutationId(section, mutation);
+        section.title = mutationTitle ?? this.getDefaultMutationTitle(section, mutation);
 
-        let weapon = section.getHeadValueValue("Weapon");
-        let weaponCore = section.getHeadValueValue("Weapon Core");
-        let headValueName = weapon ? "Weapon" : "Weapon Core";
-        let headValueValue = (weapon || weaponCore) + " + " + mutation;
-        section.addHeadValue(headValueName, headValueValue, { update: true });
+        let categoryHeadValueName;
+        AbilitySectionHelpers.categoryHeadValueNames.forEach(name => {
+            if (section.headValues.has(name)) categoryHeadValueName = name;
+        });
+        let categoryHeadValueValue = section.getHeadValueValue(categoryHeadValueName);
+        section.addHeadValue(categoryHeadValueName, categoryHeadValueValue + " + " + mutation, { update: true });
 
 
-        let mutationSection = Registries.techniques.get(mutation + " Mutation");
+        mutationSection ??= Registries.techniques.get(mutation + " Mutation");
         if (!mutationSection) return;
 
         // Handle "Damage"
         const damageInfo = DamageHelpers.parseAttribute(section.getHeadValueValue("Damage"));
-        if (!damageInfo) return;
         const mutationDamage = DamageHelpers.parseAttribute(mutationSection.getHeadValueValue("Base Damage"));
 
-        // Special case: If "rolled damage" content exists, only update types, not the dice
-        if (!section.content || section.content.includes("rolled damage")) {
-            if (mutationDamage) {
-                const damageTypes = DamageHelpers.mergeTypes(damageInfo?.types, mutationDamage?.types);
-                const newDamageValue = DamageHelpers.formatDiceDamage(damageInfo?.dice, damageTypes); // Keep original dice, just update types
-                section.addHeadValue("Damage", newDamageValue, { update: true });
-            }
+        let canAttributesBeChanged = section.content && !section.content.includes("rolled damage") && mutationDamage && damageInfo;
+        if (canAttributesBeChanged) {
+            // Merge full damage head value
+            const damage = DamageHelpers.updateDiceDamage(damageInfo?.dice, mutationDamage.dice);
+            const damageTypes = DamageHelpers.mergeTypes(damageInfo?.types, mutationDamage.types);
+            const newDamageValue = DamageHelpers.formatDiceDamage(damage, damageTypes);
+            section.addHeadValue("Damage", newDamageValue, { update: true });
         } else {
-            if (mutationDamage) {
-                const damage = DamageHelpers.updateDiceDamage(damageInfo?.dice, mutationDamage?.dice);
-                const damageTypes = DamageHelpers.mergeTypes(damageInfo?.types, mutationDamage?.types);
-                const newDamageValue = DamageHelpers.formatDiceDamage(damage, damageTypes);
-                section.addHeadValue("Damage", newDamageValue, { update: true });
-            }
+            // Merge damage head value types only
+            const damageTypes = DamageHelpers.mergeTypes(damageInfo?.types, mutationDamage.types);
+            const newDamageValue = DamageHelpers.formatDiceDamage(damageInfo?.dice, damageTypes); // Keep original dice, just update types
+            section.addHeadValue("Damage", newDamageValue, { update: true });
         }
+
+        if (section.content) {
+            if (mutationDamage) {
+                // Find and merge damage types in content
+                const damageTypes = DamageHelpers.damageTypes;
+                section.content.replace(/\(([^)]+)\)/g, (match, capturedGroup) => {
+                    const extractedItems = capturedGroup.split(', ').map(type => toTextCase(type));
+                    if (extractedItems.some(type => !damageTypes.has(type))) return match;
+                    const mutationTypes = mutationDamage.types || [];
+                    const mergedTypesSet = new Set([...extractedItems.map(t => t.toLowerCase()), ...mutationTypes]);
+                    const mergedTypes = Array.from(mergedTypesSet);
+                    return `(${mergedTypes.join(", ")})`;
+                });
+            }
+
+            section.content.replaceAll(`${categoryHeadValueValue.toLowerCase()} attack`, (match, capturedGroup) => {
+                return `${categoryHeadValueValue.toLowerCase()} or ${mutation.toLowerCase()} attack`;
+            });
+        }
+
+        let trigger = AbilitySectionHelpers.getTrigger(section);
+        if (trigger) {
+            trigger = trigger.replaceAll(`${categoryHeadValueValue.toLowerCase()} attack`, (match, capturedGroup) => {
+                return `${categoryHeadValueValue.toLowerCase()} or ${mutation.toLowerCase()} attack`;
+            });
+            section.addHeadValue("Trigger", trigger, { update: true });
+        }
+
+        if (!canAttributesBeChanged) return;
 
         // Handle other attributes
         const attributesToMutate = ["Accuracy", "Graze Range", "Crit Range"];

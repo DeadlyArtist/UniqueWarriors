@@ -1,5 +1,9 @@
 class DamageHelpers {
-    static damageTypes = ["Bludgeoning, Piercing, Slashing, Cryo, Thermal, Shock, Necrotic, Psychic, Sonic, Holy, Unholy, Metabolism"];
+    static damageTypes = new Registry();
+
+    static setup() {
+        ["Bludgeoning, Piercing, Slashing, Cryo, Thermal, Shock, Necrotic, Psychic, Sonic, Holy, Unholy, Metabolism"].forEach(d => this.damageTypes.register(d));
+    }
 
     // Utility: Parse dice damage and types
     static parseAttribute(attributeValue) {
@@ -77,3 +81,4 @@ class DamageHelpers {
         return (value > 0 ? "++" : "--") + Math.abs(value);
     }
 }
+DamageHelpers.setup();

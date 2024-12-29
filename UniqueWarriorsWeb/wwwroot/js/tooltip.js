@@ -15,6 +15,13 @@ class Tooltip {
     static tooltipStack = [];
     static tooltipsByTarget = new Map();
 
+    static closeAll() {
+        Tooltip.tooltipStack = [];
+        Tooltip.tooltipsByTarget.clear();
+        Tooltip.tooltipContainer.innerHTML = "";
+        Tooltip.tooltipStyleContainer.innerHTML = "";
+    }
+
     static get currentTooltip() {
         if (this.tooltipStack.length == 0) return null;
         return this.tooltipStack[this.tooltipStack.length - 1];
@@ -281,6 +288,7 @@ class Tooltip {
     }
 
     static tryAddTooltip(target) {
+        if (pressedKeys["Escape"]) return;
         if (Tooltip.tooltipsByTarget.has(target)) return;
         if (Tooltip.currentTooltip && !Tooltip.currentTooltip.element.contains(target)) return;
         Tooltip.addTooltip(target);
@@ -317,6 +325,12 @@ class Tooltip {
         Tooltip.removeCurrentTooltip();
         Tooltip.onMousemove(event);
     }
+
+    static escapeTooltips(e) {
+        if (e.key == "Escape") {
+            Tooltip.closeAll();
+        }
+    }
 }
 Tooltip.init();
 
@@ -324,3 +338,5 @@ Tooltip.init();
 window.addEventListener('load', () => {
     Tooltip.setupEventListeners();
 });
+
+window.addEventListener("keydown", e => Tooltip.escapeTooltips(e));

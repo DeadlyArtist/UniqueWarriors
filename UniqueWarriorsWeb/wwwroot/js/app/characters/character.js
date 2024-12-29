@@ -12,6 +12,7 @@ class Character {
 
         this.items = new Registry();
         this.techniques = new Registry();
+        this.summons = new Registry();
         this.masteryManager = new MasteryManager({ masteries: settings.masteries });
         this.weapons = new Registry();
         this.paths = new Registry();
@@ -21,6 +22,7 @@ class Character {
 
         settings.items?.forEach(e => this.items.register(e.clone()));
         settings.techniques?.forEach(e => this.techniques.register(e.clone()));
+        settings.summons?.forEach(e => this.summons.register(e.clone()));
         settings.weapons?.forEach(e => this.weapons.register(e));
         settings.paths?.forEach(e => this.paths.register(e));
         settings.characteristics?.forEach(e => this.characteristics.register(e));
@@ -212,6 +214,7 @@ class Character {
             attributes: this.attributes,
             items: this.items.getAll(),
             techniques: this.techniques.getAll(),
+            summons: this.summons.getAll(),
             masteries: this.masteries.getAll(),
             weapons: this.weapons.getAll(),
             paths: this.paths.getAll(),
@@ -222,9 +225,10 @@ class Character {
     }
 
     static fromJSON(json) {
-        json.items = SectionHelpers.initSections(json.items);
-        json.techniques = SectionHelpers.initSections(json.techniques);
-        json.masteries = SectionHelpers.initSections(json.masteries);
+        json.items = SectionHelpers.initSections(json.items ?? []);
+        json.techniques = SectionHelpers.initSections(json.techniques ?? []);
+        json.summons = SectionHelpers.initSections(json.summons ?? []);
+        json.masteries = SectionHelpers.initSections(json.masteries ?? []);
         return new Character(json);
     }
 }
@@ -305,7 +309,7 @@ class MasteryManager {
                     // Ascendancies: Always insert last
                 }
             }
-            console.log(splitMastery.mastery.subSections, masteryLike, settings);
+
             splitMastery.mastery.subSections.register(masteryLike, settings);
         }
     }
@@ -330,12 +334,12 @@ class MasteryManager {
         } else {
             let splitMastery = this.splitMasteries.get(masteryLike?.parent);
             if (!splitMastery) return;
-
             let splitRegistry = this.getSplitRegistry(splitMastery, masteryLike);
             let subRegistry = this.getSubRegistry(masteryLike);
             if (!splitRegistry) return;
             splitRegistry.unregister(masteryLike);
-            subRegistry.unregister(masteryLike, { id: masteryLike.getPath() });
+            subRegistry.unregister(masteryLike.getPath());
+            splitMastery.mastery.subSections.unregister(masteryLike);
         }
     }
 

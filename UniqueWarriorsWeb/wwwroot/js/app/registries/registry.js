@@ -123,7 +123,7 @@ class Registry {
     }
 
     clear() {
-        for (let entry of this.getAllEntries()) this.unregisterEntry(entry);
+        for (let entry of this.getAllEntries()) this.unregister(entry);
     }
 
     /**

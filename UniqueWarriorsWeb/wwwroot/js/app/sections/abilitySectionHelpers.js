@@ -81,6 +81,24 @@ class AbilitySectionHelpers {
         return section.headValues.has("Weapon Mutation");
     }
 
+    static isMutated(section) {
+        return section.headValues.has("Mutation");
+    }
+
+    static getMutatedInfo(section) {
+        let parts = section.getHeadValueValue("Mutation")?.split(" + ").map(part => part.replace(/<(.*)>/g, "$1"));
+        if (!parts || parts.length < 2) return null;
+        return { original: parts[0], mutation: parts[1] };
+    }
+
+    static getMutatedOriginal(section) {
+        return this.getMutatedInfo(section)?.original;
+    }
+
+    static getMutatedMutation(section) {
+        return this.getMutatedInfo(section)?.mutation;
+    }
+
     static isTrigger(section) {
         return section.headValues.has("Trigger");
     }
@@ -155,11 +173,26 @@ class AbilitySectionHelpers {
         return new Set(section.getHeadValueParts("Connections"));
     }
 
-    static getUnlocks(section) {
-        return new Set(section.getHeadValueParts("Unlocks"));
+    static hasUnlocks(section) {
+        return section.headValues.has("Unlocks");
     }
 
-    static categoryHeadValueNames = ["Weapon", "Weapon Core", "Weapon Mutation", "Path", "Path Core", "Summon"];
+    static getUnlocks(section) {
+        let unlocks = section.getHeadValueParts("Unlocks").map(unlock => {
+            let parsed = {};
+            parsed.target = unlock.replace(/^\d*\s*/, matched => {
+                parsed.amount = parseInt(matched.trim());
+                return "";
+            }).replace(/\s*\S*$/, matched => {
+                parsed.type = matched.trim();
+                return "";
+            });
+            return parsed;
+        });
+        return unlocks;
+    }
+
+    static categoryHeadValueNames = ["Summon", "Weapon", "Weapon Core", "Weapon Mutation", "Path", "Path Core"];
     static getCategories(section) {
         for (let headValueName of this.categoryHeadValueNames) {
             let values = section.getHeadValueParts(headValueName);
@@ -206,7 +239,6 @@ class AbilitySectionHelpers {
     static splitMasteries(masteries) {
         let splitMasteries = new Registry();
         let newMasteries = new Registry();
-        let masteryLikes = new Registry();
         let upgrades = new Registry();
         let evolutions = new Registry();
         let ascendancies = new Registry();
