@@ -352,7 +352,7 @@ class SectionHelpers {
     static setupVariant(section, variationTitle = null) {
         section.removeHeadValue("Connections");
         section.addHeadValue("Variant", `<${section.title}>`, { lineIndex: 0 });
-        section.title = variationTitle;
+        section.title = variationTitle ?? `Variant ${section.title}`;
     }
 
     static generateStructuredHtmlForSection(section, settings = null) {
@@ -370,39 +370,15 @@ class SectionHelpers {
         let attributes = section.attributes;
         let newVariables = settings.variables ??= new Map();
         let hasLevel = false;
-        let isNPC = NPCSectionHelpers.isSummon(section);
-        let npc = null;
+        let isNPC = section.npc != null;
+        let npc = section.npc;
         if (isNPC) {
-            let mixed = [];
-            function parseMixed(text) {
-                return text.replace(/(^|\n)<[^<]+>/g, matched => {
-                    let parsed = SectionReferenceHelpers.parseReference(matched);
-                    let path = "techniques/" + parsed.reference;
-                    let section = SectionHelpers.resolveSectionExpression(path);
-                    if (section) mixed.push(section);
-                    return "";
-                });
-            }
-            if (content) {
-                content = parseMixed(text);
-            }
-            if (attributes) {
-                attributes = attributes.map(attributeLine => attributeLine.map(attribute => {
-                    if (SectionAttributesHelpers.isTag(attribute)) return parseMixed(attribute);
-                    return attribute;
-                }).filter(a => a));
-            }
-            npc = NPCSectionHelpers.parseNPC(section, { mixed });
+            npc = section.npc.clone();
             let level = settings.variables.get("Level");
             if (level == null) {
                 newVariables = new Map();
             } else {
                 npc.stats.level = level;
-                NPCHelpers.allStatNames.forEach(statName => {
-                    let value = section.getHeadValueValue(statName);
-                    if (value == null) return;
-                    npc.stats[statName] = value;
-                });
                 newVariables = npc.getVariables();
                 hasLevel = true;
             }
@@ -481,7 +457,6 @@ class SectionHelpers {
         structuredSection.tableElement = tableElement;
         structuredSection.subSectionContainer = subSectionContainer;
         structuredSection.newVariables = newVariables;
-
         if (isNPC) {
             let characterContainer = fromHTML(`<div>`);
             if (hasLevel) {
@@ -610,14 +585,14 @@ class StructuredSectionHtml {
         }
 
         const structuredSubSection = SectionHelpers.generateStructuredHtmlForSection(subSection, { ...this.insertSettings, variables: this.newVariables });
-        this.subSections.register(structuredSubSection, { ...insertSettings, id: structuredSubSection.section.title });
+        this.subSections.register(structuredSubSection, { ...insertSettings, id: structuredSubSection.section.id });
         HtmlHelpers.insertAt(this.subSectionContainer, this.subSections.getIndex(structuredSubSection), structuredSubSection.wrapperElement);
 
         return structuredSubSection;
     }
 
     removeSubSection(subSection) {
-        const structuredSubSection = this.subSections.get(subSection?.title);
+        const structuredSubSection = this.subSections.get(subSection?.id);
         if (!structuredSubSection) return;
         structuredSubSection.wrapperElement.remove();
         this.subSections.unregister(structuredSubSection);
@@ -665,7 +640,7 @@ class StructuredSectionOverviewHtml {
         const structuredSection = SectionHelpers.wrapSectionForOverview(section, this.type, this.settings);
         if (this.settings.removeTopLineHeight) structuredSection.titleElement?.classList.add('top-line');
 
-        this.sections.register(structuredSection, { ...insertSettings, id: structuredSection.section.title });
+        this.sections.register(structuredSection, { ...insertSettings, id: structuredSection.section.id });
         HtmlHelpers.insertAt(this.listElement, this.sections.getIndex(structuredSection), structuredSection.wrapperElement);
 
         this.updateSearchDisplay();
@@ -673,7 +648,7 @@ class StructuredSectionOverviewHtml {
     }
 
     removeSection(section) {
-        const structuredSection = this.sections.get(section?.title);
+        const structuredSection = this.sections.get(section?.id);
         if (!structuredSection) return;
         structuredSection.wrapperElement.remove();
         this.sections.unregister(structuredSection);

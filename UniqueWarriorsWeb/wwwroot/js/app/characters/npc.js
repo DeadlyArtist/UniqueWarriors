@@ -6,10 +6,13 @@ class NPC {
         this.id = settings.id ?? generateUniqueId();
         this.imageUrl = settings.imageUrl ?? null;
         this.name = settings.name ?? ("New " + this.subType ?? "NPC");
-        this.stats = settings.stats ?? NPCHelpers.getDefaultStats();
+        this.stats = { ...NPCHelpers.getDefaultStats(), ...(settings.stats ?? {})};
+        this.baseStatOverrides = settings.baseStatOverrides ?? {};
         this.statOverrides = settings.statOverrides ?? {};
         this.boons = settings.boons ?? {};
         this.settings = settings.settings ?? {};
+        this.details = settings.details ?? {};
+        this.linkedSection = settings.linkedSection ?? {};
 
         this.items = new Registry();
         this.techniques = new Registry();
@@ -35,6 +38,14 @@ class NPC {
             else if (NPCSectionHelpers.isSummon(section)) target = this.summons;
             target.register(section.clone());
         });
+    }
+
+    get name() {
+        return this.linkedSection?._title ?? this._name;
+    }
+    set name(name) {
+        this._name = name;
+        if (this.linkedSection) this.linkedSection.title = name;
     }
 
     get masteries() {
@@ -86,50 +97,53 @@ class NPC {
     }
 
     getAttributeStats() {
+        let baseStats = { ...NPCHelpers.getBaseStats(), ...(this.baseStatOverrides ?? {}) };
         let { tier, importance } = this.getScalingStats();
         let attributes = this.getAttributes();
-        let maxHealth = (this.stats.maxHealth + tier * 8 + attributes.maxHealth * 2) * Math.pow(2, importance);
-        let power = this.stats.power + attributes.power * 1;
-        let speed = this.stats.speed + attributes.speed * 2;
-        let evasion = this.stats.evasion + attributes.evasion * 1;
-        let accuracy = this.stats.accuracy + attributes.accuracy * 1;
-        let luck = this.stats.luck + importance;
-        let initiative = this.stats.initiative + importance * 2 + attributes.initiative * 3;
-        let range = this.stats.range + attributes.range * 6;
+        let maxHealth = (baseStats.maxHealth + tier * 8 + attributes.maxHealth * 2) * Math.pow(2, importance);
+        let power = baseStats.power + attributes.power * 1;
+        let speed = baseStats.speed + attributes.speed * 2;
+        let evasion = baseStats.evasion + attributes.evasion * 1;
+        let accuracy = baseStats.accuracy + attributes.accuracy * 1;
+        let luck = baseStats.luck + importance;
+        let initiative = baseStats.initiative + importance * 2 + attributes.initiative * 3;
+        let range = baseStats.range + attributes.range * 6;
 
         if (this.settings.immobile) speed = 0;
 
         return {
-            maxHealth,
-            power,
-            speed,
-            evasion,
-            accuracy,
-            luck,
-            initiative,
-            range,
+            maxHealth: this.statOverrides.maxHealth ?? maxHealth,
+            power: this.statOverrides.power ?? power,
+            speed: this.statOverrides.speed ?? speed,
+            evasion: this.statOverrides.evasion ?? evasion,
+            accuracy: this.statOverrides.accuracy ?? accuracy,
+            luck: this.statOverrides.luck ?? luck,
+            initiative: this.statOverrides.initiative ?? initiative,
+            range: this.statOverrides.range ?? range,
         };
     }
 
     getStaticStats() {
-        let moveActions = this.stats.moveActions;
+        let baseStats = { ...NPCHelpers.getBaseStats(), ...(this.baseStatOverrides ?? {}) };
+        let { importance } = this.getScalingStats();
+        let moveActions = baseStats.moveActions;
         if (this.settings.immobile) moveActions = 0;
 
         return {
-            grazeRange: this.stats.grazeRange,
-            critRange: this.stats.critRange,
-            reach: this.stats.reach,
-            size: this.stats.size,
-            actions: this.stats.actions,
-            moveActions,
-            quickActions: this.stats.quickActions,
+            grazeRange: this.statOverrides.grazeRange ?? baseStats.grazeRange,
+            critRange: this.statOverrides.critRange ?? baseStats.critRange,
+            reach: this.statOverrides.reach ?? baseStats.reach,
+            size: this.statOverrides.size ?? baseStats.size,
+            actions: this.statOverrides.actions ?? (baseStats.actions + importance),
+            moveActions: this.statOverrides.moveActions ?? moveActions,
+            quickActions: this.statOverrides.quickActions ?? (baseStats.quickActions + importance),
         };
     }
 
     getAttributes() {
         let boons = this.boons;
         let { scaling } = this.getScalingStats();
-        let attributes = CharacterHelpers.getDefaultAttributes();
+        let attributes = CharacterHelpers.getEmptyAttributes();
         for (let [key, value] of Object.entries(boons)) {
             attributes[key] = scaling + value;
         }
@@ -143,5 +157,40 @@ class NPC {
             variables.set(toTextCase(name), value);
         }
         return variables;
+    }
+
+    // Serialization
+    clone() {
+        return NPC.fromJSON(clone(this));
+    }
+
+    toJSON() {
+        return {
+            id: this.id,
+            imageUrl: this.imageUrl,
+            name: this.name,
+            stats: this.stats,
+            baseStatOverrides: this.baseStatOverrides,
+            statOverrides: this.statOverrides,
+            boons: this.boons,
+            details: this.details,
+            items: this.items.getAll(),
+            techniques: this.techniques.getAll(),
+            summons: this.summons.getAll(),
+            masteries: this.masteries.getAll(),
+            weapons: this.weapons.getAll(),
+            paths: this.paths.getAll(),
+            ancestry: this.ancestry,
+            characteristics: this.characteristics.getAll(),
+            passions: this.passions.getAll(),
+        };
+    }
+
+    static fromJSON(json) {
+        json.items = SectionHelpers.initSections(json.items ?? []);
+        json.techniques = SectionHelpers.initSections(json.techniques ?? []);
+        json.summons = SectionHelpers.initSections(json.summons ?? []);
+        json.masteries = SectionHelpers.initSections(json.masteries ?? []);
+        return new NPC(json);
     }
 }

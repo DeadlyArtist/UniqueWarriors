@@ -45,7 +45,13 @@ class Registry {
 
         if (entry.id == null) return null;
 
-        let insertInfo = { insertFirst: settings.insertFirst, insertBefore: settings.replace ?? settings.insertBefore, insertAfter: settings.insertAfter };
+        if (settings.replace) {
+            let id = this.getId(settings.replace);
+            if (id == this.first.id) settings.insertFirst = true;
+            else settings.insertAfter = this.getEntryBefore(id);
+            this.unregister(id);
+        }
+        let insertInfo = { insertFirst: settings.insertFirst, insertBefore: settings.insertBefore, insertAfter: settings.insertAfter };;
         this.insertEntryAt(entry, insertInfo);
 
         // Add entry to the primary registries
@@ -63,8 +69,6 @@ class Registry {
             stream.batchState.registered.add(entry);
             stream.batchState.unregistered.delete(entry);
         }
-
-        if (settings.replace != null) this.unregister(settings.replace);
 
         return entry;
     }

@@ -10,6 +10,7 @@ class Section {
         this.tableHeaderLocation = section.tableHeaderLocation ?? null;
         this.subSections = new Registry();
         if (section.subSections) for (const subSection of section.subSections) this.addSubSection(subSection);
+        this.npc = section.npc;
 
         // Custom
         this.parent = section.parent ?? null;
@@ -27,6 +28,14 @@ class Section {
         this._overrideId = id;
     }
 
+    get title() {
+        return this.npc?.name ?? this._title;
+    }
+    set title(title) {
+        this._title = title;
+        if (this.npc) this.npc.name = title;
+    }
+
     #setup() {
         for (let subSection of this.subSections) subSection.parent = this;
 
@@ -36,15 +45,6 @@ class Section {
                 else this.headValues.set(attribute.name, attribute.value);
             }
         }
-    }
-
-    static classify(section) {
-        if (section instanceof Section) return section;
-        let classified = ObjectHelpers.lowerFirstCharOfKeys(section, false);
-        if (classified.subSections) classified.subSections = SectionHelpers.classify(classified.subSections);
-        if (classified.attributes) classified.attributes = SectionAttributesHelpers.classify(classified.attributes);
-        section = new Section(classified);
-        return section;
     }
 
     addSubSection(section, settings) {
@@ -209,11 +209,50 @@ class Section {
         return parts.reverse().map(p => SectionReferenceHelpers.pathEncoder.escape(p)).join('/');
     }
 
+    static classify(section) {
+        if (section instanceof Section) return section;
+
+        let classified = ObjectHelpers.lowerFirstCharOfKeys(section, false);
+        if (classified.subSections) classified.subSections = SectionHelpers.classify(classified.subSections);
+        if (classified.attributes) classified.attributes = SectionAttributesHelpers.classify(classified.attributes);
+        if (classified.npc) classified.npc = NPC.fromJSON(classified.npc);
+        section = new Section(classified);
+        return section;
+    }
+
+    static resolvePendingReferences(section) {
+        if (NPCSectionHelpers.isSummon(section)) {
+            let mixed = section.subSections.getAll();
+            function parseMixed(text) {
+                return text.replace(/(^|\n)<[^<]+>/g, matched => {
+                    let parsed = SectionReferenceHelpers.parseReference(matched);
+                    let path = "techniques/" + parsed.reference;
+                    let section = SectionHelpers.resolveSectionExpression(path);
+                    if (section) mixed.push(section);
+                    return "";
+                });
+            }
+            if (section.content) {
+                section.content = parseMixed(text);
+            }
+            if (section.attributes) {
+                section.attributes = section.attributes.map(attributeLine => attributeLine.map(attribute => {
+                    if (SectionAttributesHelpers.isTag(attribute)) return parseMixed(attribute);
+                    return attribute;
+                }).filter(a => a));
+            }
+            section = new Section(section);
+            section.npc = NPCSectionHelpers.parseNPC(section, { mixed });
+            section.subSections.clear();
+            return section;
+        }
+    }
+
     // Cloning
     clone() {
-        let clone = Section.fromJSON(this.toJSON());
-        clone.parent = this.parent;
-        return clone;
+        let cloned = Section.fromJSON(clone(this));
+        cloned.parent = this.parent;
+        return cloned;
     }
 
     cloneWithoutSubSections() {
@@ -235,6 +274,7 @@ class Section {
             tableHeaderLocation: this.tableHeaderLocation,
             anchor: this.anchor,
             subSections: this.subSections.getAll().map(s => s.toJSON()),
+            npc: this.npc?.toJSON(),
         };
     }
 
@@ -242,6 +282,7 @@ class Section {
         let newSubSections = [];
         if (section.attributes) section.attributes = SectionAttributesHelpers.fromJSON(section.attributes);
         if (section.subSections) section.subSections.forEach(s => newSubSections.push(Section.fromJSON(s)));
+        if (section.npc) section.npc = NPC.fromJSON(section.npc);
         section.subSections = newSubSections;
         return new Section(section);
     }

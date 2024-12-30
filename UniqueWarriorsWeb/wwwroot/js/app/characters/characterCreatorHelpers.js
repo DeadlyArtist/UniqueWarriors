@@ -41,7 +41,7 @@ class CharacterCreatorHelpers {
     }
 
     static generateSettingsPageHtml(character, page) {
-        let element = fromHTML(`<div class="characterCreator-page divList children-w-max">`);
+        let element = fromHTML(`<div class="characterCreator-page divList children-w-fit">`);
 
         element.appendChild(fromHTML(`<h1>Name`));
         let nameInputContainer = fromHTML(`<div class="listHorizontal gap-4">`);
@@ -154,92 +154,39 @@ class CharacterCreatorHelpers {
         }
 
         let maxTechniques = character.getMaxTechniques(); // one of which is a weapon core technique
-        let maxOtherTechniques = maxTechniques - 1;
+        let maxOtherTechniques = this.getMaxOtherTechniques(character, {maxTechniques});
         let chosenTechniques = character.techniques;
         let chosenSummons = character.summons;
 
         function getMaxSummonUnlocks() {
-            let unlocks = new Map();
-            chosenTechniques.filter(t => AbilitySectionHelpers.hasUnlocks(t)).map(s => AbilitySectionHelpers.getUnlocks(s)).forEach(unlocksList => {
-                unlocksList.filter(u => u.type == "Summon").forEach(unlock => {
-                    let oldAmount = unlocks.get(unlock.target) ?? 0;
-                    unlocks.set(unlock.target, oldAmount + unlock.amount);
-                });
-            });
-            return unlocks;
+            return CharacterCreatorHelpers.getMaxSummonUnlocks(character);
         }
         let maxSummonUnlocks = getMaxSummonUnlocks();
         let availableSummons = Registries.summons.getAll();
         function getRemainingSummonUnlocks() {
-            let remaining = new Map();
-            for (let [category, maxAmount] of maxSummonUnlocks.entries()) {
-                let hasAmount = chosenSummons.filter(s => AbilitySectionHelpers.getMainCategory(s) == category).length;
-                remaining.set(category, clamp(maxAmount - hasAmount, 0, maxAmount));
-            }
-            return remaining;
+            return CharacterCreatorHelpers.getRemainingSummonUnlocks(character, {maxSummonUnlocks});
         }
         let remainingSummonUnlocks = getRemainingSummonUnlocks();
+        function getMutations() {
+            return CharacterCreatorHelpers.getMutations(character);
+        }
+        let chosenMutations = getMutations();
+        function getRemainingFreeMutations() {
+            return CharacterCreatorHelpers.getRemainingFreeMutations(character, { chosenMutations });
+        }
+        let remainingFreeMutations = getRemainingFreeMutations();
         function getHasWeaponCore() {
-            return chosenTechniques.some(t => AbilitySectionHelpers.isWeaponCore(t));
+            return CharacterCreatorHelpers.getHasWeaponCore(character);
         }
         let hasWeaponCore = getHasWeaponCore();
         function getRemainingOtherTechniques() {
-            let tooManySummonsTracker = new Map(maxSummonUnlocks);
-            let tooManySummons = chosenSummons.filter(summon => {
-                let category = AbilitySectionHelpers.getMainCategory(summon);
-                let remaining = tooManySummonsTracker.get(category);
-                if (remaining == null || remaining == 0) return true;
-                tooManySummonsTracker.set(category, remaining - 1);
-                return false;
-            }).length;
-
-            let variantTechniques = character.summons.filter(s => AbilitySectionHelpers.isVariant(s)).flatMap(s => {
-                let original = SummonHelpers.getVariantOriginal(original);
-                return s.techniques.filter(t => !original.techniques.has(t));
-            }).length;
-            let variantSummons = character.summons.filter(s => AbilitySectionHelpers.isVariant(s)).flatMap(s => {
-                let maxSummonUnlocks = new Map();
-                s.techniques.filter(t => AbilitySectionHelpers.hasUnlocks(t)).map(s => AbilitySectionHelpers.getUnlocks(s)).forEach(unlocksList => {
-                    unlocksList.filter(u => u.type == "Summon").forEach(unlock => {
-                        let oldAmount = maxSummonUnlocks.get(unlock.target) ?? 0;
-                        maxSummonUnlocks.set(unlock.target, oldAmount + unlock.amount);
-                    });
-                });
-                let tooManySummonsTracker = new Map(maxSummonUnlocks);
-                tooManySummons += s.summons.filter(summon => {
-                    let category = AbilitySectionHelpers.getMainCategory(summon);
-                    let remaining = tooManySummonsTracker.get(category);
-                    if (remaining == null || remaining == 0) return true;
-                    tooManySummonsTracker.set(category, remaining - 1);
-                    return false;
-                }).length;
-
-                let original = SummonHelpers.getVariantOriginal(original);
-                return s.summons.filter(t => !original.summons.has(t));
-            }).length;
-            return maxOtherTechniques - (hasWeaponCore ? chosenTechniques.size - 1 : chosenTechniques.size) - tooManySummons - variantTechniques - variantSummons;
+            return CharacterCreatorHelpers.getRemainingOtherTechniques(character, { hasWeaponCore, maxTechniques, maxOtherTechniques, maxSummonUnlocks, chosenMutations, remainingFreeMutations });
         }
-
-        function getMutations() {
-            return character.techniques.filter(t => AbilitySectionHelpers.isMutation(t));
-        }
-        function getRemainingFreeMutations() {
-            let remaining = new Map();
-            for (let mutation of chosenMutations) {
-                remaining.set(mutation, 1);
-                for (let chosen of [chosenTechniques, chosenSummons]) {
-                    for (let techniqueLike of chosen) {
-                        let mutatedMutation = AbilitySectionHelpers.getMutatedMutation(techniqueLike);
-                        if (mutatedMutation == mutation.title) remaining.set(mutation, 0);
-                    }
-                }
-            }
-            return remaining;
-        }
-
-        let chosenMutations = getMutations();
         let remainingOtherTechniques = getRemainingOtherTechniques();
-        let remainingFreeMutations = getRemainingFreeMutations();
+
+        function getAllowedMutations(techniqueLike) {
+            return CharacterCreatorHelpers.getAllowedMutations(character, techniqueLike, { hasWeaponCore, maxTechniques, maxSummonUnlocks, chosenMutations, remainingFreeMutations, remainingOtherTechniques });
+        }
 
         let mutationDialog = DialogHelpers.create(dialog => {
             let dialogElement = fromHTML(`<div class="divList">`);
@@ -296,18 +243,6 @@ class CharacterCreatorHelpers {
 
             return dialogElement;
         });
-
-        function getAllowedMutations(techniqueLike) {
-            let isSummon = NPCSectionHelpers.isSummon(techniqueLike);
-            let chosen = chosenTechniques;
-            if (isSummon) chosen = chosenSummons;
-            let category = AbilitySectionHelpers.getMainCategory(techniqueLike);
-            return chosenMutations.filter(mutation =>
-                !chosen.has(SectionHelpers.getMutationId(techniqueLike, mutation)) &&
-                AbilitySectionHelpers.getMainCategory(mutation) != category &&
-                (remainingOtherTechniques > 0 || remainingFreeMutations.get(mutation) != 0)
-            );
-        }
 
         function openMutationDialog(techniqueLike) {
             mutationDialog.dialogTitleElement.textContent = `Mutate: ${techniqueLike.title}`;
@@ -415,6 +350,29 @@ class CharacterCreatorHelpers {
         chosenSummonsOverview.listElement.setAttribute('placeholder', 'No summons learned yet...');
 
         function updateChosenSummonsOverview() {
+            let maxVariantsPerSummon = 3;
+            let remainingVariantsByOriginal = new Map();
+            chosenSummons.filter(s => AbilitySectionHelpers.isVariant(s)).forEach(summon => {
+                let original = SummonHelpers.getVariantOriginal(character, summon);
+                remainingVariantsByOriginal.set(original, (remainingVariantsByOriginal.get(original) ?? maxVariantsPerSummon) - 1);
+            });
+            for (let structuredSection of chosenSummonsOverview.sections) {
+                let element = structuredSection.wrapperElement;
+                let summon = structuredSection.section;
+                if (!AbilitySectionHelpers.isVariant(summon)) {
+                    let remainingVariants = remainingVariantsByOriginal.get(summon) ?? maxVariantsPerSummon;
+                    if (remainingVariants > 0) {
+                        if (!structuredSection.variantButton) {
+                            addVariantButton(structuredSection);
+                        }
+                    } else {
+                        if (structuredSection.variantButton) {
+                            structuredSection.variantButtonContainer.remove();
+                            structuredSection.variantButton = null;
+                        }
+                    }
+                }
+            }
             chosenSummonsOverview.listElement._masonry?.resize();
         }
 
@@ -437,7 +395,6 @@ class CharacterCreatorHelpers {
                     if (!maxSummonUnlocks.has(category)) isAvailable = false;
                     else if (remainingOtherTechniques <= 0 && remainingSummonUnlocks.get(category) <= 0) isAvailable = false;
                     else if (!CharacterCreatorHelpers.canConnectToAbility(chosenSummons, summon, chosenTechniques)) isAvailable = false;
-                    console.log(summon, remainingOtherTechniques, maxSummonUnlocks.get(category), remainingSummonUnlocks.get(category));
                 }
 
                 if (isAvailable) {
@@ -472,6 +429,9 @@ class CharacterCreatorHelpers {
             chosen.register(techniqueLike);
             let structuredSection = overview.addSection(techniqueLike);
             addUnlearnButton(structuredSection);
+            if (NPCSectionHelpers.isSummon(structuredSection.section)) {
+                if (AbilitySectionHelpers.isVariant(structuredSection.section)) addEditVariantButton(structuredSection);
+            }
 
             if (update) {
                 updateAll();
@@ -510,8 +470,19 @@ class CharacterCreatorHelpers {
             }
         }
 
-        function mutate(techniqueLike) {
-            openMutationDialog(techniqueLike)
+        function mutate(technique) {
+            openMutationDialog(technique)
+        }
+
+        function createVariant(summon) {
+            let variant = SectionHelpers.getVariant(summon);
+            variant.id = generateUniqueId();
+            learn(variant);
+            SummonHelpers.openSummonEditor(character, variant);
+        }
+
+        function editVariant(summon) {
+            SummonHelpers.openSummonEditor(character, summon);
         }
 
         function addUnlearnButton(structuredSection) {
@@ -527,14 +498,6 @@ class CharacterCreatorHelpers {
             structuredSection.element.appendChild(container);
         }
 
-        for (let structuredSection of chosenOverview.sections) {
-            addUnlearnButton(structuredSection);
-        }
-
-        for (let structuredSection of chosenSummonsOverview.sections) {
-            addUnlearnButton(structuredSection);
-        }
-
         function addLearnButton(structuredSection) {
             let technique = structuredSection.section;
             let container = structuredSection.learnButtonContainer = fromHTML(`<div>`);
@@ -547,14 +510,6 @@ class CharacterCreatorHelpers {
             structuredSection.element.appendChild(container);
         }
 
-        for (let structuredSection of availableOverview.sections) {
-            addLearnButton(structuredSection);
-        }
-
-        for (let structuredSection of availableSummonsOverview.sections) {
-            addLearnButton(structuredSection);
-        }
-
         function addMutateButton(structuredSection) {
             let technique = structuredSection.section;
             let container = structuredSection.mutateButtonContainer = fromHTML(`<div>`);
@@ -564,26 +519,65 @@ class CharacterCreatorHelpers {
             let button = structuredSection.mutateButton = fromHTML(`<button class="listHorizontal gap-2 largeElement bordered brand-border-color hoverable centerContentHorizontally w-100">Mutate`);
             wrapper.appendChild(button);
             button.addEventListener('click', () => mutate(technique));
-            structuredSection.element.appendChild(container);
+            structuredSection.learnButtonContainer.before(container);
+        }
+
+        function addVariantButton(structuredSection) {
+            let summon = structuredSection.section;
+            let container = structuredSection.variantButtonContainer = fromHTML(`<div>`);
+            container.appendChild(hb(2));
+            let wrapper = fromHTML(`<div class="listHorizontal centerContentHorizontally">`);
+            container.appendChild(wrapper);
+            let button = structuredSection.variantButton = fromHTML(`<button class="listHorizontal gap-2 largeElement bordered brand-border-color hoverable centerContentHorizontally w-100">Create Variant`);
+            wrapper.appendChild(button);
+            button.addEventListener('click', () => createVariant(summon));
+            structuredSection.learnButtonContainer.before(container);
+        }
+
+        function addEditVariantButton(structuredSection) {
+            let summon = structuredSection.section;
+            let container = structuredSection.editButtonContainer = fromHTML(`<div>`);
+            container.appendChild(hb(2));
+            let wrapper = fromHTML(`<div class="listHorizontal centerContentHorizontally">`);
+            container.appendChild(wrapper);
+            let button = structuredSection.editButton = fromHTML(`<button class="listHorizontal gap-2 largeElement bordered brand-border-color hoverable centerContentHorizontally w-100">Edit`);
+            wrapper.appendChild(button);
+            button.addEventListener('click', () => editVariant(summon));
+            structuredSection.learnButtonContainer.before(container);
+        }
+
+        for (let structuredSection of chosenOverview.sections) {
+            addUnlearnButton(structuredSection);
+        }
+
+        for (let structuredSection of chosenSummonsOverview.sections) {
+            addUnlearnButton(structuredSection);
+            if (NPCSectionHelpers.isSummon(structuredSection.section)) {
+                if (AbilitySectionHelpers.isVariant(structuredSection.section)) addEditVariantButton(structuredSection);
+            }
+        }
+
+        for (let structuredSection of availableOverview.sections) {
+            addLearnButton(structuredSection);
+        }
+
+        for (let structuredSection of availableSummonsOverview.sections) {
+            addLearnButton(structuredSection);
         }
 
         function refreshData() {
             hasWeaponCore = getHasWeaponCore();
-            remainingOtherTechniques = getRemainingOtherTechniques();
             chosenMutations = getMutations();
-            maxSummonUnlocks = getMaxSummonUnlocks();
             remainingFreeMutations = getRemainingFreeMutations();
+            maxSummonUnlocks = getMaxSummonUnlocks();
 
-            if (character.settings.validate) {
-                let summonsWithoutUnlocks = chosenSummons.filter(s => !maxSummonUnlocks.has(AbilitySectionHelpers.getMainCategory(s)));
-                if (summonsWithoutUnlocks.length != 0) {
-                    summonsWithoutUnlocks.forEach(s => chosenSummons.unregister(s));
-                    maxSummonUnlocks = getMaxSummonUnlocks();
-                    remainingSummonUnlocks = getRemainingSummonUnlocks();
-                }
+            let summonsWithoutUnlocks = chosenSummons.filter(s => !maxSummonUnlocks.has(AbilitySectionHelpers.getMainCategory(s)));
+            if (summonsWithoutUnlocks.length != 0) {
+                summonsWithoutUnlocks.forEach(s => chosenSummons.unregister(s));
             }
 
             remainingSummonUnlocks = getRemainingSummonUnlocks();
+            remainingOtherTechniques = getRemainingOtherTechniques();
         }
 
         function updateAll(refresh = true) {
@@ -1275,6 +1269,247 @@ class CharacterCreatorHelpers {
         for (let connection of connections) {
             if (targetRegistry.has(connection)) return true;
         }
+        return false;
+    }
+
+    // Unlock methods
+    static getMaxSummonUnlocks(character) {
+        let unlocks = new Map();
+        character.techniques.filter(t => AbilitySectionHelpers.hasUnlocks(t)).map(s => AbilitySectionHelpers.getUnlocks(s)).forEach(unlocksList => {
+            unlocksList.filter(u => u.type == "Summon").forEach(unlock => {
+                let oldAmount = unlocks.get(unlock.target) ?? 0;
+                unlocks.set(unlock.target, oldAmount + unlock.amount);
+            });
+        });
+        return unlocks;
+    }
+
+    static getMaxSummonUnlocksInVariant(character, summon) {
+        let unlocks = new Map();
+        let original = SummonHelpers.getVariantOriginal(character, summon);
+        summon.npc.techniques.filter(t => !original.npc.techniques.has(t)).filter(t => AbilitySectionHelpers.hasUnlocks(t)).map(s => AbilitySectionHelpers.getUnlocks(s)).forEach(unlocksList => {
+            unlocksList.filter(u => u.type == "Summon").forEach(unlock => {
+                let oldAmount = unlocks.get(unlock.target) ?? 0;
+                unlocks.set(unlock.target, oldAmount + unlock.amount);
+            });
+        });
+        return unlocks;
+    }
+
+    static getRemainingSummonUnlocks(character, environment = null) {
+        environment ??= {};
+        let maxSummonUnlocks = environment.maxSummonUnlocks ?? this.getMaxSummonUnlocks(character);
+        let remaining = new Map();
+        for (let [category, maxAmount] of maxSummonUnlocks.entries()) {
+            let hasAmount = character.summons.filter(s => AbilitySectionHelpers.getMainCategory(s) == category).length;
+            remaining.set(category, clamp(maxAmount - hasAmount, 0, maxAmount));
+        }
+        return remaining;
+    }
+
+    static getRemainingSummonUnlocksInVariant(character, summon, environment = null) {
+        environment ??= {};
+        let maxSummonUnlocks = environment.maxSummonUnlocks ?? this.getMaxSummonUnlocksInVariant(character, summon, environment);
+        let original = SummonHelpers.getVariantOriginal(character, summon);
+        let remaining = new Map();
+        for (let [category, maxAmount] of maxSummonUnlocks.entries()) {
+            let hasAmount = summon.npc.summons.filter(t => !original.npc.summons.has(t)).filter(s => AbilitySectionHelpers.getMainCategory(s) == category).length;
+            remaining.set(category, clamp(maxAmount - hasAmount, 0, maxAmount));
+        }
+        return remaining;
+    }
+
+    static getRemainingFreeMutations(character, environment = null) {
+        environment ??= {};
+        let chosenMutations = environment.chosenMutations ?? this.getMutations(character);
+        let remaining = new Map();
+        for (let mutation of chosenMutations) {
+            remaining.set(mutation, 1);
+            for (let techniqueLike of character.techniques) {
+                let mutatedMutation = AbilitySectionHelpers.getMutatedMutation(techniqueLike);
+                if (mutatedMutation == mutation.title) remaining.set(mutation, 0);
+            }
+        }
+        return remaining;
+    }
+
+    static getRemainingFreeMutationsInVariant(character, summon, environment = null) {
+        environment ??= {};
+        let original = SummonHelpers.getVariantOriginal(character, summon);
+        let chosenMutations = (environment.chosenMutations ?? this.getMutations(summon.npc)).filter(m => !original.npc.techniques.has(m));
+        let remaining = new Map();
+        for (let mutation of chosenMutations) {
+            remaining.set(mutation, 1);
+            for (let techniqueLike of summon.npc.techniques) {
+                let mutatedMutation = AbilitySectionHelpers.getMutatedMutation(techniqueLike);
+                if (mutatedMutation == mutation.title) remaining.set(mutation, 0);
+            }
+        }
+        return remaining;
+    }
+
+    static getMutations(character) {
+        return character.techniques.filter(t => AbilitySectionHelpers.isMutation(t));
+    }
+
+    static getHasWeaponCore(character) {
+        return character.techniques.some(t => AbilitySectionHelpers.isWeaponCore(t));
+    }
+
+    static getTooManySummonsCount(character, environment = null) {
+        environment ??= {};
+        let maxSummonUnlocks = environment.maxSummonUnlocks ?? this.getMaxSummonUnlocks(character);
+        let tooManySummonsTracker = new Map(maxSummonUnlocks);
+        let tooManySummons = character.summons.filter(s => !AbilitySectionHelpers.isVariant(s)).filter(summon => {
+            let category = AbilitySectionHelpers.getMainCategory(summon);
+            let remaining = tooManySummonsTracker.get(category);
+            if (remaining == null || remaining == 0) return true;
+            tooManySummonsTracker.set(category, remaining - 1);
+            return false;
+        }).length;
+        return tooManySummons;
+    }
+
+    static getTooManySummonsCountInVariant(character, summon, environment = null) {
+        environment ??= {};
+        let original = SummonHelpers.getVariantOriginal(character, summon);
+        let maxSummonUnlocks = environment.maxSummonUnlocks ?? this.getMaxSummonUnlocksInVariant(character, summon);
+        let tooManySummonsTracker = new Map(maxSummonUnlocks);
+        let tooManySummons = summon.npc.summons.filter(t => !original.npc.summons.has(t)).filter(summon => {
+            let category = AbilitySectionHelpers.getMainCategory(summon);
+            let remaining = tooManySummonsTracker.get(category);
+            if (remaining == null || remaining == 0) return true;
+            tooManySummonsTracker.set(category, remaining - 1);
+            return false;
+        }).length;
+        return tooManySummons;
+    }
+
+    static getFreeMutatedCount(character, environment = null) {
+        environment ??= {};
+        let remainingFreeMutations = environment.remainingFreeMutations ?? this.getRemainingFreeMutations(character, environment);
+        let freeMutated = 0;
+        remainingFreeMutations.values().forEach(amount => freeMutated += 1 - amount);
+        return freeMutated;
+    }
+
+    static getFreeMutatedCountInVariant(character, summon, environment = null) {
+        environment ??= {};
+        let remainingFreeMutations = environment.remainingFreeMutations ?? this.getRemainingFreeMutationsInVariant(character, summon, environment);
+        let freeMutated = 0;
+        remainingFreeMutations.values().forEach(amount => freeMutated += 1 - amount);
+        return freeMutated;
+    }
+
+    static getTooManyTechniquesCountInVariant(character, summon, environment = null) {
+        let original = SummonHelpers.getVariantOriginal(character, summon);
+        return summon.npc.techniques.filter(t => !original.npc.techniques.has(t)).length - this.getFreeMutatedCountInVariant(character, summon, environment);
+    }
+
+    static getTooManyThingsCountInVariant(character, summon, environment = null) {
+        return this.getTooManySummonsCountInVariant(character, summon, environment) + this.getTooManyTechniquesCountInVariant(character, summon, environment);
+    }
+
+    static getTooManyVariantTechniquesCount(character, environment = null) {
+        let count = 0;
+        character.summons.filter(s => AbilitySectionHelpers.isVariant(s)).forEach(s => {
+            count += this.getTooManyTechniquesCountInVariant(character, s);
+        });
+        return count;
+    }
+
+    static getTooManyVariantSummonsCount(character, environment = null) {
+        let tooManyVariantSummons = 0;
+        character.summons.filter(s => AbilitySectionHelpers.isVariant(s)).forEach(s => {
+            tooManyVariantSummons += this.getTooManySummonsCountInVariant(character, s);
+        });
+        return tooManyVariantSummons;
+    }
+
+    static getTooManyVariantThingsCountData(character, environment = null) {
+        let tooManyVariantSummons = this.getTooManyVariantSummonsCount(character, environment);
+        let toomanyVariantTechniques = this.getTooManyVariantTechniquesCount(character, environment);
+        let tooManyUndivided = tooManyVariantSummons + toomanyVariantTechniques;
+
+        let divisior = 2;
+        let divisionOverflow = tooManyUndivided % divisior;
+        let tooManyVariantThings = Math.ceil(tooManyUndivided / divisior);
+        return { count: tooManyVariantThings, divisionOverflow };
+    }
+
+    static getTooManyVariantThingsCount(character, environment = null) {
+        return this.getTooManyVariantThingsCountData(character, environment).count;
+    }
+
+    static getMaxOtherTechniques(character, environment = null) {
+        environment ??= {};
+        let maxTechniques = environment.maxTechniques ?? character.getMaxTechniques(); // one of which is a weapon core technique
+        return maxTechniques - 1;
+    }
+
+    static getRemainingOtherTechniquesData(character, environment = null) {
+        environment ??= {};
+        let maxTechniques = environment.maxTechniques ?? character.getMaxTechniques(); // one of which is a weapon core technique
+        let maxOtherTechniques = environment.maxOtherTechniques ?? this.getMaxOtherTechniques(character, { ...environment, maxTechniques });
+        let chosenTechniques = character.techniques;
+
+        let remainingFreeMutations = environment.remainingFreeMutations ?? this.getRemainingFreeMutations(character, environment);
+        let hasWeaponCore = environment.hasWeaponCore ?? this.getHasWeaponCore(character);
+        let freeMutated = this.getFreeMutatedCount(character, { remainingFreeMutations });
+        let tooManySummons = this.getTooManySummonsCount(character, environment);
+        let tooManyVariantThingsData = this.getTooManyVariantThingsCountData(character, environment);
+        let tooManyVariantThings = tooManyVariantThingsData.count;
+        let divisionOverflow = tooManyVariantThingsData.divisionOverflow;
+
+        let remaining = maxOtherTechniques + freeMutated - (hasWeaponCore ? chosenTechniques.size - 1 : chosenTechniques.size) - tooManySummons - tooManyVariantThings;
+        return {count:remaining, divisionOverflow};
+    }
+
+    static getRemainingOtherTechniques(character, environment = null) {
+        return this.getRemainingOtherTechniquesData(character, environment).count;
+    }
+
+    static getAllowedMutations(character, techniqueLike, environment) {
+        environment ??= {};
+        let chosenMutations = environment.chosenMutations ?? this.getMutations(character);
+        let remainingFreeMutations = environment.remainingFreeMutations ?? this.getRemainingFreeMutations(character, { ...environment, chosenMutations });
+        let remainingOtherTechniques = environment.remainingOtherTechniques ?? this.getRemainingOtherTechniques(character, { ...environment, chosenMutations, remainingFreeMutations });
+
+        let chosen = character.techniques;
+        let category = AbilitySectionHelpers.getMainCategory(techniqueLike);
+        return chosenMutations.filter(mutation =>
+            !chosen.has(SectionHelpers.getMutationId(techniqueLike, mutation)) &&
+            AbilitySectionHelpers.getMainCategory(mutation) != category &&
+            (remainingOtherTechniques > 0 || remainingFreeMutations.get(mutation) > 0)
+        );
+    }
+
+    static getMaxThingsInVariant(character) {
+        return (Math.floor(character.stats.level / 10) + 1) * 2;
+    }
+
+    static getRemainingOtherTechniquesInVariant(character, summon, environment) {
+        let remainingForCharacterData = this.getRemainingOtherTechniquesData(character);
+        let remainingForSummonFromCharacterPerspective = remainingForCharacterData.count * 2 + remainingForCharacterData.divisionOverflow;
+        let tooManyThings = this.getTooManyThingsCountInVariant(character, summon, environment);
+        let maxThings = this.getMaxThingsInVariant(character);
+        let remainingThings = maxThings - tooManyThings;
+        return Math.min(remainingForSummonFromCharacterPerspective, remainingThings);
+    }
+
+    static getAllowedMutationsInVariant(character, summon, techniqueLike, environment) {
+        environment ??= {};
+        let chosenMutations = environment.chosenMutations ?? this.getMutations(summon.npc);
+        let remainingFreeMutations = environment.remainingFreeMutations ?? this.getRemainingFreeMutationsInVariant(character, summon, { ...environment, chosenMutations });
+        let remainingOtherTechniques = environment.remainingOtherTechniques ?? this.getRemainingOtherTechniquesInVariant(character, summon, { ...environment, chosenMutations, remainingFreeMutations });
+
+        let chosen = character.techniques;
+        let category = AbilitySectionHelpers.getMainCategory(techniqueLike);
+        return chosenMutations.filter(mutation =>
+            !chosen.has(SectionHelpers.getMutationId(techniqueLike, mutation)) &&
+            AbilitySectionHelpers.getMainCategory(mutation) != category &&
+            (remainingOtherTechniques > 0 || remainingFreeMutations.get(mutation) > 0)
+        );
     }
 }
 

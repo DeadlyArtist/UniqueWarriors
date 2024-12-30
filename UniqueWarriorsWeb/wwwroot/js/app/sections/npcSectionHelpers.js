@@ -53,6 +53,18 @@ class NPCSectionHelpers {
         if (isSummon) {
             parsedSettings.subType = "Summon";
         }
+        let statOverrides = {};
+        parsedSettings.statOverrides = statOverrides;
+        for (let statName of [...NPCHelpers.attributeStatNames, ...NPCHelpers.staticStatNames]) {
+            let value = section.getHeadValueValue(statName);
+            if (value) statOverrides[statName] = value;
+        }
+        let stats = {};
+        parsedSettings.stats = stats;
+        for (let statName of ["Level", "Importance"]) {
+            let value = section.getHeadValueValue(statName);
+            if (value) stats[statName] = value;
+        }
 
         let npc = new NPC({...parsedSettings, ...settings});
         return npc;

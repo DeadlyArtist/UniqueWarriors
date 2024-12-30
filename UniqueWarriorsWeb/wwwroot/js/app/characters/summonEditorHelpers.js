@@ -13,7 +13,7 @@ class SummonEditorHelpers {
         topBar.appendChild(tabBar);
         let pages = structuredSummonEditor.pages = [
             { name: "Settings", provider: page => this.generateSettingsPageHtml(character, summon, original, page), },
-            { name: "Techniques", provider: page => this.generateTechniquesPageHtml(character, summon, origina, page), },
+            { name: "Techniques", provider: page => this.generateTechniquesPageHtml(character, summon, original, page), },
         ];
         for (let page of pages) {
             let element = page.tabElement = fromHTML(`<button class="summonEditor-tab largeElement raised bordered-inset hoverable hideDisabled">`);
@@ -37,21 +37,23 @@ class SummonEditorHelpers {
     }
 
     static generateSettingsPageHtml(character, summon, original, page) {
-        let element = fromHTML(`<div class="characterCreator-page divList children-w-max">`);
+        let summonVariables = summon.npc.getVariables();
+        let element = fromHTML(`<div class="characterCreator-page divList children-w-fit">`);
 
         element.appendChild(fromHTML(`<h1>Name`));
         let nameInputContainer = fromHTML(`<div class="listHorizontal gap-4">`);
         element.appendChild(nameInputContainer);
         let nameInput = fromHTML(`<input type="text" class="largeElement xl-font" style="width: 400px;">`);
         nameInputContainer.appendChild(nameInput);
-        nameInput.value = character.name;
+        nameInput.value = summon.npc.name;
         nameInput.addEventListener('input', () => {
-            if (character.name == nameInput.value) return;
-            character.name = nameInput.value;
+            if (summon.npc.name == nameInput.value) return;
+            summon.npc.name = nameInput.value;
             CharacterHelpers.saveCharacter(character);
         });
 
-        element.appendChild(SectionHelpers.generateStructuredHtmlForSection(SectionHelpers.resolveSectionExpression('rules/Character Creation/Choose Weapons*noChildren'), { variables }).element);
+        element.appendChild(hb(4));
+        element.appendChild(SectionHelpers.generateStructuredHtmlForSection(SectionHelpers.resolveSectionExpression('rules/Character Creation/Choose Weapons*noChildren'), { variables: summonVariables }).element);
 
         element.appendChild(hb(4));
         let chosenWeaponsBar = fromHTML(`<div class="listHorizontal gap-2">`);
@@ -60,7 +62,8 @@ class SummonEditorHelpers {
         let unchosenWeaponsBar = fromHTML(`<div class="listHorizontal gap-2">`);
         element.appendChild(unchosenWeaponsBar);
         let weapons = new Set(CategoryHelpers.getWeaponNames());
-        let chosenWeapons = summon.weapons; // Registry
+        let chosenWeapons = summon.npc.weapons; // Registry
+        let originalWeapons = original.npc.weapons;
 
         function chooseWeapon(weapon) {
             if (chosenWeapons.has(weapon)) return;
@@ -81,13 +84,20 @@ class SummonEditorHelpers {
             unchosenWeaponsBar.innerHTML = '';
             for (let weapon of weapons) {
                 let hasWeapon = chosenWeapons.has(weapon);
+                let originalHasWeapon = originalWeapons.has(weapon);
                 let element = fromHTML(`<button class="listHorizontal gap-2 largeElement bordered hoverable">`);
                 (hasWeapon ? chosenWeaponsBar : unchosenWeaponsBar).appendChild(element);
+                if (originalHasWeapon) {
+                    element.setAttribute('disabled', '');
+                    element.setAttribute('tooltip', 'Default weapons cannot be removed.');
+                    element.classList.add('hideDisabled');
+                }
                 if (hasWeapon) element.classList.add('brand-border-color');
-                element.addEventListener('click', () => hasWeapon ? unchooseWeapon(weapon) : chooseWeapon(weapon));
+                if (!originalHasWeapon) element.addEventListener('click', () => hasWeapon ? unchooseWeapon(weapon) : chooseWeapon(weapon));
                 let nameElement = fromHTML(`<div>`);
                 element.appendChild(nameElement);
                 nameElement.textContent = weapon;
+                if (originalHasWeapon) continue;
                 let icon = hasWeapon ? icons.close() : icons.add();
                 element.appendChild(icon);
                 icon.classList.add('minimalIcon');
@@ -99,123 +109,45 @@ class SummonEditorHelpers {
     }
 
     static generateTechniquesPageHtml(character, summon, original, page) {
-        let variables = character.getVariables();
+        let summonVariables = summon.npc.getVariables();
         let element = fromHTML(`<div class="characterCreator-page divList">`);
 
-        let summonWeapons = summon.weapons;
-        if (summonWeapons.size == 0) {
+        let chosenWeapons = summon.npc.weapons;
+        if (chosenWeapons.size == 0) {
             element.setAttribute('tooltip', "No weapons chosen...");
             return element;
         }
 
-        let maxTechniques = character.getMaxTechniques(); // one of which is a weapon core technique
-        let maxOtherTechniques = maxTechniques - 1;
-        let chosenTechniques = character.techniques;
-        let summonTechniques = summon.techniques;
-        let originalTechniques = original.techniques;
-        let chosenSummons = character.summons;
-        let summonSummons = summon.summons;
-        let originalSummons = original.summons;
-        let summonMaxTechniques = character.getScalingStats().rank + 2;
+        let chosenTechniques = summon.npc.techniques;
+        let originalTechniques = original.npc.techniques;
+        let chosenSummons = summon.npc.summons;
+        let originalSummons = original.npc.summons;
 
         function getMaxSummonUnlocks() {
-            let unlocks = new Map();
-            summonTechniques.filter(t => AbilitySectionHelpers.hasUnlocks(t)).map(s => AbilitySectionHelpers.getUnlocks(s)).forEach(unlocksList => {
-                unlocksList.filter(u => u.type == "Summon").forEach(unlock => {
-                    let oldAmount = unlocks.get(unlock.target) ?? 0;
-                    unlocks.set(unlock.target, oldAmount + unlock.amount);
-                });
-            });
-            return unlocks;
+            return CharacterCreatorHelpers.getMaxSummonUnlocksInVariant(character, summon);
         }
         let maxSummonUnlocks = getMaxSummonUnlocks();
         let availableSummons = Registries.summons.getAll();
         function getRemainingSummonUnlocks() {
-            let remaining = new Map();
-            for (let [category, maxAmount] of maxSummonUnlocks.entries()) {
-                let hasAmount = summonSummons.filter(s => AbilitySectionHelpers.getMainCategory(s) == category).length;
-                remaining.set(category, clamp(maxAmount - hasAmount, 0, maxAmount));
-            }
-            return remaining;
+            return CharacterCreatorHelpers.getRemainingSummonUnlocksInVariant(character, summon, { maxSummonUnlocks });
         }
         let remainingSummonUnlocks = getRemainingSummonUnlocks();
-
-        function characterGetMaxSummonUnlocks() {
-            let unlocks = new Map();
-            chosenTechniques.filter(t => AbilitySectionHelpers.hasUnlocks(t)).map(s => AbilitySectionHelpers.getUnlocks(s)).forEach(unlocksList => {
-                unlocksList.filter(u => u.type == "Summon").forEach(unlock => {
-                    let oldAmount = unlocks.get(unlock.target) ?? 0;
-                    unlocks.set(unlock.target, oldAmount + unlock.amount);
-                });
-            });
-            return unlocks;
-        }
-        let characterMaxSummonUnlocks = characterGetMaxSummonUnlocks();
-
-        function getHasWeaponCore() {
-            return chosenTechniques.some(t => AbilitySectionHelpers.isWeaponCore(t));
-        }
-        let hasWeaponCore = getHasWeaponCore();
-        function getRemainingOtherTechniques() {
-            let tooManySummonsTracker = new Map(characterMaxSummonUnlocks);
-            let tooManySummons = chosenSummons.filter(summon => {
-                let category = AbilitySectionHelpers.getMainCategory(summon);
-                let remaining = tooManySummonsTracker.get(category);
-                if (remaining == null || remaining == 0) return true;
-                tooManySummonsTracker.set(category, remaining - 1);
-                return false;
-            }).length;
-
-            let variantTechniques = character.summons.filter(s => AbilitySectionHelpers.isVariant(s)).flatMap(s => {
-                let original = SummonHelpers.getVariantOriginal(original);
-                return s.techniques.filter(t => !original.techniques.has(t));
-            }).length;
-            let variantSummons = character.summons.filter(s => AbilitySectionHelpers.isVariant(s)).flatMap(s => {
-                let maxSummonUnlocks = new Map();
-                s.techniques.filter(t => AbilitySectionHelpers.hasUnlocks(t)).map(s => AbilitySectionHelpers.getUnlocks(s)).forEach(unlocksList => {
-                    unlocksList.filter(u => u.type == "Summon").forEach(unlock => {
-                        let oldAmount = maxSummonUnlocks.get(unlock.target) ?? 0;
-                        maxSummonUnlocks.set(unlock.target, oldAmount + unlock.amount);
-                    });
-                });
-                let tooManySummonsTracker = new Map(maxSummonUnlocks);
-                tooManySummons += s.summons.filter(summon => {
-                    let category = AbilitySectionHelpers.getMainCategory(summon);
-                    let remaining = tooManySummonsTracker.get(category);
-                    if (remaining == null || remaining == 0) return true;
-                    tooManySummonsTracker.set(category, remaining - 1);
-                    return false;
-                }).length;
-
-                let original = SummonHelpers.getVariantOriginal(original);
-                return s.summons.filter(t => !original.summons.has(t));
-            }).length;
-
-            let characterRemainingOtherTechniques = maxOtherTechniques - (hasWeaponCore ? chosenTechniques.size - 1 : chosenTechniques.size) - tooManySummons - variantTechniques - variantSummons;
-            let summonRemainingTechniques = summonMaxTechniques - summonTechniques.filter(t => !originalTechniques.has(t)).length - summonSummons.filter(t => !originalTechniques.has(t)).length;
-            return Math.min(characterRemainingOtherTechniques, summonRemainingTechniques);
-        }
-
         function getMutations() {
-            return summon.techniques.filter(t => AbilitySectionHelpers.isMutation(t));
+            return CharacterCreatorHelpers.getMutations(summon.npc);
         }
+        let chosenMutations = getMutations();
         function getRemainingFreeMutations() {
-            let remaining = new Map();
-            for (let mutation of mutations) {
-                remaining.set(mutation, 1);
-                for (let chosen of [summonTechniques, summonSummons]) {
-                    for (let techniqueLike of chosen) {
-                        let mutatedMutation = AbilitySectionHelpers.getMutatedMutation(techniqueLike);
-                        if (mutatedMutation == mutation.title) remaining.set(mutation, 0);
-                    }
-                }
-            }
-            return remaining;
+            return CharacterCreatorHelpers.getRemainingFreeMutationsInVariant(character, summon, { chosenMutations });
         }
-
-        let summonMutations = getMutations();
-        let remainingOtherTechniques = getRemainingOtherTechniques();
         let remainingFreeMutations = getRemainingFreeMutations();
+        function getRemainingOtherTechniques() {
+            return CharacterCreatorHelpers.getRemainingOtherTechniquesInVariant(character, summon, { maxSummonUnlocks, chosenMutations, remainingFreeMutations });
+        }
+        let remainingOtherTechniques = getRemainingOtherTechniques();
+
+        function getAllowedMutations(techniqueLike) {
+            return CharacterCreatorHelpers.getAllowedMutationsInVariant(character, summon, techniqueLike, { maxSummonUnlocks, chosenMutations, remainingFreeMutations, remainingOtherTechniques });
+        }
 
         let mutationDialog = DialogHelpers.create(dialog => {
             let dialogElement = fromHTML(`<div class="divList">`);
@@ -251,7 +183,7 @@ class SummonEditorHelpers {
             dialog.onMutationChange = () => {
                 let mutation = dialogMutationInput.value;
                 let section = SectionHelpers.getMutated(dialog._originalSection, mutation);
-                let structuredSection = dialog._structuredSection = SectionHelpers.generateStructuredHtmlForSection(section, { variables });
+                let structuredSection = dialog._structuredSection = SectionHelpers.generateStructuredHtmlForSection(section, { summonVariables });
                 dialogNameInput.value = section.title;
                 dialogMutationPreviewContainer.innerHTML = "";
                 dialogMutationPreviewContainer.appendChild(structuredSection.wrapperElement);
@@ -273,18 +205,6 @@ class SummonEditorHelpers {
             return dialogElement;
         });
 
-        function getAllowedMutations(techniqueLike) {
-            let isSummon = NPCSectionHelpers.isSummon(techniqueLike);
-            let chosen = summonTechniques;
-            if (isSummon) chosen = summonSummons;
-            let category = AbilitySectionHelpers.getMainCategory(techniqueLike);
-            return summonMutations.filter(mutation =>
-                !chosen.has(SectionHelpers.getMutationId(techniqueLike, mutation)) &&
-                AbilitySectionHelpers.getMainCategory(mutation) != category &&
-                (remainingOtherTechniques > 0 || remainingFreeMutations.get(mutation) != 0)
-            );
-        }
-
         function openMutationDialog(techniqueLike) {
             mutationDialog.dialogTitleElement.textContent = `Mutate: ${techniqueLike.title}`;
 
@@ -301,18 +221,19 @@ class SummonEditorHelpers {
         let descriptionElement = fromHTML(`<div>`);
         element.appendChild(descriptionElement);
         function updateDescription() {
-            let other = '';
+            let other = [];
             remainingFreeMutations.forEach((amount, mutation) => {
-                other += `${amount}/1 ${mutation.title.toLowerCase()}, `;
+                other.push(`${amount}/1 ${mutation.title.toLowerCase()}`);
             });
             remainingSummonUnlocks.forEach((amount, category) => {
-                other += `${amount}/${maxSummonUnlocks.get(category)} ${category.toLowerCase()} summon, `;
+                other.push(`${amount}/${maxSummonUnlocks.get(category)} ${category.toLowerCase()} summon`);
             });
             let content = null;
-            if (other.length == 0) {
-                content = `Choose ${remainingOtherTechniques}/${maxOtherTechniques} techniques.`;
-            } else {
-                content = `Choose ${other}and ${remainingOtherTechniques}/${maxOtherTechniques} other techniques.`;
+
+            let remainingCharacterTechniquesData = CharacterCreatorHelpers.getRemainingOtherTechniquesData(character);
+            content = `Choose up to ${remainingOtherTechniques} techniques. Every 2 techniques you spend on more summon techniques, you can spend 1 technique less on your character (which has currently ${remainingCharacterTechniquesData.count} available). Note: Choosing 1 technique on a summon means you have 1 more technique that you can spend only on summons (current overflow: ${remainingCharacterTechniquesData.divisionOverflow}).`;
+            if (other.length != 0) {
+                content += `\n\nAdditionally, choose ${other.join(", ")}.`;
             }
             let structuredSection = SectionHelpers.generateStructuredHtmlForSection(new Section({
                 content,
@@ -323,7 +244,7 @@ class SummonEditorHelpers {
 
         element.appendChild(hb(4));
         element.appendChild(fromHTML(`<h1>Learned Techniques`));
-        let chosenOverview = SectionHelpers.generateStructuredHtmlForSectionOverview(summonTechniques.getAll(), SectionHelpers.MasonryType, { addSearch: true, variables });
+        let chosenOverview = SectionHelpers.generateStructuredHtmlForSectionOverview(chosenTechniques.getAll(), SectionHelpers.MasonryType, { addSearch: true, summonVariables });
         element.appendChild(chosenOverview.container);
         chosenOverview.listElement.setAttribute('placeholder', 'No techniques learned yet...');
 
@@ -349,8 +270,8 @@ class SummonEditorHelpers {
 
         element.appendChild(hb(4));
         element.appendChild(fromHTML(`<h1>Available Techniques`));
-        let availableTechniques = Registries.techniques.filter(t => summonWeapons.has(AbilitySectionHelpers.getMainCategory(t)));
-        let availableOverview = SectionHelpers.generateStructuredHtmlForSectionOverview(availableTechniques, SectionHelpers.MasonryType, { addSearch: true, variables });
+        let availableTechniques = Registries.techniques.filter(t => chosenWeapons.has(AbilitySectionHelpers.getMainCategory(t)));
+        let availableOverview = SectionHelpers.generateStructuredHtmlForSectionOverview(availableTechniques, SectionHelpers.MasonryType, { addSearch: true, summonVariables });
         element.appendChild(availableOverview.container);
         let noTechniquesElement = fromHTML(`<div class="hide" placeholder="No more techniques available...">`);
         element.appendChild(noTechniquesElement);
@@ -360,10 +281,10 @@ class SummonEditorHelpers {
                 let element = structuredSection.wrapperElement;
                 let technique = structuredSection.section;
                 let isAvailable = true;
-                if (summonTechniques.has(technique)) isAvailable = false;
+                if (chosenTechniques.has(technique)) isAvailable = false;
                 else if (character.settings.validate) {
-                    if (hasWeaponCore && remainingOtherTechniques <= 0) isAvailable = false;
-                    else if (!CharacterCreatorHelpers.canConnectToAbility(summonTechniques, technique, summonTechniques)) isAvailable = false;
+                    if (remainingOtherTechniques <= 0) isAvailable = false;
+                    else if (!CharacterCreatorHelpers.canConnectToAbility(chosenTechniques, technique, chosenTechniques)) isAvailable = false;
                 }
 
                 if (isAvailable) {
@@ -390,7 +311,7 @@ class SummonEditorHelpers {
         element.appendChild(summonsContainer);
         summonsContainer.appendChild(hb(4));
         summonsContainer.appendChild(fromHTML(`<h1>Learned Summons`));
-        let chosenSummonsOverview = SectionHelpers.generateStructuredHtmlForSectionOverview(summonSummons.getAll(), SectionHelpers.MasonryType, { addSearch: true, variables });
+        let chosenSummonsOverview = SectionHelpers.generateStructuredHtmlForSectionOverview(chosenSummons.getAll(), SectionHelpers.MasonryType, { addSearch: true, summonVariables });
         summonsContainer.appendChild(chosenSummonsOverview.container);
         chosenSummonsOverview.listElement.setAttribute('placeholder', 'No summons learned yet...');
 
@@ -400,7 +321,7 @@ class SummonEditorHelpers {
 
         summonsContainer.appendChild(hb(4));
         summonsContainer.appendChild(fromHTML(`<h1>Available Summons`));
-        let availableSummonsOverview = SectionHelpers.generateStructuredHtmlForSectionOverview(availableSummons, SectionHelpers.MasonryType, { addSearch: true, variables });
+        let availableSummonsOverview = SectionHelpers.generateStructuredHtmlForSectionOverview(availableSummons, SectionHelpers.MasonryType, { addSearch: true, summonVariables });
         summonsContainer.appendChild(availableSummonsOverview.container);
         let noSummonsElement = fromHTML(`<div class="hide" placeholder="No more summons available...">`);
         summonsContainer.appendChild(noSummonsElement);
@@ -411,12 +332,12 @@ class SummonEditorHelpers {
                 let element = structuredSection.wrapperElement;
                 let summon = structuredSection.section;
                 let isAvailable = true;
-                if (summonSummons.has(summon)) isAvailable = false;
+                if (chosenSummons.has(summon)) isAvailable = false;
                 else if (character.settings.validate) {
                     let category = AbilitySectionHelpers.getMainCategory(summon);
                     if (!maxSummonUnlocks.has(category)) isAvailable = false;
                     else if (remainingOtherTechniques <= 0 && remainingSummonUnlocks.get(category) <= 0) isAvailable = false;
-                    else if (!CharacterCreatorHelpers.canConnectToAbility(summonSummons, summon, summonSummons)) isAvailable = false;
+                    else if (!CharacterCreatorHelpers.canConnectToAbility(chosenSummons, summon, chosenTechniques)) isAvailable = false;
                 }
 
                 if (isAvailable) {
@@ -440,10 +361,10 @@ class SummonEditorHelpers {
 
         function learn(techniqueLike, update = true) {
             let isSummon = NPCSectionHelpers.isSummon(techniqueLike);
-            let chosen = summonTechniques;
+            let chosen = chosenTechniques;
             let overview = chosenOverview;
             if (isSummon) {
-                chosen = summonSummons;
+                chosen = chosenSummons;
                 overview = chosenSummonsOverview;
             }
 
@@ -460,10 +381,10 @@ class SummonEditorHelpers {
 
         function unlearn(techniqueLike, update = true) {
             let isSummon = NPCSectionHelpers.isSummon(techniqueLike);
-            let chosen = summonTechniques;
+            let chosen = chosenTechniques;
             let overview = chosenOverview;
             if (isSummon) {
-                chosen = summonSummons;
+                chosen = chosenSummons;
                 overview = chosenSummonsOverview;
             }
 
@@ -543,26 +464,20 @@ class SummonEditorHelpers {
             let button = structuredSection.mutateButton = fromHTML(`<button class="listHorizontal gap-2 largeElement bordered brand-border-color hoverable centerContentHorizontally w-100">Mutate`);
             wrapper.appendChild(button);
             button.addEventListener('click', () => mutate(technique));
-            structuredSection.element.appendChild(container);
+            if (structuredSection.learnButtonContainer) structuredSection.learnButtonContainer.before(container);
+            else structuredSection.element.appendChild(container);
         }
 
         function refreshData() {
-            hasWeaponCore = getHasWeaponCore();
-            remainingOtherTechniques = getRemainingOtherTechniques();
-            summonMutations = getMutations();
-            maxSummonUnlocks = getMaxSummonUnlocks();
+            chosenMutations = getMutations();
             remainingFreeMutations = getRemainingFreeMutations();
+            maxSummonUnlocks = getMaxSummonUnlocks();
 
-            if (character.settings.validate) {
-                let summonsWithoutUnlocks = chosenSummons.filter(s => !maxSummonUnlocks.has(AbilitySectionHelpers.getMainCategory(s)));
-                if (summonsWithoutUnlocks.length != 0) {
-                    summonsWithoutUnlocks.forEach(s => chosenSummons.unregister(s));
-                    maxSummonUnlocks = getMaxSummonUnlocks();
-                    remainingSummonUnlocks = getRemainingSummonUnlocks();
-                }
-            }
+            let summonsWithoutUnlocks = chosenSummons.filter(s => !maxSummonUnlocks.has(AbilitySectionHelpers.getMainCategory(s)));
+            summonsWithoutUnlocks.forEach(s => chosenSummons.unregister(s));
 
             remainingSummonUnlocks = getRemainingSummonUnlocks();
+            remainingOtherTechniques = getRemainingOtherTechniques();
         }
 
         function updateAll(refresh = true) {

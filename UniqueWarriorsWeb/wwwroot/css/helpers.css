@@ -261,12 +261,12 @@ b {
 
 }
 
-.w-max {
-  width: max-content;
+.w-fit {
+  width: fit-content;
 }
 
-.children-w-max > * {
-  width: max-content;
+.children-w-fit > * {
+  width: fit-content;
 }
 
 .top-line {

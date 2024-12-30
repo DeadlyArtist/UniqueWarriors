@@ -12,7 +12,12 @@ class CharacterHelpers {
     static getDefaultStats() {
         return {
             level: 1,
-            maxHealth: 40,
+        };
+    }
+
+    static getBaseStats() {
+        return {
+            maxHealth: 20,
             power: 1,
             speed: 8,
             evasion: 12,
@@ -30,7 +35,7 @@ class CharacterHelpers {
         };
     }
 
-    static getDefaultAttributes() {
+    static getEmptyAttributes() {
         return {
             maxHealth: 0,
             power: 0,
@@ -93,11 +98,11 @@ class CharacterHelpers {
     }
 
     static openCharacter(character) {
-        Pages.goToPath(`/app/character?id=${encodeURIComponent(character.id)}`);
+        Pages.goToPath(`${Pages.character.link}?id=${encodeURIComponent(character.id)}`);
     }
 
     static openCharacterCreator(character, tab = null) {
-        Pages.goToPath(`/app/character/creator?id=${encodeURIComponent(character.id)}${tab ? `#?tab=${tab}` : ''}`);
+        Pages.goToPath(`${Pages.characterCreator.link}?id=${encodeURIComponent(character.id)}${tab ? `#?tab=${tab}` : ''}`);
     }
 
     static saveCharacter(character) {
@@ -340,12 +345,14 @@ class CharacterHelpers {
             showLessStatsButton.classList.remove('hide');
             staticStatsBar.classList.remove('hide');
             scalingStatsBar.classList.remove('hide');
+            HtmlHelpers.getClosestProperty(statsContainer, "_masonry")?.resize();
         });
         showLessStatsButton.addEventListener('click', () => {
             showAllStatsButton.classList.remove('hide');
             showLessStatsButton.classList.add('hide');
             staticStatsBar.classList.add('hide');
             scalingStatsBar.classList.add('hide');
+            HtmlHelpers.getClosestProperty(statsContainer, "_masonry")?.resize();
         });
         return statsContainer;
     }
@@ -593,7 +600,7 @@ class StructuredAbilityListHtml {
         insertSettings ??= {};
         const structuredSection = CharacterHelpers.wrapAbilitySectionForList(this.character, ability, { ...this.insertSettings, variables: this.settings.variables, simple: this.settings.simple });
 
-        this.sections.register(structuredSection, { ...insertSettings, id: ability.title });
+        this.sections.register(structuredSection, { ...insertSettings, id: ability.id });
         HtmlHelpers.insertAt(this.listElement, this.sections.getIndex(structuredSection), structuredSection.wrapperElement);
         if (!this.settings.dontInitSearch) this.initSearch();
 
@@ -603,7 +610,7 @@ class StructuredAbilityListHtml {
     }
 
     removeAbility(ability) {
-        const structuredSection = this.sections.get(ability?.title);
+        const structuredSection = this.sections.get(ability?.id);
         if (!structuredSection) return;
         structuredSection.wrapperElement.remove();
         this.sections.unregister(structuredSection);
@@ -639,7 +646,7 @@ class StructuredCharacterSectionOverviewHtml {
         const structuredSection = SectionHelpers.wrapSectionForOverview(section, this.type, { ...this.insertSettings, link: `/app/character?id=${character.id}` });
         structuredSection.element._character = character;
 
-        this.sections.register(structuredSection, { ...insertSettings, id: structuredSection.section.title });
+        this.sections.register(structuredSection, { ...insertSettings, id: structuredSection.section.id });
         HtmlHelpers.insertAt(this.listElement, this.sections.getIndex(structuredSection), structuredSection.wrapperElement);
         if (!this.settings.dontInitSearch) this.initSearch();
 
@@ -647,7 +654,7 @@ class StructuredCharacterSectionOverviewHtml {
     }
 
     removeCharacter(character) {
-        const structuredSection = this.sections.get(character?.name);
+        const structuredSection = this.sections.get(character?.id);
         if (!structuredSection) return;
         structuredSection.wrapperElement.remove();
         this.sections.unregister(structuredSection);

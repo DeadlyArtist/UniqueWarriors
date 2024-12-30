@@ -74,6 +74,7 @@ class Snippets {
         new Snippet("ancestry", "rules/Character Creation/Choose Ancestry/Ancestries"),
         new Snippet("ancestries", "rules/Character Creation/Choose Ancestry/Ancestries"),
         new Snippet("ancestries", "rules/Character Creation/Choose Ancestry/Ancestries"),
+        new Snippet("more summon techniques", "rules/Techniques/Summons/More Summon Techniques"),
 
         // Tag only
         new Snippet("Connections", "rules/Connections", { whitelist: "tags" }),
@@ -121,8 +122,8 @@ class Snippets {
 
         Registries.conditions.stream(event => {
             let condition = event.obj;
-            if (event.registered) Snippets.registerSnippet(new Snippet(condition.title, `conditions/${condition.title}`));
-            else Snippets.unregisterSnippet(condition.title);
+            if (event.registered) Snippets.registerSnippet(new Snippet(condition.id, `conditions/${condition.id}`));
+            else Snippets.unregisterSnippet(condition.id);
         });
     }
 }

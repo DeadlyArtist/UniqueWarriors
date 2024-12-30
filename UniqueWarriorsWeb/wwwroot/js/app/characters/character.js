@@ -5,8 +5,10 @@ class Character {
         this.id = settings.id ?? generateUniqueId();
         this.imageUrl = settings.imageUrl ?? null;
         this.name = settings.name ?? CharacterHelpers.defaultName;
-        this.stats = settings.stats ?? CharacterHelpers.getDefaultStats();
-        this.attributes = settings.attributes ?? CharacterHelpers.getDefaultAttributes();
+        this.stats = settings.stats ?? {};
+        this.baseStatOverrides = settings.baseStatOverrides ?? {};
+        this.statOverrides = settings.statOverrides ?? {};
+        this.attributes = {...CharacterHelpers.getEmptyAttributes(), ...(settings.attributes ?? {})};
         this.settings = settings.settings ?? {};
         this.settings.validate ??= true;
         this.details = settings.details ?? {};
@@ -77,37 +79,39 @@ class Character {
     }
 
     getAttributeStats() {
+        let baseStats = { ...CharacterHelpers.getBaseStats(), ...(this.baseStatOverrides ?? {}) };
         let { tier } = this.getScalingStats();
-        let maxHealth = this.stats.maxHealth + tier * 20 + this.attributes.maxHealth * 10;
-        let power = this.stats.power + this.attributes.power * 1;
-        let speed = this.stats.speed + this.attributes.speed * 2;
-        let evasion = this.stats.evasion + this.attributes.evasion * 1;
-        let accuracy = this.stats.accuracy + this.attributes.accuracy * 1;
-        let luck = this.stats.luck + this.attributes.luck * 1;
-        let initiative = this.stats.initiative + this.attributes.initiative * 3;
-        let range = this.stats.range + this.attributes.range * 6;
+        let maxHealth = baseStats.maxHealth + tier * 20 + this.attributes.maxHealth * 10;
+        let power = baseStats.power + this.attributes.power * 1;
+        let speed = baseStats.speed + this.attributes.speed * 2;
+        let evasion = baseStats.evasion + this.attributes.evasion * 1;
+        let accuracy = baseStats.accuracy + this.attributes.accuracy * 1;
+        let luck = baseStats.luck + this.attributes.luck * 1;
+        let initiative = baseStats.initiative + this.attributes.initiative * 3;
+        let range = baseStats.range + this.attributes.range * 6;
 
         return {
-            maxHealth,
-            power,
-            speed,
-            evasion,
-            accuracy,
-            luck,
-            initiative,
-            range,
+            maxHealth: this.statOverrides.maxHealth ?? maxHealth,
+            power: this.statOverrides.power ?? power,
+            speed: this.statOverrides.speed ?? speed,
+            evasion: this.statOverrides.evasion ?? evasion,
+            accuracy: this.statOverrides.accuracy ?? accuracy,
+            luck: this.statOverrides.luck ?? luck,
+            initiative: this.statOverrides.initiative ?? initiative,
+            range: this.statOverrides.range ?? range,
         };
     }
 
     getStaticStats() {
+        let baseStats = { ...CharacterHelpers.getBaseStats(), ...(this.baseStatOverrides ?? {}) };
         return {
-            grazeRange: this.stats.grazeRange,
-            critRange: this.stats.critRange,
-            reach: this.stats.reach,
-            size: this.stats.size,
-            actions: this.stats.actions,
-            moveActions: this.stats.moveActions,
-            quickActions: this.stats.quickActions,
+            grazeRange: this.statOverrides.grazeRange ?? baseStats.grazeRange,
+            critRange: this.statOverrides.critRange ?? baseStats.critRange,
+            reach: this.statOverrides.reach ?? baseStats.reach,
+            size: this.statOverrides.size ?? baseStats.size,
+            actions: this.statOverrides.actions ?? baseStats.actions,
+            moveActions: this.statOverrides.moveActions ?? baseStats.moveActions,
+            quickActions: this.statOverrides.quickActions ?? baseStats.quickActions,
         };
     }
 
@@ -218,6 +222,8 @@ class Character {
             imageUrl: this.imageUrl,
             name: this.name,
             stats: this.stats,
+            baseStatOverrides: this.baseStatOverrides,
+            statOverrides: this.statOverrides,
             attributes: this.attributes,
             details: this.details,
             items: this.items.getAll(),

@@ -30,11 +30,14 @@ class Loader {
             new Collection.SectionResourceWrapper(Resources.techniques_special_m),
         ], {categories: true}),
     ];
+    static collectionsByRegistry = new Map();
 
     static async registerAllCollections() {
+        this.collections.forEach(c => this.collectionsByRegistry.set(c.registry, c));
         await parallel(this.collections, async function (collection) {
             await collection.register();
         });
+        this.collections.forEach(collection => collection.resolvePendingReferences());
         this.collectionsLoaded = true;
         window.dispatchEvent(new CustomEvent('collections-loaded'));
     }

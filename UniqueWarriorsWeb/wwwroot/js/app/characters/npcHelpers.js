@@ -13,6 +13,11 @@ class NPCHelpers {
         return {
             level: 1,
             importance: 0,
+        };
+    }
+
+    static getBaseStats() {
+        return {
             maxHealth: 0,
             power: 1,
             speed: 8,
