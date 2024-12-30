@@ -94,6 +94,7 @@ class ObjectHelpers {
     }
 
     static fromMap(map) {
+        if (!(map instanceof Map)) return map;
         let obj = {};
         for (let [key, value] of map.entries()) {
             obj[key] = value;

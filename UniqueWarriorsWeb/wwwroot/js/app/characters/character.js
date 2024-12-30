@@ -9,6 +9,7 @@ class Character {
         this.attributes = settings.attributes ?? CharacterHelpers.getDefaultAttributes();
         this.settings = settings.settings ?? {};
         this.settings.validate ??= true;
+        this.details = settings.details ?? {};
 
         this.items = new Registry();
         this.techniques = new Registry();
@@ -63,7 +64,7 @@ class Character {
         let tier = 1 + Math.floor(rank / 3);
         let maxRunes = 1 + Math.floor(level / 10);
         let attributeIncreases = this.getMaxAttributeIncreases();
-        let maxAttributes = 2 + rank - tier;
+        let attributeMaximum = 2 + rank - tier;
 
         return {
             level,
@@ -71,7 +72,7 @@ class Character {
             tier,
             maxRunes,
             attributeIncreases,
-            maxAttributes,
+            attributeMaximum,
         };
     }
 
@@ -108,6 +109,12 @@ class Character {
             moveActions: this.stats.moveActions,
             quickActions: this.stats.quickActions,
         };
+    }
+
+    getRemainingAttributeIncreases() {
+        let amount = this.getScalingStats().attributeIncreases;
+        Object.keys(this.attributes).forEach(name => amount -= [this.attributes[name]]);
+        return amount;
     }
 
     getVariables() {
@@ -212,6 +219,7 @@ class Character {
             name: this.name,
             stats: this.stats,
             attributes: this.attributes,
+            details: this.details,
             items: this.items.getAll(),
             techniques: this.techniques.getAll(),
             summons: this.summons.getAll(),

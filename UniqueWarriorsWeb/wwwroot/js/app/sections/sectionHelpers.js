@@ -23,7 +23,7 @@ class SectionHelpers {
 
         if (settings.anchor) sections.forEach(s => s.anchor = settings.anchor);
 
-        if (settings.name && !settings.mutation) sections.forEach(s => s.title = settings.name);
+        if (settings.name && !settings.mutation) sections.forEach(s => this.setupVariant(s, settings.name));
 
         if (settings.addChild) settings.addChildren = [settings.addChild];
         if (settings.removeChild) settings.removeChildren = [settings.removeChild];
@@ -158,7 +158,7 @@ class SectionHelpers {
     }
 
     static resolvePath(path, encoded = false) {
-        if (!encoded) path = SectionReferenceHelpers.pathEncoder.encode(part);
+        if (!encoded) path = SectionReferenceHelpers.pathEncoder.encode(path);
         let parts = path.split('/').map(part => SectionReferenceHelpers.pathEncoder.unescape(part));
         if (parts.length < 2) return null;
         let registry = Registries.all[parts.shift()];
@@ -255,12 +255,12 @@ class SectionHelpers {
         section.id = this.getMutationId(section, mutation);
         section.title = mutationTitle ?? this.getDefaultMutationTitle(section, mutation);
 
-        let categoryHeadValueName;
-        AbilitySectionHelpers.categoryHeadValueNames.forEach(name => {
-            if (section.headValues.has(name)) categoryHeadValueName = name;
+        let weaponDefinitionHeadValueName;
+        ["Weapon", "Weapon Core", "Weapons"].forEach(name => {
+            if (section.headValues.has(name)) weaponDefinitionHeadValueName = name;
         });
-        let categoryHeadValueValue = section.getHeadValueValue(categoryHeadValueName);
-        section.addHeadValue(categoryHeadValueName, categoryHeadValueValue + " + " + mutation, { update: true });
+        let weaponDefinitionHeadValueValue = section.getHeadValueValue(weaponDefinitionHeadValueName);
+        section.addHeadValue(weaponDefinitionHeadValueName, weaponDefinitionHeadValueValue + " + " + mutation, { update: true });
 
 
         mutationSection ??= Registries.techniques.get(mutation + " Mutation");
@@ -298,15 +298,19 @@ class SectionHelpers {
                 });
             }
 
-            section.content.replaceAll(`${categoryHeadValueValue.toLowerCase()} attack`, (match, capturedGroup) => {
-                return `${categoryHeadValueValue.toLowerCase()} or ${mutation.toLowerCase()} attack`;
+            ["attack", "ability"].forEach(type => {
+                section.content = section.content.replaceAll(`${weaponDefinitionHeadValueValue.toLowerCase()} ${type}`, (match) => {
+                    return `${weaponDefinitionHeadValueValue.toLowerCase()} or ${mutation.toLowerCase()} attack`;
+                });
             });
         }
 
         let trigger = AbilitySectionHelpers.getTrigger(section);
         if (trigger) {
-            trigger = trigger.replaceAll(`${categoryHeadValueValue.toLowerCase()} attack`, (match, capturedGroup) => {
-                return `${categoryHeadValueValue.toLowerCase()} or ${mutation.toLowerCase()} attack`;
+            ["attack", "ability"].forEach(type => {
+                trigger = trigger.replaceAll(`${weaponDefinitionHeadValueValue.toLowerCase()} ${type}`, (match) => {
+                    return `${weaponDefinitionHeadValueValue.toLowerCase()} or ${mutation.toLowerCase()} attack`;
+                });
             });
             section.addHeadValue("Trigger", trigger, { update: true });
         }
@@ -339,8 +343,21 @@ class SectionHelpers {
         }
     }
 
+    static getVariant(section, variationTitle = null) {
+        section = section.clone();
+        this.setupVariant(section, variationTitle);
+        return section;
+    }
+
+    static setupVariant(section, variationTitle = null) {
+        section.removeHeadValue("Connections");
+        section.addHeadValue("Variant", `<${section.title}>`, { lineIndex: 0 });
+        section.title = variationTitle;
+    }
+
     static generateStructuredHtmlForSection(section, settings = null) {
         settings ??= {};
+
         const sectionElement = fromHTML(`<div class="section">`);
         const structuredSection = new StructuredSectionHtml(
             section,
@@ -348,10 +365,49 @@ class SectionHelpers {
             settings.wrapperElement ?? sectionElement,
             settings,
         );
-        let newVariables = settings.variables ??= new Map();
-        if (SummonHelpers.isSummon(section)) {
 
+        let content = section.content;
+        let attributes = section.attributes;
+        let newVariables = settings.variables ??= new Map();
+        let hasLevel = false;
+        let isNPC = NPCSectionHelpers.isSummon(section);
+        let npc = null;
+        if (isNPC) {
+            let mixed = [];
+            function parseMixed(text) {
+                return text.replace(/(^|\n)<[^<]+>/g, matched => {
+                    let parsed = SectionReferenceHelpers.parseReference(matched);
+                    let path = "techniques/" + parsed.reference;
+                    let section = SectionHelpers.resolveSectionExpression(path);
+                    if (section) mixed.push(section);
+                    return "";
+                });
+            }
+            if (content) {
+                content = parseMixed(text);
+            }
+            if (attributes) {
+                attributes = attributes.map(attributeLine => attributeLine.map(attribute => {
+                    if (SectionAttributesHelpers.isTag(attribute)) return parseMixed(attribute);
+                    return attribute;
+                }).filter(a => a));
+            }
+            npc = NPCSectionHelpers.parseNPC(section, { mixed });
+            let level = settings.variables.get("Level");
+            if (level == null) {
+                newVariables = new Map();
+            } else {
+                npc.stats.level = level;
+                NPCHelpers.allStatNames.forEach(statName => {
+                    let value = section.getHeadValueValue(statName);
+                    if (value == null) return;
+                    npc.stats[statName] = value;
+                });
+                newVariables = npc.getVariables();
+                hasLevel = true;
+            }
         }
+
 
         let needsBreak = false;
 
@@ -367,10 +423,10 @@ class SectionHelpers {
 
         // Need to extract embedded (summon) variables before here.
         let attributesElement = null;
-        if (section.attributes?.length > 0) {
+        if (attributes?.length > 0) {
             needsBreak = true;
             attributesElement = fromHTML(`<div class="section-attributes applySnippets markTooltips">`);
-            section.attributes.forEach(attributeList => {
+            attributes.forEach(attributeList => {
                 let attributesLine = fromHTML(`<div class="section-attributesLine">`);
                 attributesElement.appendChild(attributesLine);
                 attributeList.forEach((attr, index) => {
@@ -394,13 +450,13 @@ class SectionHelpers {
 
 
         let contentElement = null;
-        if (section.content) {
+        if (content) {
             needsBreak = true;
             contentElement = fromHTML(`<div class="section-content fixText applySnippets markTooltips">`);
 
             // Convert markdown links to html
             const markdownLinkRegex = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g;
-            const htmlContent = escapeHTML(section.content).replace(markdownLinkRegex, '<a class="textLink" href="$2">$1</a>');
+            const htmlContent = escapeHTML(content).replace(markdownLinkRegex, '<a class="textLink" href="$2">$1</a>');
 
             contentElement.innerHTML = htmlContent;
             sectionElement.appendChild(contentElement);
@@ -426,10 +482,49 @@ class SectionHelpers {
         structuredSection.subSectionContainer = subSectionContainer;
         structuredSection.newVariables = newVariables;
 
-        if (section.subSections?.length > 0) {
-            section.subSections.forEach(subSection => {
-                structuredSection.addSubSection(subSection);
-            });
+        if (isNPC) {
+            let characterContainer = fromHTML(`<div>`);
+            if (hasLevel) {
+                function updateCharacter() {
+                    let structuredCharacter = CharacterHelpers.generateStructuredHtmlForCharacter(npc, { embedded: true, noTitle: true, simple: true, });
+                    structuredSection._structuredCharacter = structuredCharacter;
+                    structuredCharacter._section = section;
+                    structuredCharacter.element._section = section;
+                    structuredCharacter.element._npc = npc;
+                    characterContainer.innerHTML = "";
+                    characterContainer.appendChild(structuredCharacter.element);
+                }
+
+                let importanceInputContainer = fromHTML(`<div class="listHorizontal gap-2">`);
+                sectionElement.appendChild(importanceInputContainer);
+                importanceInputContainer.appendChild(fromHTML(`<div>Importance:`));
+                let importanceInput = fromHTML(`<input type="number" class="largeElement rounded">`);
+                importanceInputContainer.appendChild(importanceInput);
+                importanceInput.value = npc.stats.importance;
+                importanceInput.addEventListener('input', () => {
+                    if (importanceInput.value == '') return;
+                    let newValue = InputHelpers.fixNumberInput(importanceInput);
+                    newValue = InputHelpers.constrainInput(importanceInput, value => clamp(value, 0, 3));
+                    if (npc.stats.importance == newValue) return;
+                    npc.stats.importance = newValue;
+                    updateCharacter();
+                });
+                importanceInput.addEventListener('focusout', () => {
+                    if (importanceInput.value == '') importanceInput.value = npc.stats.importance;
+                });
+
+                updateCharacter();
+            } else {
+                let abilityListElement = CharacterHelpers.generateAbilitiesSubPageHtml(npc, { noVariables: true, simple: true, });
+                characterContainer.appendChild(abilityListElement);
+            }
+            sectionElement.appendChild(characterContainer);
+        } else {
+            if (section.subSections?.length > 0) {
+                section.subSections.forEach(subSection => {
+                    structuredSection.addSubSection(subSection);
+                });
+            }
         }
 
         SectionReferenceHelpers.addTooltips(attributesElement, settings.variables);

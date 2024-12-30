@@ -71,3 +71,7 @@
 .decoratedContainer>*:nth-child(2) {
     width: calc(100% - 28 * 2px);
 }
+
+.alignItemsStart {
+  align-items: start;
+}

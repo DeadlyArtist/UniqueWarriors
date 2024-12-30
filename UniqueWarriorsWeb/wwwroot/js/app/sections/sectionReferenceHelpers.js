@@ -159,6 +159,7 @@ class SectionReferenceHelpers {
             let start = -1, end = -1;
             let parentSectionElement = HtmlHelpers.getClosestWithProperty(node, "_section");
             let parentSection = parentSectionElement._section;
+            let isHeadValue = HtmlHelpers.getClosestWithProperty(node, "_headValue");
 
             let reference = null;
             let path = null;
@@ -174,24 +175,22 @@ class SectionReferenceHelpers {
                 } else if (value[i] === '>') {
                     if (start == -1) continue;
                     end = i;
-                    const parts = value.substring(start + 1, end).split('|');
-                    reference = parts.shift();
-                    for (let part of parts) {
-                        if (!mutation && part.endsWith('Mutation')) mutation = part;
-                        else name = part;
-                    }
-                    if (mutation) reference += `*mutation=${mutation}`;
-                    if (name) reference += `*name=${name}`;
+                    let parsed = this.parseReference(value.substring(start + 1, end));
+                    reference = parsed.reference;
+                    name = parsed.name;
+                    mutation = parsed.mutation;
+                    reference = parsed.reference;
+                    let display = parsed.display;
+
                     isLine = start == 0 && end == value.length - 1;
                     path = isLine ? 'techniques/' + reference : this.findPathFromReference(parentSection, reference);
-                    let display = name ?? reference;
-                    html += `<span tooltip-path="${escapeHTML(path)}" section-formula>${escapeHTML(isLine ? "<" + display + ">" : display)}</span>`;
+                    html += `<span tooltip-path="${escapeHTML(path)}" section-formula>${escapeHTML(isLine && !isHeadValue ? "<" + display + ">" : display)}</span>`;
                 }
             }
 
-            if (isLine) {
+            if (isLine && !isHeadValue) {
                 let section = SectionHelpers.resolveSectionExpression(path);
-                if (section && value[0] == '<' && value[value.length - 1] == '>') {
+                if (section) {
                     let height = 1;
                     if (parentSection) height = parentSection.height + 1;
                     section = SectionHelpers.modify(section, { height })[0];
@@ -207,6 +206,21 @@ class SectionReferenceHelpers {
 
             if (html !== value) replaceTextNodeWithHTML(node, html);
         }
+    }
+
+    static parseReference(text) {
+        let mutation = null;
+        let name = null;
+        const parts = text.trim().replace(/^</, "").replace(/>$/, "").split('|');
+        let reference = parts.shift();
+        for (let part of parts) {
+            if (!mutation && part.endsWith('Mutation')) mutation = part;
+            else name = part;
+        }
+        if (mutation) reference += `*mutation=${mutation}`;
+        if (name) reference += `*name=${name}`;
+        let display = name ?? reference;
+        return { reference, name, mutation, display };
     }
 
     static findPathFromReference(section, reference) {

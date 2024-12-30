@@ -276,15 +276,14 @@ function replaceNodeWithClone(node) {
 
 function replaceTextNodeWithHTML(node, html) {
     if (node && node.nodeType === Node.TEXT_NODE) {
+        let parentNode = node.parentNode;
         // Create a temporary container for the new HTML content
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = html;
-
         // Replace the text node with new HTML content
         while (tempDiv.firstChild) {
-            node.parentNode.insertBefore(tempDiv.firstChild, node);
+            parentNode.insertBefore(tempDiv.firstChild, node);
         }
-
         // Remove the original text node
         node.remove();
     }

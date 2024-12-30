@@ -18,6 +18,7 @@ class Registries {
     static summons = this.register(new Registry("summons"));
     static conditions = this.register(new Registry("conditions"));
     static rules = this.register(new Registry("rules"));
+    static ancestries = this.register(new Registry("ancestries"));
     static characters = this.register(new Registry("characters"));
     static npcs = this.register(new Registry("npcs"));
 

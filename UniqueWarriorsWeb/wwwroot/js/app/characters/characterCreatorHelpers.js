@@ -157,22 +157,75 @@ class CharacterCreatorHelpers {
         let maxOtherTechniques = maxTechniques - 1;
         let chosenTechniques = character.techniques;
         let chosenSummons = character.summons;
+
+        function getMaxSummonUnlocks() {
+            let unlocks = new Map();
+            chosenTechniques.filter(t => AbilitySectionHelpers.hasUnlocks(t)).map(s => AbilitySectionHelpers.getUnlocks(s)).forEach(unlocksList => {
+                unlocksList.filter(u => u.type == "Summon").forEach(unlock => {
+                    let oldAmount = unlocks.get(unlock.target) ?? 0;
+                    unlocks.set(unlock.target, oldAmount + unlock.amount);
+                });
+            });
+            return unlocks;
+        }
+        let maxSummonUnlocks = getMaxSummonUnlocks();
+        let availableSummons = Registries.summons.getAll();
+        function getRemainingSummonUnlocks() {
+            let remaining = new Map();
+            for (let [category, maxAmount] of maxSummonUnlocks.entries()) {
+                let hasAmount = chosenSummons.filter(s => AbilitySectionHelpers.getMainCategory(s) == category).length;
+                remaining.set(category, clamp(maxAmount - hasAmount, 0, maxAmount));
+            }
+            return remaining;
+        }
+        let remainingSummonUnlocks = getRemainingSummonUnlocks();
         function getHasWeaponCore() {
             return chosenTechniques.some(t => AbilitySectionHelpers.isWeaponCore(t));
         }
         let hasWeaponCore = getHasWeaponCore();
-        function getRemainingOtherTechniques(hasWeaponCore = null) {
-            hasWeaponCore ??= getHasWeaponCore();
-            return maxOtherTechniques - (hasWeaponCore ? chosenTechniques.size - 1 : chosenTechniques.size);
+        function getRemainingOtherTechniques() {
+            let tooManySummonsTracker = new Map(maxSummonUnlocks);
+            let tooManySummons = chosenSummons.filter(summon => {
+                let category = AbilitySectionHelpers.getMainCategory(summon);
+                let remaining = tooManySummonsTracker.get(category);
+                if (remaining == null || remaining == 0) return true;
+                tooManySummonsTracker.set(category, remaining - 1);
+                return false;
+            }).length;
+
+            let variantTechniques = character.summons.filter(s => AbilitySectionHelpers.isVariant(s)).flatMap(s => {
+                let original = SummonHelpers.getVariantOriginal(original);
+                return s.techniques.filter(t => !original.techniques.has(t));
+            }).length;
+            let variantSummons = character.summons.filter(s => AbilitySectionHelpers.isVariant(s)).flatMap(s => {
+                let maxSummonUnlocks = new Map();
+                s.techniques.filter(t => AbilitySectionHelpers.hasUnlocks(t)).map(s => AbilitySectionHelpers.getUnlocks(s)).forEach(unlocksList => {
+                    unlocksList.filter(u => u.type == "Summon").forEach(unlock => {
+                        let oldAmount = maxSummonUnlocks.get(unlock.target) ?? 0;
+                        maxSummonUnlocks.set(unlock.target, oldAmount + unlock.amount);
+                    });
+                });
+                let tooManySummonsTracker = new Map(maxSummonUnlocks);
+                tooManySummons += s.summons.filter(summon => {
+                    let category = AbilitySectionHelpers.getMainCategory(summon);
+                    let remaining = tooManySummonsTracker.get(category);
+                    if (remaining == null || remaining == 0) return true;
+                    tooManySummonsTracker.set(category, remaining - 1);
+                    return false;
+                }).length;
+
+                let original = SummonHelpers.getVariantOriginal(original);
+                return s.summons.filter(t => !original.summons.has(t));
+            }).length;
+            return maxOtherTechniques - (hasWeaponCore ? chosenTechniques.size - 1 : chosenTechniques.size) - tooManySummons - variantTechniques - variantSummons;
         }
 
         function getMutations() {
             return character.techniques.filter(t => AbilitySectionHelpers.isMutation(t));
         }
-        function getRemainingFreeMutations(mutations = null) {
-            mutations ??= getMutations();
+        function getRemainingFreeMutations() {
             let remaining = new Map();
-            for (let mutation of mutations) {
+            for (let mutation of chosenMutations) {
                 remaining.set(mutation, 1);
                 for (let chosen of [chosenTechniques, chosenSummons]) {
                     for (let techniqueLike of chosen) {
@@ -185,8 +238,8 @@ class CharacterCreatorHelpers {
         }
 
         let chosenMutations = getMutations();
-        let remainingOtherTechniques = getRemainingOtherTechniques(hasWeaponCore);
-        let remainingFreeMutations = getRemainingFreeMutations(chosenMutations);
+        let remainingOtherTechniques = getRemainingOtherTechniques();
+        let remainingFreeMutations = getRemainingFreeMutations();
 
         let mutationDialog = DialogHelpers.create(dialog => {
             let dialogElement = fromHTML(`<div class="divList">`);
@@ -244,23 +297,22 @@ class CharacterCreatorHelpers {
             return dialogElement;
         });
 
-        function getAllowedMutations(techniqueLike, mutations, remainingOtherTechniques, remainingFreeMutations) {
-            let isSummon = SummonHelpers.isSummon(techniqueLike);
+        function getAllowedMutations(techniqueLike) {
+            let isSummon = NPCSectionHelpers.isSummon(techniqueLike);
             let chosen = chosenTechniques;
             if (isSummon) chosen = chosenSummons;
             let category = AbilitySectionHelpers.getMainCategory(techniqueLike);
-            return mutations.filter(mutation =>
+            return chosenMutations.filter(mutation =>
                 !chosen.has(SectionHelpers.getMutationId(techniqueLike, mutation)) &&
                 AbilitySectionHelpers.getMainCategory(mutation) != category &&
                 (remainingOtherTechniques > 0 || remainingFreeMutations.get(mutation) != 0)
             );
         }
 
-        function openMutationDialog(techniqueLike, mutations, remainingOtherTechniques, remainingFreeMutations) {
-            let isSummon = SummonHelpers.isSummon(techniqueLike);
+        function openMutationDialog(techniqueLike) {
             mutationDialog.dialogTitleElement.textContent = `Mutate: ${techniqueLike.title}`;
 
-            mutations = getAllowedMutations(techniqueLike, mutations, remainingOtherTechniques, remainingFreeMutations);
+            let mutations = getAllowedMutations(techniqueLike);
             mutationDialog._originalSection = techniqueLike;
             mutationDialog.dialogMutationInput.innerHTML = "";
             mutations.forEach(mutation => mutationDialog.dialogMutationInput.appendChild(fromHTML(`<option>${escapeHTML(mutation.title)}`)));       
@@ -272,13 +324,7 @@ class CharacterCreatorHelpers {
         element.appendChild(fromHTML(`<h1>Choose Techniques`));
         let descriptionElement = fromHTML(`<div>`);
         element.appendChild(descriptionElement);
-        function updateDescription(hasWeaponCore = null, remainingOtherTechniques = null, mutations = null, remainingFreeMutations = null, maxSummonUnlocks = null, remainingSummonUnlocks = null) {
-            hasWeaponCore ??= getHasWeaponCore();
-            remainingOtherTechniques ??= getRemainingOtherTechniques(hasWeaponCore);
-            mutations ??= getMutations();
-            remainingFreeMutations ??= getRemainingFreeMutations(mutations);
-            maxSummonUnlocks ??= getMaxSummonUnlocks();
-            remainingSummonUnlocks ??= getRemainingSummonUnlocks(maxSummonUnlocks);
+        function updateDescription() {
             let other = '';
             remainingFreeMutations.forEach((amount, mutation) => {
                 other += `, ${amount}/1 ${mutation.title.toLowerCase()}`;
@@ -300,26 +346,18 @@ class CharacterCreatorHelpers {
         element.appendChild(chosenOverview.container);
         chosenOverview.listElement.setAttribute('placeholder', 'No techniques learned yet...');
 
-        function updateChosenOverview(hasWeaponCore = null, remainingOtherTechniques = null, mutations = null, remainingFreeMutations = null) {
-            hasWeaponCore ??= getHasWeaponCore();
-            remainingOtherTechniques ??= getRemainingOtherTechniques(hasWeaponCore);
-            mutations ??= getMutations();
-            remainingFreeMutations ??= getRemainingFreeMutations(mutations);
-
+        function updateChosenOverview() {
             for (let structuredSection of chosenOverview.sections) {
                 let element = structuredSection.wrapperElement;
                 let technique = structuredSection.section;
-                let allowedMutations = getAllowedMutations(technique, mutations, remainingOtherTechniques, remainingFreeMutations);
+                let allowedMutations = getAllowedMutations(technique);
                 if (!AbilitySectionHelpers.isMutated(technique) && !AbilitySectionHelpers.isMutation(technique) && allowedMutations.length != 0) {
                     if (!structuredSection.mutateButton) {
                         addMutateButton(structuredSection);
                     }
-                    if (remainingOtherTechniques <= 0 && !allowedMutations.some(am => remainingFreeMutations.get())) {
-
-                    }
                 } else {
                     if (structuredSection.mutateButton) {
-                        structuredSection.mutateButton.remove();
+                        structuredSection.mutateButtonContainer.remove();
                         structuredSection.mutateButton = null;
                     }
                 }
@@ -335,10 +373,7 @@ class CharacterCreatorHelpers {
         element.appendChild(availableOverview.container);
         let noTechniquesElement = fromHTML(`<div class="hide" placeholder="No more techniques available...">`);
         element.appendChild(noTechniquesElement);
-        function updateAvailableOverview(hasWeaponCore = null, remainingOtherTechniques = null) {
-            hasWeaponCore ??= getHasWeaponCore();
-            remainingOtherTechniques ??= getRemainingOtherTechniques(hasWeaponCore);
-
+        function updateAvailableOverview() {
             let somethingAvailable = false;
             for (let structuredSection of availableOverview.sections) {
                 let element = structuredSection.wrapperElement;
@@ -379,53 +414,9 @@ class CharacterCreatorHelpers {
         summonsContainer.appendChild(chosenSummonsOverview.container);
         chosenSummonsOverview.listElement.setAttribute('placeholder', 'No summons learned yet...');
 
-        function updateChosenSummonsOverview(hasWeaponCore = null, remainingOtherTechniques = null, mutations = null, remainingFreeMutations = null) {
-            hasWeaponCore ??= getHasWeaponCore();
-            remainingOtherTechniques ??= getRemainingOtherTechniques(hasWeaponCore);
-            mutations ??= getMutations();
-            remainingFreeMutations ??= getRemainingFreeMutations(mutations);
-
-            for (let structuredSection of chosenSummonsOverview.sections) {
-                let element = structuredSection.wrapperElement;
-                let summon = structuredSection.section;
-                let allowedMutations = getAllowedMutations(summon, mutations, remainingOtherTechniques, remainingFreeMutations);
-                if (!AbilitySectionHelpers.isMutated(summon) && !AbilitySectionHelpers.isMutation(summon) && allowedMutations.length != 0) {
-                    if (!structuredSection.mutateButton) {
-                        addMutateButton(structuredSection);
-                    }
-                } else {
-                    if (structuredSection.mutateButton) {
-                        structuredSection.mutateButton.remove();
-                        structuredSection.mutateButton = null;
-                    }
-                }
-            }
-
+        function updateChosenSummonsOverview() {
             chosenSummonsOverview.listElement._masonry?.resize();
         }
-
-        function getMaxSummonUnlocks() {
-            let unlocks = new Map();
-            chosenTechniques.filter(t => AbilitySectionHelpers.hasUnlocks(t)).map(s => AbilitySectionHelpers.getUnlocks(s)).forEach(unlocksList => {
-                unlocksList.filter(u => u.type == "Summon").forEach(unlock => {
-                    let oldAmount = unlocks.get(unlock.target) ?? 0;
-                    unlocks.set(unlock.target, oldAmount + unlock.amount);
-                });
-            });
-            return unlocks;
-        }
-        let maxSummonUnlocks = getMaxSummonUnlocks();
-        let availableSummons = Registries.summons.getAll();
-        function getRemainingSummonUnlocks(maxSummonUnlocks = null) {
-            maxSummonUnlocks ??= getMaxSummonUnlocks();
-            let remaining = new Map();
-            for (let [category, maxAmount] of maxSummonUnlocks.entries()) {
-                let hasAmount = chosenSummons.filter(s => AbilitySectionHelpers.getMainCategory(s) == category).length;
-                remaining.set(category, clamp(maxAmount - hasAmount, 0, maxAmount));
-            }
-            return remaining;
-        }
-        let remainingSummonUnlocks = getRemainingSummonUnlocks();
 
         summonsContainer.appendChild(hb(4));
         summonsContainer.appendChild(fromHTML(`<h1>Available Summons`));
@@ -434,12 +425,7 @@ class CharacterCreatorHelpers {
         let noSummonsElement = fromHTML(`<div class="hide" placeholder="No more summons available...">`);
         summonsContainer.appendChild(noSummonsElement);
 
-        function updateAvailableSummonsOverview(hasWeaponCore = null, remainingOtherTechniques = null, maxSummonUnlocks = null, remainingSummonUnlocks = null) {
-            hasWeaponCore ??= getHasWeaponCore();
-            remainingOtherTechniques ??= getRemainingOtherTechniques(hasWeaponCore);
-            maxSummonUnlocks ??= getMaxSummonUnlocks();
-            remainingSummonUnlocks ??= getRemainingSummonUnlocks();
-
+        function updateAvailableSummonsOverview() {
             let somethingAvailable = false;
             for (let structuredSection of availableSummonsOverview.sections) {
                 let element = structuredSection.wrapperElement;
@@ -449,8 +435,9 @@ class CharacterCreatorHelpers {
                 else if (character.settings.validate) {
                     let category = AbilitySectionHelpers.getMainCategory(summon);
                     if (!maxSummonUnlocks.has(category)) isAvailable = false;
-                    else if (remainingOtherTechniques <= 0 && maxSummonUnlocks.get(category) <= 0) isAvailable = false;
+                    else if (remainingOtherTechniques <= 0 && remainingSummonUnlocks.get(category) <= 0) isAvailable = false;
                     else if (!CharacterCreatorHelpers.canConnectToAbility(chosenSummons, summon, chosenTechniques)) isAvailable = false;
+                    console.log(summon, remainingOtherTechniques, maxSummonUnlocks.get(category), remainingSummonUnlocks.get(category));
                 }
 
                 if (isAvailable) {
@@ -473,7 +460,7 @@ class CharacterCreatorHelpers {
         }
 
         function learn(techniqueLike, update = true) {
-            let isSummon = SummonHelpers.isSummon(techniqueLike);
+            let isSummon = NPCSectionHelpers.isSummon(techniqueLike);
             let chosen = chosenTechniques;
             let overview = chosenOverview;
             if (isSummon) {
@@ -493,7 +480,7 @@ class CharacterCreatorHelpers {
         }
 
         function unlearn(techniqueLike, update = true) {
-            let isSummon = SummonHelpers.isSummon(techniqueLike);
+            let isSummon = NPCSectionHelpers.isSummon(techniqueLike);
             let chosen = chosenTechniques;
             let overview = chosenOverview;
             if (isSummon) {
@@ -524,10 +511,7 @@ class CharacterCreatorHelpers {
         }
 
         function mutate(techniqueLike) {
-            let mutations = getMutations();
-            let remainingOtherTechniques = getRemainingOtherTechniques();
-            let remainingFreeMutations = getRemainingFreeMutations(mutations);
-            openMutationDialog(techniqueLike, mutations, remainingOtherTechniques, remainingFreeMutations)
+            openMutationDialog(techniqueLike)
         }
 
         function addUnlearnButton(structuredSection) {
@@ -540,7 +524,7 @@ class CharacterCreatorHelpers {
             wrapper.appendChild(button);
             if (character.settings.validate) button.setAttribute('tooltip', "Warning: If other techniques depend on this, you will unlearn them as well.");
             button.addEventListener('click', () => unlearn(technique));
-            structuredSection.subSectionContainer.after(container);
+            structuredSection.element.appendChild(container);
         }
 
         for (let structuredSection of chosenOverview.sections) {
@@ -560,7 +544,7 @@ class CharacterCreatorHelpers {
             let button = structuredSection.learnButton = fromHTML(`<button class="listHorizontal gap-2 largeElement bordered brand-border-color hoverable centerContentHorizontally w-100">Learn`);
             wrapper.appendChild(button);
             button.addEventListener('click', () => learn(technique));
-            structuredSection.subSectionContainer.after(container);
+            structuredSection.element.appendChild(container);
         }
 
         for (let structuredSection of availableOverview.sections) {
@@ -580,15 +564,15 @@ class CharacterCreatorHelpers {
             let button = structuredSection.mutateButton = fromHTML(`<button class="listHorizontal gap-2 largeElement bordered brand-border-color hoverable centerContentHorizontally w-100">Mutate`);
             wrapper.appendChild(button);
             button.addEventListener('click', () => mutate(technique));
-            structuredSection.subSectionContainer.after(container);
+            structuredSection.element.appendChild(container);
         }
 
-        function updateAll(hasWeaponCore = null, remainingOtherTechniques = null, mutations = null, maxSummonUnlocks = null, remainingSummonUnlocks = null, remainingFreeMutations = null) {
-            hasWeaponCore ??= getHasWeaponCore();
-            remainingOtherTechniques ??= getRemainingOtherTechniques(hasWeaponCore);
-            mutations ??= getMutations();
-            maxSummonUnlocks ??= getMaxSummonUnlocks();
-            remainingFreeMutations ??= getRemainingFreeMutations(mutations);
+        function refreshData() {
+            hasWeaponCore = getHasWeaponCore();
+            remainingOtherTechniques = getRemainingOtherTechniques();
+            chosenMutations = getMutations();
+            maxSummonUnlocks = getMaxSummonUnlocks();
+            remainingFreeMutations = getRemainingFreeMutations();
 
             if (character.settings.validate) {
                 let summonsWithoutUnlocks = chosenSummons.filter(s => !maxSummonUnlocks.has(AbilitySectionHelpers.getMainCategory(s)));
@@ -599,20 +583,24 @@ class CharacterCreatorHelpers {
                 }
             }
 
-            remainingSummonUnlocks ??= getRemainingSummonUnlocks();
+            remainingSummonUnlocks = getRemainingSummonUnlocks();
+        }
 
-            updateDescription(hasWeaponCore, remainingOtherTechniques, mutations, remainingFreeMutations, maxSummonUnlocks, remainingSummonUnlocks);
-            updateChosenOverview(hasWeaponCore, remainingOtherTechniques, mutations, remainingFreeMutations);
-            updateAvailableOverview(hasWeaponCore, remainingOtherTechniques);
+        function updateAll(refresh = true) {
+            if (refresh) refreshData();
+
+            updateDescription();
+            updateChosenOverview();
+            updateAvailableOverview();
             if (maxSummonUnlocks.size != 0) {
                 summonsContainer.classList.remove('hide');
-                updateChosenSummonsOverview(hasWeaponCore, remainingOtherTechniques, mutations, remainingFreeMutations);
-                updateAvailableSummonsOverview(hasWeaponCore, remainingOtherTechniques, maxSummonUnlocks, remainingSummonUnlocks);
+                updateChosenSummonsOverview();
+                updateAvailableSummonsOverview();
             } else {
                 summonsContainer.classList.add('hide');
             }
         }
-        updateAll(hasWeaponCore, remainingOtherTechniques, chosenMutations, maxSummonUnlocks, remainingSummonUnlocks, remainingFreeMutations);
+        updateAll(false);
 
         return element;
     }
@@ -705,11 +693,7 @@ class CharacterCreatorHelpers {
         element.appendChild(fromHTML(`<h1>Choose Masteries`));
         let descriptionElement = fromHTML(`<div>`);
         element.appendChild(descriptionElement);
-        function updateDescription(hasPathCore = null, remainingMasteries = null, remainingEvolutions = null, remainingAscendancies = null) {
-            hasPathCore ??= getHasPathCore();
-            remainingMasteries ??= getRemainingMasteries();
-            remainingEvolutions ??= getRemainingEvolutions();
-            remainingAscendancies ??= getRemainingAscendancies();
+        function updateDescription() {
             let other = '';
             if (maxEvolutions != 0) other += `, ${remainingEvolutions}/${maxEvolutions} evolutions`;
             if (maxAscendancies != 0) other += `, ${remainingAscendancies}/${maxAscendancies} ascendancies`;
@@ -726,12 +710,7 @@ class CharacterCreatorHelpers {
         let chosenOverview = SectionHelpers.generateStructuredHtmlForSectionOverview(chosenMasteries.getAll().map(mastery => Registries.masteries.get(mastery) ?? mastery), SectionHelpers.MasonryType, { addSearch: true, variables });
         element.appendChild(chosenOverview.container);
         chosenOverview.listElement.setAttribute('placeholder', 'No masteries learned yet...');
-        function updateChosenOverview(hasPathCore = null, remainingMasteries = null, remainingEvolutions = null, remainingAscendancies = null) {
-            hasPathCore ??= getHasPathCore();
-            remainingMasteries ??= getRemainingMasteries();
-            remainingEvolutions ??= getRemainingEvolutions();
-            remainingAscendancies ??= getRemainingAscendancies();
-
+        function updateChosenOverview() {
             for (let structuredSection of chosenOverview.sections) {
                 let element = structuredSection.wrapperElement;
                 let mastery = structuredSection.section;
@@ -788,10 +767,7 @@ class CharacterCreatorHelpers {
         element.appendChild(availableOverview.container);
         let noMasteriesElement = fromHTML(`<div class="hide" placeholder="No more masteries available...">`);
         element.appendChild(noMasteriesElement);
-        function updateAvailableOverview(hasPathCore = null, remainingMasteries = null) {
-            hasPathCore ??= getHasPathCore();
-            remainingMasteries ??= getRemainingMasteries();
-
+        function updateAvailableOverview() {
             let somethingAvailable = false;
             for (let structuredSection of availableOverview.sections) {
                 let element = structuredSection.wrapperElement;
@@ -911,7 +887,7 @@ class CharacterCreatorHelpers {
             else button.classList.add('w-80');
  
             button.addEventListener('click', () => unlearnMasteryLike(mastery));
-            structuredSection.subSectionContainer.after(container);
+            structuredSection.element.appendChild(container);
         }
 
         for (let structuredSection of availableOverview.sections) {
@@ -930,20 +906,24 @@ class CharacterCreatorHelpers {
             if (AbilitySectionHelpers.isTopMastery(mastery)) button.classList.add('w-100');
             else button.classList.add('w-80');
             button.addEventListener('click', () => learnMasteryLike(mastery));
-            structuredSection.subSectionContainer.after(container);
+            structuredSection.element.appendChild(container);
         }
 
-        function updateAll(hasPathCore = null, remainingMasteries = null, remainingEvolutions = null, remainingAscendancies = null) {
-            hasPathCore ??= getHasPathCore();
-            remainingMasteries ??= getRemainingMasteries();
-            remainingEvolutions ??= getRemainingEvolutions();
-            remainingAscendancies ??= getRemainingAscendancies();
-
-            updateDescription(hasPathCore, remainingMasteries);
-            updateChosenOverview(hasPathCore, remainingMasteries, remainingEvolutions, remainingAscendancies);
-            updateAvailableOverview(hasPathCore, remainingMasteries);
+        function refreshData() {
+            hasPathCore = getHasPathCore();
+            remainingMasteries = getRemainingMasteries();
+            remainingEvolutions = getRemainingEvolutions();
+            remainingAscendancies = getRemainingAscendancies();
         }
-        updateAll(hasPathCore, remainingMasteries, remainingEvolutions, remainingAscendancies);
+
+        function updateAll(refresh = true) {
+            if (refresh) refreshData();
+
+            updateDescription();
+            updateChosenOverview();
+            updateAvailableOverview();
+        }
+        updateAll(false);
 
         return element;
     }
@@ -951,6 +931,76 @@ class CharacterCreatorHelpers {
     static generateAttributesPageHtml(character, page) {
         let variables = character.getVariables();
         let element = fromHTML(`<div class="characterCreator-page divList">`);
+        let attributes = character.attributes;
+
+        element.appendChild(fromHTML(`<h1>Distribute Attribute Increases`));
+        let descriptionContainer = fromHTML(`<div>`);
+        element.appendChild(descriptionContainer);
+        function updateDescription() {
+            let scalingStats = character.getScalingStats();
+            let attributeIncreases = scalingStats.attributeIncreases;
+            let remainingAttributeIncreases = character.getRemainingAttributeIncreases();
+            let attributeMaximum = scalingStats.attributeMaximum;
+            let structuredSection = SectionHelpers.generateStructuredHtmlForSection(new Section({
+                content: `Distribute ${remainingAttributeIncreases}/${attributeIncreases} attribute increases up to a maximum of ${attributeMaximum} each.`
+            }));
+
+            descriptionContainer.innerHTML = "";
+            descriptionContainer.appendChild(structuredSection.wrapperElement);
+        }
+
+        element.appendChild(hb(4));
+        let attributesContainer = fromHTML(`<div class="characterCreator-attributes listHorizontal gap-2">`);
+        element.appendChild(attributesContainer);
+
+        element.appendChild(hb(6));
+        element.appendChild(fromHTML(`<h1>View Stats`));
+        let statsContainer = fromHTML(`<div>`);
+        element.appendChild(statsContainer);
+
+        function updateStats() {
+            statsContainer.innerHTML = "";
+            statsContainer.appendChild(CharacterHelpers.generateStatsHtml(character));
+        }
+
+        function updateAll() {
+            updateStats();
+            updateDescription();
+        }
+
+        for (let name of Object.keys(attributes)) {
+            let attributeElement = fromHTML(`<div class="character-attribute divList bordered rounded-xl">`);
+            attributesContainer.appendChild(attributeElement);
+            let attributeNameElement = fromHTML(`<div class="character-attribute-name mediumElement">`);
+            attributeElement.appendChild(attributeNameElement);
+            attributeNameElement.textContent = CharacterHelpers.getStatName(name);
+            attributeElement.appendChild(hr());
+            let attributeValueElement = fromHTML(`<div class="character-attribute-value largeElement">`); /*listHorizontal centerContentHorizontally*/
+            attributeElement.appendChild(attributeValueElement);
+            let attributeInputElement = fromHTML(`<input type="number" class="mediumElement rounded">`);
+            attributeValueElement.appendChild(attributeInputElement);
+            attributeInputElement.value = character.attributes[name]
+            attributeInputElement.addEventListener('input', () => {
+                if (attributeInputElement.value == '') return;
+                let oldValue = character.attributes[name];
+                let newValue = InputHelpers.fixNumberInput(attributeInputElement);
+
+                let scalingStats = character.getScalingStats();
+                let remainingAttributeIncreases = character.getRemainingAttributeIncreases();
+                let attributeMaximum = scalingStats.attributeMaximum;
+                let difference = Math.min(newValue - oldValue, remainingAttributeIncreases);
+                if (character.settings.validate) newValue = InputHelpers.constrainInput(attributeInputElement, value => clamp(oldValue + difference, 0, attributeMaximum));
+                if (oldValue == newValue) return;
+                character.attributes[name] = newValue;
+                CharacterHelpers.saveCharacter(character);
+                updateAll();
+            });
+            attributeInputElement.addEventListener('focusout', () => {
+                if (attributeInputElement.value == '') attributeInputElement.value = character.attributes[name];
+            });
+        }
+
+        updateAll();
 
         return element;
     }
@@ -958,6 +1008,257 @@ class CharacterCreatorHelpers {
     static generateFlavorPageHtml(character, page) {
         let variables = character.getVariables();
         let element = fromHTML(`<div class="characterCreator-page divList">`);
+        element.appendChild(SectionHelpers.generateStructuredHtmlForSection(SectionHelpers.resolveSectionExpression('rules/Character Creation/Choose Ancestry*noChildren'), { variables }).element);
+
+        element.appendChild(hb(4));
+        let chosenAncestriesBar = fromHTML(`<div class="listHorizontal gap-2">`);
+        element.appendChild(chosenAncestriesBar);
+        element.appendChild(hb(4));
+        let unchosenAncestriesBar = fromHTML(`<div class="listHorizontal gap-2">`);
+        element.appendChild(unchosenAncestriesBar);
+        let ancestries = new Set(Registries.ancestries.getAll());
+
+        function chooseAncestry(ancestry) {
+            if (character.ancestry == ancestry) return;
+            character.ancestry = ancestry;
+            CharacterHelpers.saveCharacter(character);
+            updateAncestries();
+        }
+
+        function unchooseAncestry(ancestry) {
+            if (character.ancestry == null) return;
+            character.ancestry = null;
+            CharacterHelpers.saveCharacter(character);
+            updateAncestries();
+        }
+
+        function updateAncestries() {
+            chosenAncestriesBar.innerHTML = '';
+            unchosenAncestriesBar.innerHTML = '';
+            for (let ancestry of ancestries) {
+                let hasAncestry = character.ancestry == ancestry;
+                let element = fromHTML(`<button class="listHorizontal gap-2 largeElement bordered hoverable">`);
+                (hasAncestry ? chosenAncestriesBar : unchosenAncestriesBar).appendChild(element);
+                if (hasAncestry) element.classList.add('brand-border-color');
+                element.addEventListener('click', () => hasAncestry ? unchooseAncestry(ancestry) : chooseAncestry(ancestry));
+                let nameElement = fromHTML(`<div>`);
+                element.appendChild(nameElement);
+                nameElement.textContent = ancestry;
+                let icon = hasAncestry ? icons.close() : icons.add();
+                element.appendChild(icon);
+                icon.classList.add('minimalIcon');
+            }
+        }
+        updateAncestries();
+
+        element.appendChild(hb(4));
+        element.appendChild(SectionHelpers.generateStructuredHtmlForSection(SectionHelpers.resolveSectionExpression('rules/Character Creation/Choose Characteristics*noChildren'), { variables }).element);
+        element.appendChild(hb(4));
+
+        let characteristicsInputContainer = fromHTML(`<div class="listHorizontal gap-1">`);
+        element.appendChild(characteristicsInputContainer);
+        let characteristicsInput = fromHTML(`<input type="text" class="largeElement" style="width: 400px;">`);
+        characteristicsInputContainer.appendChild(characteristicsInput);
+        characteristicsInput.value = "";
+        let addCharacteristicsButton = fromHTML(`<button class="largeElement bordered hoverable listHorizontal" tooltip="Add characteristics (or press Enter)" disabled>`);
+        let characteristicsPlusIcon = icons.add();
+        characteristicsPlusIcon.classList.add('minimalIcon');
+        addCharacteristicsButton.appendChild(characteristicsPlusIcon);
+        characteristicsInputContainer.appendChild(addCharacteristicsButton);
+        function chooseCustomCharacteristics() {
+            characteristicsInput.value.split(",").forEach(c => chooseCharacteristic(toTextCase(c.trim())));
+            characteristicsInput.value = "";
+            addCharacteristicsButton.setAttribute('disabled', '');
+        }
+        addCharacteristicsButton.addEventListener('click', e => chooseCustomCharacteristics());
+        characteristicsInput.addEventListener('input', () => {
+            if (characteristicsInput.value) addCharacteristicsButton.removeAttribute('disabled');
+            else addCharacteristicsButton.setAttribute('disabled', '');
+        });
+        characteristicsInput.addEventListener('keyup', e => {
+            if (e.key == "Enter") chooseCustomCharacteristics();
+        });
+
+        element.appendChild(hb(2));
+        let chosenCharacteristicsBar = fromHTML(`<div class="listHorizontal gap-2">`);
+        element.appendChild(chosenCharacteristicsBar);
+        element.appendChild(hb(4));
+        let unchosenCharacteristicsBar = fromHTML(`<div class="listHorizontal gap-2">`);
+        element.appendChild(unchosenCharacteristicsBar);
+        let characteristics = FlavorHelpers.sampleCharacteristics;
+        let chosenCharacteristics = character.characteristics; // Registry
+
+        function chooseCharacteristic(characteristic) {
+            if (chosenCharacteristics.has(characteristic)) return;
+            chosenCharacteristics.register(characteristic);
+            CharacterHelpers.saveCharacter(character);
+            updateCharacteristics();
+        }
+
+        function unchooseCharacteristic(characteristic) {
+            if (!chosenCharacteristics.has(characteristic)) return;
+            chosenCharacteristics.unregister(characteristic);
+            CharacterHelpers.saveCharacter(character);
+            updateCharacteristics();
+        }
+
+        function updateCharacteristics() {
+            chosenCharacteristicsBar.innerHTML = '';
+            unchosenCharacteristicsBar.innerHTML = '';
+            for (let characteristic of chosenCharacteristics) {
+                let hasCharacteristic = chosenCharacteristics.has(characteristic);
+                if (!hasCharacteristic) continue;
+                let element = fromHTML(`<button class="listHorizontal gap-2 largeElement bordered hoverable">`);
+                (hasCharacteristic ? chosenCharacteristicsBar : unchosenCharacteristicsBar).appendChild(element);
+                if (hasCharacteristic) element.classList.add('brand-border-color');
+                element.addEventListener('click', () => hasCharacteristic ? unchooseCharacteristic(characteristic) : chooseCharacteristic(characteristic));
+                let nameElement = fromHTML(`<div>`);
+                element.appendChild(nameElement);
+                nameElement.textContent = characteristic;
+                let icon = hasCharacteristic ? icons.close() : icons.add();
+                element.appendChild(icon);
+                icon.classList.add('minimalIcon');
+            }
+            for (let characteristic of characteristics) {
+                let hasCharacteristic = chosenCharacteristics.has(characteristic);
+                if (hasCharacteristic) continue;
+                let element = fromHTML(`<button class="listHorizontal gap-2 largeElement bordered hoverable">`);
+                (hasCharacteristic ? chosenCharacteristicsBar : unchosenCharacteristicsBar).appendChild(element);
+                if (hasCharacteristic) element.classList.add('brand-border-color');
+                element.addEventListener('click', () => hasCharacteristic ? unchooseCharacteristic(characteristic) : chooseCharacteristic(characteristic));
+                let nameElement = fromHTML(`<div>`);
+                element.appendChild(nameElement);
+                nameElement.textContent = characteristic;
+                let icon = hasCharacteristic ? icons.close() : icons.add();
+                element.appendChild(icon);
+                icon.classList.add('minimalIcon');
+            }
+        }
+        updateCharacteristics();
+
+        element.appendChild(hb(4));
+        element.appendChild(SectionHelpers.generateStructuredHtmlForSection(SectionHelpers.resolveSectionExpression('rules/Character Creation/Choose Passions*noChildren'), { variables }).element);
+        element.appendChild(hb(4));
+
+        let passionsInputContainer = fromHTML(`<div class="listHorizontal gap-1">`);
+        element.appendChild(passionsInputContainer);
+        let passionsInput = fromHTML(`<input type="text" class="largeElement" style="width: 400px;">`);
+        passionsInputContainer.appendChild(passionsInput);
+        passionsInput.value = "";
+        let addPassionsButton = fromHTML(`<button class="largeElement bordered hoverable listHorizontal" tooltip="Add passions (or press Enter)" disabled>`);
+        let passionsPlusIcon = icons.add();
+        passionsPlusIcon.classList.add('minimalIcon');
+        addPassionsButton.appendChild(passionsPlusIcon);
+        passionsInputContainer.appendChild(addPassionsButton);
+        function chooseCustomPassions() {
+            passionsInput.value.split(",").forEach(c => choosePassion(toTextCase(c.trim())));
+            passionsInput.value = "";
+            addPassionsButton.setAttribute('disabled', '');
+        }
+        addPassionsButton.addEventListener('click', e => chooseCustomPassions());
+        passionsInput.addEventListener('input', () => {
+            if (passionsInput.value) addPassionsButton.removeAttribute('disabled');
+            else addPassionsButton.setAttribute('disabled', '');
+        });
+        passionsInput.addEventListener('keyup', e => {
+            if (e.key == "Enter") chooseCustomPassions();
+        });
+
+        element.appendChild(hb(4));
+        let chosenPassionsBar = fromHTML(`<div class="listHorizontal gap-2">`);
+        element.appendChild(chosenPassionsBar);
+        element.appendChild(hb(4));
+        element.appendChild(fromHTML(`<h4>Common`));
+        let unchosenPassionsCommonBar = fromHTML(`<div class="listHorizontal gap-2">`);
+        element.appendChild(unchosenPassionsCommonBar);
+        element.appendChild(hb(4));
+        element.appendChild(fromHTML(`<h4>Specific`));
+        let unchosenPassionsSpecificBar = fromHTML(`<div class="listHorizontal gap-2">`);
+        element.appendChild(unchosenPassionsSpecificBar);
+        let passionsCommon = FlavorHelpers.sampleCommonPassions;
+        let passionsSpecific = FlavorHelpers.sampleSpecificPassions;
+        let chosenPassions = character.passions; // Registry
+
+        function choosePassion(passion) {
+            if (chosenPassions.has(passion)) return;
+            chosenPassions.register(passion);
+            CharacterHelpers.saveCharacter(character);
+            updatePassions();
+        }
+
+        function unchoosePassion(passion) {
+            if (!chosenPassions.has(passion)) return;
+            chosenPassions.unregister(passion);
+            CharacterHelpers.saveCharacter(character);
+            updatePassions();
+        }
+
+        function updatePassions() {
+            chosenPassionsBar.innerHTML = '';
+            unchosenPassionsCommonBar.innerHTML = '';
+            unchosenPassionsSpecificBar.innerHTML = '';
+            for (let passion of chosenPassions) {
+                let hasPassion = chosenPassions.has(passion);
+                if (!hasPassion) continue;
+                let element = fromHTML(`<button class="listHorizontal gap-2 largeElement bordered hoverable">`);
+                (hasPassion ? chosenPassionsBar : (passionGroup == passionsCommon ? unchosenPassionsCommonBar : unchosenPassionsSpecificBar)).appendChild(element);
+                if (hasPassion) element.classList.add('brand-border-color');
+                element.addEventListener('click', () => hasPassion ? unchoosePassion(passion) : choosePassion(passion));
+                let nameElement = fromHTML(`<div>`);
+                element.appendChild(nameElement);
+                nameElement.textContent = passion;
+                let icon = hasPassion ? icons.close() : icons.add();
+                element.appendChild(icon);
+                icon.classList.add('minimalIcon');
+            }
+            for (let passionGroup of [passionsCommon, passionsSpecific]) {
+                for (let passion of passionGroup) {
+                    let hasPassion = chosenPassions.has(passion);
+                    if (hasPassion) continue;
+                    let element = fromHTML(`<button class="listHorizontal gap-2 largeElement bordered hoverable">`);
+                    (hasPassion ? chosenPassionsBar : (passionGroup == passionsCommon ? unchosenPassionsCommonBar : unchosenPassionsSpecificBar)).appendChild(element);
+                    if (hasPassion) element.classList.add('brand-border-color');
+                    element.addEventListener('click', () => hasPassion ? unchoosePassion(passion) : choosePassion(passion));
+                    let nameElement = fromHTML(`<div>`);
+                    element.appendChild(nameElement);
+                    nameElement.textContent = passion;
+                    let icon = hasPassion ? icons.close() : icons.add();
+                    element.appendChild(icon);
+                    icon.classList.add('minimalIcon');
+                }
+            }
+        }
+        updatePassions();
+
+        element.appendChild(hb(4));
+        element.appendChild(SectionHelpers.generateStructuredHtmlForSection(SectionHelpers.resolveSectionExpression('rules/Character Creation/Why?'), { variables }).element);
+        element.appendChild(hb(4));
+        let whyInputContainer = fromHTML(`<div class="contenteditableContainer">`);
+        element.appendChild(whyInputContainer);
+        const whyInput = fromHTML(`<div contenteditable-type="plainTextOnly" contenteditable="true" class="w-100 fixText">`);
+        whyInputContainer.appendChild(whyInput);
+        whyInput.textContent = character.details.why;
+        whyInput.addEventListener('input', e => {
+            let text = whyInput.innerText;
+            if (ContentEditableHelpers.textNeedsFixing(text)) element.textContent = text = ContentEditableHelpers.fixText(text);
+            character.details.why = text;
+            CharacterHelpers.saveCharacter(character);
+        });
+
+        element.appendChild(hb(4));
+        element.appendChild(SectionHelpers.generateStructuredHtmlForSection(SectionHelpers.resolveSectionExpression('rules/Character Creation/Write Backstory'), { variables }).element);
+        element.appendChild(hb(4));
+        let backstoryInputContainer = fromHTML(`<div class="contenteditableContainer">`);
+        element.appendChild(backstoryInputContainer);
+        const backstoryInput = fromHTML(`<div contenteditable-type="plainTextOnly" contenteditable="true" class="w-100 fixText">`);
+        backstoryInputContainer.appendChild(backstoryInput);
+        backstoryInput.textContent = character.details.backstory;
+        backstoryInput.addEventListener('input', e => {
+            let text = backstoryInput.innerText;
+            if (ContentEditableHelpers.textNeedsFixing(text)) element.textContent = text = ContentEditableHelpers.fixText(text);
+            character.details.backstory = text;
+            CharacterHelpers.saveCharacter(character);
+        });
 
         return element;
     }

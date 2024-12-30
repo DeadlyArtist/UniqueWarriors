@@ -1,6 +1,7 @@
 class CharacterPageManager extends PageManager {
     characterIdOverride;
     characterId;
+    character;
 
     constructor(settings) {
         super();

@@ -1,7 +1,10 @@
-class CharacterCreatorPageManager extends PageManager {
+class SummonEditorPageManager extends PageManager {
     characterIdOverride;
     characterId;
+    summonIdOverride;
+    summonId;
     character;
+    summon;
 
     constructor(settings) {
         super();
@@ -14,9 +17,14 @@ class CharacterCreatorPageManager extends PageManager {
         settings ??= {};
         let self = this;
         let loadId = this.loadId;
-        this.characterId = this.characterIdOverride ?? getQueryVariable('id');
+        this.characterId = this.characterIdOverride ?? getQueryVariable('characterId');
         if (!this.characterId) {
             Pages.loadError('No character id provided.');
+            return;
+        }
+        this.summonId = this.summonIdOverride ?? getQueryVariable('summonId');
+        if (!this.summonId) {
+            Pages.loadError('No summon id provided.');
             return;
         }
 
@@ -25,7 +33,12 @@ class CharacterCreatorPageManager extends PageManager {
             Pages.loadError(`Character not found or invalid: ${this.characterId}`);
             return;
         }
-        if (!settings.dontSetTitle) App.setTitle(`Edit - ${this.character.name}`);
+        this.summon = this.character.summons.get(this.summonId);
+        if (!this.character) {
+            Pages.loadError(`Summon not found or invalid: ${this.summonId}`);
+            return;
+        }
+        if (!settings.dontSetTitle) App.setTitle(`Edit - ${this.summon.name} - ${this.character.name}`);
 
         setTimeout(() => {
             Loader.onCollectionsLoaded(() => {
@@ -35,7 +48,7 @@ class CharacterCreatorPageManager extends PageManager {
     }
 
     delayedLoad() {
-        this.structuredCharacterCreator = CharacterCreatorHelpers.generateStructuredHtmlForCharacterCreator(this.character, { startTab: this.getTab(), updateHash: true });
+        this.structuredCharacterCreator = SummonEditorHelpers.generateStructuredHtmlForSummonEditor(this.character, this.summon, { startTab: this.getTab(), updateHash: true });
         this.pageElement.appendChild(this.structuredCharacterCreator.element);
     }
 

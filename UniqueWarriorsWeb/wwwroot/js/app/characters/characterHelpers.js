@@ -1,6 +1,6 @@
 class CharacterHelpers {
     static defaultName = "New Character";
-    static scalingStatNames = new Set(["Level", "Rank", "Tier", "Max Runes", "Attribute Increases", "Max Runes"]);
+    static scalingStatNames = new Set(["Level", "Rank", "Tier", "Max Runes", "Attribute Increases", "Attribute Maximum"]);
     static attributeStatNames = new Set(["Max Health", "Speed", "Power", "Evasion", "Accuracy", "Initiative", "Luck", "Range"]);
     static staticStatNames = new Set(["Graze Range", "Crit Range", "Reach", "Size", "Actions", "Move Actions", "Quick Actions"]);
     static allStatNames = new Set();
@@ -96,8 +96,8 @@ class CharacterHelpers {
         Pages.goToPath(`/app/character?id=${encodeURIComponent(character.id)}`);
     }
 
-    static openCharacterCreator(character) {
-        Pages.goToPath(`/app/character/creator?id=${encodeURIComponent(character.id)}`);
+    static openCharacterCreator(character, tab = null) {
+        Pages.goToPath(`/app/character/creator?id=${encodeURIComponent(character.id)}${tab ? `#?tab=${tab}` : ''}`);
     }
 
     static saveCharacter(character) {
@@ -133,94 +133,164 @@ class CharacterHelpers {
         let element = fromHTML(`<div class="character divList">`);
         let structuredCharacter = new StructuredCharacterHtml(character, element);
 
-        let deleteDialog = DialogHelpers.create(dialog => {
-            let dialogElement = fromHTML(`<div class="divList">`);
-            let dialogTitleElement = fromHTML(`<h1>`);
-            dialogElement.appendChild(dialogTitleElement);
-            dialogTitleElement.textContent = `Confirm Deletion of: ${character.name}`;
-            let dialogContentElement = fromHTML(`<div>Are you sure you want to permanently delete the character?<div class="hb-1"></div><b>Warning:</b> This is an irreversible operation. Please <b>download</b> the character first before deletion.<div class="hb-4"></div><i>To confirm deletion enter "delete" below and press delete.</i>`);
-            dialogElement.appendChild(dialogContentElement);
-            dialogElement.appendChild(hb(2));
-            let dialogConfirmInput = fromHTML(`<input type="text" class="largeElement" placeholder="delete">`);
-            dialogElement.appendChild(dialogConfirmInput);
-            dialogElement.appendChild(hb(2));
-            let dialogButtonList = fromHTML(`<div class="listHorizontal">`);
-            dialogElement.appendChild(dialogButtonList);
-            let dialogCancelButton = fromHTML(`<button class="largeElement bordered hoverable flexFill w-100">Cancel`);
-            dialogButtonList.appendChild(dialogCancelButton);
-            dialog.addCloseButton(dialogCancelButton);
-            let dialogConfirmDeleteButton = fromHTML(`<button class="largeElement bordered hoverable flexFill w-100 danger-text" disabled>Delete`);
-            dialogButtonList.appendChild(dialogConfirmDeleteButton);
-            dialogConfirmInput.addEventListener('input', () => {
-                if (dialogConfirmInput.value == "delete") dialogConfirmDeleteButton.removeAttribute('disabled');
-                else dialogConfirmDeleteButton.setAttribute('disabled', '');
-            });
-            dialogConfirmDeleteButton.addEventListener('click', () => {
-                CharacterHelpers.deleteCharacter(character);
-                dialog.close();
-                Pages.goTo(Pages.characters);
-            });
+        if (!settings.noTitle) {
+            let actionBarElement = null;
+            if (!settings.embedded) {
+                let deleteDialog = DialogHelpers.create(dialog => {
+                    let dialogElement = fromHTML(`<div class="divList">`);
+                    let dialogTitleElement = fromHTML(`<h1>`);
+                    dialogElement.appendChild(dialogTitleElement);
+                    dialogTitleElement.textContent = `Confirm Deletion of: ${character.name}`;
+                    let dialogContentElement = fromHTML(`<div>Are you sure you want to permanently delete the character?<div class="hb-1"></div><b>Warning:</b> This is an irreversible operation. Please <b>download</b> the character first before deletion.<div class="hb-4"></div><i>To confirm deletion enter "delete" below and press delete.</i>`);
+                    dialogElement.appendChild(dialogContentElement);
+                    dialogElement.appendChild(hb(2));
+                    let dialogConfirmInput = fromHTML(`<input type="text" class="largeElement" placeholder="delete">`);
+                    dialogElement.appendChild(dialogConfirmInput);
+                    dialogElement.appendChild(hb(2));
+                    let dialogButtonList = fromHTML(`<div class="listHorizontal">`);
+                    dialogElement.appendChild(dialogButtonList);
+                    let dialogCancelButton = fromHTML(`<button class="largeElement bordered hoverable flexFill w-100">Cancel`);
+                    dialogButtonList.appendChild(dialogCancelButton);
+                    dialog.addCloseButton(dialogCancelButton);
+                    let dialogConfirmDeleteButton = fromHTML(`<button class="largeElement bordered hoverable flexFill w-100 danger-text" disabled>Delete`);
+                    dialogButtonList.appendChild(dialogConfirmDeleteButton);
+                    dialogConfirmInput.addEventListener('input', () => {
+                        if (dialogConfirmInput.value == "delete") dialogConfirmDeleteButton.removeAttribute('disabled');
+                        else dialogConfirmDeleteButton.setAttribute('disabled', '');
+                    });
+                    dialogConfirmDeleteButton.addEventListener('click', () => {
+                        CharacterHelpers.deleteCharacter(character);
+                        dialog.close();
+                        Pages.goTo(Pages.characters);
+                    });
 
-            return dialogElement;
-        });
-        element.addEventListener('removed', () => deleteDialog.container.remove());
+                    return dialogElement;
+                });
+                element.addEventListener('removed', () => deleteDialog.container.remove());
 
-        const actionBarElement = fromHTML(`<div class="character-actionBar listHorizontal centerContentHorizontally hide">`);
-        element.appendChild(actionBarElement);
-        let editButton = fromHTML(`<button class="listHorizontal largeElement bordered hoverable gap-1" tooltip="Open in editor"><div>Edit`);
-        actionBarElement.appendChild(editButton);
-        editButton.addEventListener('click', () => CharacterHelpers.openCharacterCreator(character));
-        let editIcon = icons.edit();
-        editButton.appendChild(editIcon);
-        editIcon.classList.add("minimalIcon");
-        let downloadButton = fromHTML(`<button class="listHorizontal largeElement bordered hoverable gap-1" tooltip="Download as json file"><div>Download`);
-        actionBarElement.appendChild(downloadButton);
-        downloadButton.addEventListener('click', () => CharacterHelpers.downloadCharacter(character));
-        let downloadIcon = icons.download();
-        downloadButton.appendChild(downloadIcon);
-        downloadIcon.classList.add("minimalIcon");
-        let deleteButton = fromHTML(`<button class="listHorizontal largeElement bordered hoverable gap-1" tooltip="Open delete character dialog"><div>Delete`);
-        actionBarElement.appendChild(deleteButton);
-        deleteButton.addEventListener('click', () => deleteDialog.open());
-        let deleteIcon = icons.delete();
-        deleteButton.appendChild(deleteIcon);
-        deleteIcon.classList.add("minimalIcon");
+                actionBarElement = fromHTML(`<div class="character-actionBar listHorizontal centerContentHorizontally hide">`);
+                element.appendChild(actionBarElement);
+                let editButton = fromHTML(`<button class="listHorizontal largeElement bordered hoverable gap-1" tooltip="Open in editor"><div>Edit`);
+                actionBarElement.appendChild(editButton);
+                editButton.addEventListener('click', () => CharacterHelpers.openCharacterCreator(character));
+                let editIcon = icons.edit();
+                editButton.appendChild(editIcon);
+                editIcon.classList.add("minimalIcon");
+                let downloadButton = fromHTML(`<button class="listHorizontal largeElement bordered hoverable gap-1" tooltip="Download as json file"><div>Download`);
+                actionBarElement.appendChild(downloadButton);
+                downloadButton.addEventListener('click', () => CharacterHelpers.downloadCharacter(character));
+                let downloadIcon = icons.download();
+                downloadButton.appendChild(downloadIcon);
+                downloadIcon.classList.add("minimalIcon");
+                let deleteButton = fromHTML(`<button class="listHorizontal largeElement bordered hoverable gap-1" tooltip="Open delete character dialog"><div>Delete`);
+                actionBarElement.appendChild(deleteButton);
+                deleteButton.addEventListener('click', () => deleteDialog.open());
+                let deleteIcon = icons.delete();
+                deleteButton.appendChild(deleteIcon);
+                deleteIcon.classList.add("minimalIcon");
+            }
 
-        const titleBarElement = fromHTML(`<div class="character-titleBar listContainerHorizontal nowrap">`);
-        element.appendChild(titleBarElement);
-        let titleElement = fromHTML(`<h1 class="character-title">`);
-        titleBarElement.appendChild(titleElement);
-        titleElement.textContent = character.name;
-        let openMenuElement = fromHTML(`<div class="character-menu listHorizontal">`);
-        titleBarElement.appendChild(openMenuElement);
-        let openMenuButton = fromHTML(`<button class="listHorizontal gap-1 element hoverable" tooltip="Open menu">`);
-        openMenuElement.appendChild(openMenuButton);
-        let closeMenuButton = fromHTML(`<button class="listHorizontal gap-1 element hoverable hide" tooltip="Close menu">`);
-        openMenuElement.appendChild(closeMenuButton);
-        openMenuButton.addEventListener('click', () => {
-            openMenuButton.classList.add('hide');
-            closeMenuButton.classList.remove('hide');
-            actionBarElement.classList.remove('hide');
-        });
-        closeMenuButton.addEventListener('click', () => {
-            openMenuButton.classList.remove('hide');
-            closeMenuButton.classList.add('hide');
-            actionBarElement.classList.add('hide');
-        });
-        let menuIcon = icons.menu();
-        openMenuButton.appendChild(menuIcon);
-        let closeMenuIcon = icons.menuClose();
-        closeMenuButton.appendChild(closeMenuIcon);
+            const titleBarElement = fromHTML(`<div class="character-titleBar listContainerHorizontal nowrap">`);
+            element.appendChild(titleBarElement);
+            let titleElement = fromHTML(`<h1 class="character-title">`);
+            titleBarElement.appendChild(titleElement);
+            titleElement.textContent = character.name;
+            if (!settings.embedded) {
+                let openMenuElement = fromHTML(`<div class="character-menu listHorizontal">`);
+                titleBarElement.appendChild(openMenuElement);
+                let openMenuButton = fromHTML(`<button class="listHorizontal gap-1 element hoverable" tooltip="Open menu">`);
+                openMenuElement.appendChild(openMenuButton);
+                let closeMenuButton = fromHTML(`<button class="listHorizontal gap-1 element hoverable hide" tooltip="Close menu">`);
+                openMenuElement.appendChild(closeMenuButton);
+                openMenuButton.addEventListener('click', () => {
+                    openMenuButton.classList.add('hide');
+                    closeMenuButton.classList.remove('hide');
+                    actionBarElement.classList.remove('hide');
+                });
+                closeMenuButton.addEventListener('click', () => {
+                    openMenuButton.classList.remove('hide');
+                    closeMenuButton.classList.add('hide');
+                    actionBarElement.classList.add('hide');
+                });
+                let menuIcon = icons.menu();
+                openMenuButton.appendChild(menuIcon);
+                let closeMenuIcon = icons.menuClose();
+                closeMenuButton.appendChild(closeMenuIcon);
+            }
+        }
 
-        const section = CharacterHelpers.getCharacterSection(character);
-        section.title = null;
-        const structuredSection = SectionHelpers.generateStructuredHtmlForSection(section, settings);
-        element.appendChild(structuredSection.element);
-        structuredSection.element.classList.add("character-summary");
+        if (!settings.embedded || !settings.simple) {
+            const section = CharacterHelpers.getCharacterSection(character);
+            section.title = null;
+            const structuredSection = SectionHelpers.generateStructuredHtmlForSection(section, settings);
+            element.appendChild(structuredSection.element);
+            structuredSection.element.classList.add("character-summary");
+        }
 
         element.appendChild(hb(4));
-        let statsContainer = fromHTML(`<div class="character-stats listHorizontal gap-2">`);
+        let statsContainer = this.generateStatsHtml(character);
         element.appendChild(statsContainer);
+
+        if (settings.embedded) {
+            let abilitiesSubPageElement = this.generateAbilitiesSubPageHtml(character, settings);
+            element.appendChild(abilitiesSubPageElement);
+        } else {
+            element.appendChild(hb(4));
+            let menuElement = fromHTML(`<div class="character-menu divList">`);
+            element.appendChild(menuElement);
+            let tabsBar = fromHTML(`<div class="character-menu-tabs listHorizontal">`);
+            menuElement.appendChild(tabsBar);
+            let abilitiesTabElement = fromHTML(`<button class="character-menu-tab largeElement bordered-inset raised hideDisabled" disabled>Abilities`);
+            tabsBar.appendChild(abilitiesTabElement);
+            let flavorTabElement = fromHTML(`<button class="character-menu-tab largeElement hoverable hideDisabled">Flavor`);
+            tabsBar.appendChild(flavorTabElement);
+
+            menuElement.appendChild(hb(2));
+            let subPageElement = fromHTML(`<div class="character-menu-subPage">`);
+            menuElement.appendChild(subPageElement);
+            let abilitiesSubPageElement = this.generateAbilitiesSubPageHtml(character);
+            subPageElement.appendChild(abilitiesSubPageElement);
+            let flavorSubPageElement = this.generateFlavorSubPageHtml(character);
+            subPageElement.appendChild(flavorSubPageElement);
+            flavorSubPageElement.classList.add('hide');
+
+            abilitiesTabElement.addEventListener('click', () => {
+                abilitiesTabElement.setAttribute('disabled', '');
+                flavorTabElement.removeAttribute('disabled');
+
+                abilitiesTabElement.classList.add('raised');
+                abilitiesTabElement.classList.add('bordered-inset');
+                abilitiesTabElement.classList.remove('hoverable');
+                flavorTabElement.classList.remove('raised');
+                flavorTabElement.classList.remove('bordered-inset');
+                flavorTabElement.classList.add('hoverable');
+
+                // Pages
+                abilitiesSubPageElement.classList.remove('hide');
+                flavorSubPageElement.classList.add('hide');
+            });
+            flavorTabElement.addEventListener('click', () => {
+                abilitiesTabElement.removeAttribute('disabled');
+                flavorTabElement.setAttribute('disabled', '');
+
+                abilitiesTabElement.classList.remove('raised');
+                abilitiesTabElement.classList.remove('bordered-inset');
+                abilitiesTabElement.classList.add('hoverable');
+                flavorTabElement.classList.add('raised');
+                flavorTabElement.classList.add('bordered-inset');
+                flavorTabElement.classList.remove('hoverable');
+
+                // Pages
+                abilitiesSubPageElement.classList.add('hide');
+                flavorSubPageElement.classList.remove('hide');
+            });
+        }
+
+        return structuredCharacter;
+    }
+
+    static generateStatsHtml(character) {
+        let statsContainer = fromHTML(`<div class="character-stats listHorizontal gap-2">`);
         let attributeStatsBar = fromHTML(`<div class="character-attributeStats listHorizontal gap-2">`);
         statsContainer.appendChild(attributeStatsBar);
         let staticStatsBar = fromHTML(`<div class="character-staticStats listHorizontal gap-2 hide">`);
@@ -230,6 +300,15 @@ class CharacterHelpers {
         let attributeStats = character.getAttributeStats();
         let staticStats = character.getStaticStats();
         let scalingStats = character.getScalingStats();
+        if (character.isSummon?.()) {
+            let badAttributes = new Set(["Luck", "Initiative"]);
+            attributeStats = ObjectHelpers.filterProperties(attributeStats, key => !badAttributes.has(key));
+        }
+        if (character.settings.immobile) {
+            let badAttributes = new Set(["Speed", "Move Actions"]);
+            attributeStats = ObjectHelpers.filterProperties(attributeStats, key => !badAttributes.has(key));
+            staticStats = ObjectHelpers.filterProperties(staticStats, key => !badAttributes.has(key));
+        }
         function addStats(stats, element) {
             for (let [name, value] of Object.entries(stats)) {
                 let statElement = fromHTML(`<div class="character-stat divList bordered rounded-xl">`);
@@ -268,108 +347,67 @@ class CharacterHelpers {
             staticStatsBar.classList.add('hide');
             scalingStatsBar.classList.add('hide');
         });
-
-        element.appendChild(hb(4));
-        let menuElement = fromHTML(`<div class="character-menu divList">`);
-        element.appendChild(menuElement);
-        let tabsBar = fromHTML(`<div class="character-menu-tabs listHorizontal">`);
-        menuElement.appendChild(tabsBar);
-        let abilitiesTabElement = fromHTML(`<button class="character-menu-tab largeElement bordered-inset raised hideDisabled" disabled>Abilities`);
-        tabsBar.appendChild(abilitiesTabElement);
-        let flavorTabElement = fromHTML(`<button class="character-menu-tab largeElement hoverable hideDisabled">Flavor`);
-        tabsBar.appendChild(flavorTabElement);
-
-        menuElement.appendChild(hb(2));
-        let subPageElement = fromHTML(`<div class="character-menu-subPage">`);
-        menuElement.appendChild(subPageElement);
-        let abilitiesSubPageElement = this.generateAbilitiesSubPageHtml(character);
-        subPageElement.appendChild(abilitiesSubPageElement);
-        let flavorSubPageElement = this.generateFlavorSubPageHtml(character);
-        subPageElement.appendChild(flavorSubPageElement);
-        flavorSubPageElement.classList.add('hide');
-
-        abilitiesTabElement.addEventListener('click', () => {
-            abilitiesTabElement.setAttribute('disabled', '');
-            flavorTabElement.removeAttribute('disabled');
-
-            abilitiesTabElement.classList.add('raised');
-            abilitiesTabElement.classList.add('bordered-inset');
-            abilitiesTabElement.classList.remove('hoverable');
-            flavorTabElement.classList.remove('raised');
-            flavorTabElement.classList.remove('bordered-inset');
-            flavorTabElement.classList.add('hoverable');
-
-            // Pages
-            abilitiesSubPageElement.classList.remove('hide');
-            flavorSubPageElement.classList.add('hide');
-        });
-        flavorTabElement.addEventListener('click', () => {
-            abilitiesTabElement.removeAttribute('disabled');
-            flavorTabElement.setAttribute('disabled', '');
-
-            abilitiesTabElement.classList.remove('raised');
-            abilitiesTabElement.classList.remove('bordered-inset');
-            abilitiesTabElement.classList.add('hoverable');
-            flavorTabElement.classList.add('raised');
-            flavorTabElement.classList.add('bordered-inset');
-            flavorTabElement.classList.remove('hoverable');
-
-            // Pages
-            abilitiesSubPageElement.classList.add('hide');
-            flavorSubPageElement.classList.remove('hide');
-        });
-
-        return structuredCharacter;
+        return statsContainer;
     }
 
-    static generateAbilitiesSubPageHtml(character) {
+    static generateAbilitiesSubPageHtml(character, settings = null) {
+        settings ??= {};
+
         let element = fromHTML(`<div class="character-subPage-abilities divList">`);
         let searchContainer = fromHTML(`<div class="sticky">`);
         element.appendChild(searchContainer);
         let abilitiesContainer = fromHTML(`<div class="divList gap-2">`);
         element.appendChild(abilitiesContainer);
 
-        let abilities = character.techniques.getAll().concat(character.masteries.getAll()).concat(this.getDefaultAbilities());
-
-        let triggeredAbilities = [];
-        let moveActionAbilities = [];
-        let actionAbilities = [];
-        let quickActionAbilities = [];
-        let otherAbilities = [];
+        let abilities = character.techniques.getAll().concat(character.masteries.getAll());
+        if (!settings.simple) abilities = abilities.concat(this.getDefaultAbilities());
         let summons = character.summons.getAll();
-        for (let ability of abilities) {
-            if (AbilitySectionHelpers.isTrigger(ability)) {
-                triggeredAbilities.push(ability);
-                continue;
+
+        let variables = null;
+        if (!settings.noVariables) variables = character.getVariables();
+        if (settings.simple) {
+            abilitiesContainer.appendChild(hb(2));
+            let combinedAbilityList = this.generateAbilityListHtml(character, [...abilities, ...summons], { ...settings, variables, hideIfEmpty: true, });
+            abilitiesContainer.appendChild(combinedAbilityList.container);
+        } else {
+            let triggeredAbilities = [];
+            let moveActionAbilities = [];
+            let actionAbilities = [];
+            let quickActionAbilities = [];
+            let otherAbilities = [];
+            for (let ability of abilities) {
+                if (AbilitySectionHelpers.isTrigger(ability)) {
+                    triggeredAbilities.push(ability);
+                    continue;
+                }
+
+                let map = AbilitySectionHelpers.getActionCost(ability);
+                if (map.has('Move Action')) {
+                    moveActionAbilities.push(ability);
+                } else if (map.has('Action')) {
+                    actionAbilities.push(ability);
+                } else if (map.has('Quick Action')) {
+                    quickActionAbilities.push(ability);
+                } else {
+                    otherAbilities.push(ability);
+                }
             }
 
-            let map = AbilitySectionHelpers.getActionCost(ability);
-            if (map.has('Move Action')) {
-                 moveActionAbilities.push(ability);
-            } else if (map.has('Action')) {
-                 actionAbilities.push(ability);
-            } else if (map.has('Quick Action')) {
-                quickActionAbilities.push(ability);
-            } else {
-                otherAbilities.push(ability);
-            }
+            let triggeredAbilityList = this.generateAbilityListHtml(character, triggeredAbilities, { ...settings, title: "Triggered", variables, hideIfEmpty: true, });
+            abilitiesContainer.appendChild(triggeredAbilityList.container);
+            let moveActionAbilityList = this.generateAbilityListHtml(character, moveActionAbilities, { ...settings, title: "Move Actions", variables, hideIfEmpty: true, });
+            abilitiesContainer.appendChild(moveActionAbilityList.container);
+            let actionAbilityList = this.generateAbilityListHtml(character, actionAbilities, { ...settings, title: "Actions", variables, hideIfEmpty: true, });
+            abilitiesContainer.appendChild(actionAbilityList.container);
+            let quickActionAbilityList = this.generateAbilityListHtml(character, quickActionAbilities, { ...settings, title: "Quick Actions", variables, hideIfEmpty: true, });
+            abilitiesContainer.appendChild(quickActionAbilityList.container);
+            let otherAbilityList = this.generateAbilityListHtml(character, otherAbilities, { ...settings, title: "Other", variables, hideIfEmpty: true, });
+            abilitiesContainer.appendChild(otherAbilityList.container);
+            let summonsList = this.generateAbilityListHtml(character, summons, { ...settings, title: "Summons", variables, hideIfEmpty: true, });
+            abilitiesContainer.appendChild(summonsList.container);
+
+            if (!settings.noSearch) new SectionSearch(searchContainer, [triggeredAbilityList, moveActionAbilityList, actionAbilityList, quickActionAbilityList, otherAbilityList, summonsList], { filterKey: character.id });
         }
-
-        let variables = character.getVariables();
-        let triggeredAbilityList = this.generateAbilityListHtml(character, triggeredAbilities, { title: "Triggered", variables });
-        abilitiesContainer.appendChild(triggeredAbilityList.container);
-        let moveActionAbilityList = this.generateAbilityListHtml(character, moveActionAbilities, { title: "Move Actions", variables });
-        abilitiesContainer.appendChild(moveActionAbilityList.container);
-        let actionAbilityList = this.generateAbilityListHtml(character, actionAbilities, { title: "Actions", variables });
-        abilitiesContainer.appendChild(actionAbilityList.container);
-        let quickActionAbilityList = this.generateAbilityListHtml(character, quickActionAbilities, { title: "Quick Actions", variables });
-        abilitiesContainer.appendChild(quickActionAbilityList.container);
-        let otherAbilityList = this.generateAbilityListHtml(character, otherAbilities, { title: "Other", variables });
-        abilitiesContainer.appendChild(otherAbilityList.container);
-        let summonsList = this.generateAbilityListHtml(character, summons, { title: "Summons", variables });
-        abilitiesContainer.appendChild(summonsList.container);
-
-        new SectionSearch(searchContainer, [triggeredAbilityList, moveActionAbilityList, actionAbilityList, quickActionAbilityList, otherAbilityList, summonsList], { filterKey: character.id });
 
         return element;
     }
@@ -387,8 +425,9 @@ class CharacterHelpers {
             searchContainer = fromHTML(`<div class="sticky">`);
             container.appendChild(searchContainer);
         }
-        let listElement = fromHTML(`<div class="divList" placeholder="No matching abilities found...">`);
+        let listElement = fromHTML(`<div class="divList">`);
         container.appendChild(listElement);
+        if (!settings.simple) listElement.setAttribute('placeholder', "No matching abilities found...");
 
         let abilityList = new StructuredAbilityListHtml(character, container, listElement, searchContainer, settings);
         abilities.forEach(ability => abilityList.addAbility(ability));
@@ -397,28 +436,34 @@ class CharacterHelpers {
 
     static wrapAbilitySectionForList(character, ability, settings = null) {
         settings ??= {};
-        settings.variables ??= character.getVariables();
+        if (!settings.noVariables) settings.variables ??= character.getVariables();
 
-        let element = fromHTML(`<div class="divList gap-2">`);
-
-        let summaryElement = fromHTML(`<div class="listHorizontal">`);
-        element.appendChild(summaryElement);
+        let element = fromHTML(`<div class="listContainerHorizontal alignItemsStart gap-2">`);
         let toggleMoreButton = fromHTML(`<button class="element rounded-xl hoverable">`);
-        summaryElement.appendChild(toggleMoreButton);
+        element.appendChild(toggleMoreButton);
         let expandMoreIcon = icons.expandMore();
         toggleMoreButton.appendChild(expandMoreIcon);
         let expandLessIcon = icons.expandLess();
         toggleMoreButton.appendChild(expandLessIcon);
         expandLessIcon.classList.add('hide');
 
+        let contentContainer = fromHTML(`<div class="divList flexFill gap-2">`);
+        element.appendChild(contentContainer);
+        let summaryElement = fromHTML(`<div class="listHorizontal" style="margin-top: 3px;">`);
+        contentContainer.appendChild(summaryElement);
+
         let nameElement = fromHTML(`<div>`);
         summaryElement.appendChild(nameElement);
         nameElement.textContent = ability.title;
         let parts = [];
-        let actionCost = AbilitySectionHelpers.getActionCostTag(ability);
-        if (actionCost) parts.push(actionCost);
-        let trigger = AbilitySectionHelpers.getTrigger(ability);
-        if (trigger) parts.push("Trigger: " + trigger);
+        if (!settings.simple) {
+            let actionCost = AbilitySectionHelpers.getActionCostTag(ability);
+            if (actionCost) parts.push(actionCost);
+            let trigger = AbilitySectionHelpers.getTrigger(ability);
+            if (trigger) {
+                parts.push("Trigger: " + trigger);
+            }
+        }
 
         for (let part of parts) {
             let verticalRuler = fromHTML(`<div>|`);
@@ -428,8 +473,8 @@ class CharacterHelpers {
             partElement.textContent = part;
         }
 
-        let expandedArea = fromHTML(`<div class="hide" style="margin-left: 40px;">`);
-        element.appendChild(expandedArea);
+        let expandedArea = fromHTML(`<div class="hide">`);
+        contentContainer.appendChild(expandedArea);
         let structuredSection = SectionHelpers.generateStructuredHtmlForSection(ability, {variables: settings.variables, wrapperElement: element});
         expandedArea.appendChild(structuredSection.element);
 
@@ -445,6 +490,7 @@ class CharacterHelpers {
                 expandLessIcon.classList.add('hide');
                 expandedArea.classList.add('hide');
             }
+            HtmlHelpers.getClosestProperty(toggleMoreButton, "_masonry")?.resize();
         });
         expandedArea.appendChild(hb(4));
 
@@ -453,17 +499,31 @@ class CharacterHelpers {
 
     static generateFlavorSubPageHtml(character) {
         let element = fromHTML(`<div class="character-subPage-flavor">`);
-        let backStoryContainer = fromHTML(`<div class="character-backstory-container"><h1>Backstory`);
+        let whyContainer = fromHTML(`<div class="character-details-why-container"><h1>Why?`);
+        element.appendChild(whyContainer);
+        let whyElement = fromHTML(`<div class="character-details-why">`);
+        whyContainer.appendChild(whyElement);
+        whyElement.textContent = character.details.why ?? "No reasons written yet...";
+
+        element.appendChild(hb(4));
+        let backStoryContainer = fromHTML(`<div class="character-details-backstory-container"><h1>Backstory`);
         element.appendChild(backStoryContainer);
-        let backstoryElement = fromHTML(`<div class="character-backstory">`);
+        let backstoryElement = fromHTML(`<div class="character-details-backstory">`);
         backStoryContainer.appendChild(backstoryElement);
-        backstoryElement.textContent = character.backstory ?? "No backstory written yet...";
+        backstoryElement.textContent = character.details.backstory ?? "No backstory written yet...";
+
         return element;
     }
 
     static getCharacterSection(character) {
         let attributes = [];
-        let firstLine = [new HeadValue("Level", character.stats.level), new HeadValue("Ancestry", character.ancestry ?? "?"), new HeadValue("Weapons", character.weapons.size == 0 ? '?' : character.weapons.getAll().join(' + ')), new HeadValue("Path", character.paths.size == 0 ? '?' : character.paths.getAll().join(' + ')), new HeadValue("Characteristics", character.characteristics.size == 0 ? '?' : character.characteristics.getAll().join(' + ')), new HeadValue("Passions", character.passions.size == 0 ? '?' : character.passions.getAll().join(' + '))];
+        let firstLine = [];
+        firstLine.push(new HeadValue("Level", character.stats.level));
+        if (character.ancestry != null) firstLine.push(new HeadValue("Ancestry", character.ancestry));
+        if (character.weapons.size != 0) firstLine.push(new HeadValue("Weapons", character.weapons.getAll().join(' + ')));
+        if (character.paths.size != 0) firstLine.push(new HeadValue("Path", character.paths.getAll().join(' + ')));
+        if (character.characteristics.size != 0) firstLine.push(new HeadValue("Characteristics", character.characteristics.getAll().join(' + ')));
+        if (character.passions.size != 0) firstLine.push(new HeadValue("Passions", character.passions.getAll().join(' + ')));
         attributes.push(firstLine);
 
         return new Section({
@@ -513,7 +573,7 @@ class StructuredAbilityListHtml {
         this.character = character;
 
         this.searchContainer = searchContainer;
-        settings.variables ??= character.getVariables();
+        if (!settings.noVariables) settings.variables ??= character.getVariables();
         this.settings = settings;
         this.sections = new Registry(); // Structured abilities
         this.didSearchInit = false;
@@ -531,11 +591,13 @@ class StructuredAbilityListHtml {
 
     addAbility(ability, insertSettings) {
         insertSettings ??= {};
-        const structuredSection = CharacterHelpers.wrapAbilitySectionForList(this.character, ability, { ...this.insertSettings, variables: this.settings.variables });
+        const structuredSection = CharacterHelpers.wrapAbilitySectionForList(this.character, ability, { ...this.insertSettings, variables: this.settings.variables, simple: this.settings.simple });
 
         this.sections.register(structuredSection, { ...insertSettings, id: ability.title });
         HtmlHelpers.insertAt(this.listElement, this.sections.getIndex(structuredSection), structuredSection.wrapperElement);
         if (!this.settings.dontInitSearch) this.initSearch();
+
+        if (this.settings.hideIfEmpty && this.sections.size != 0) this.container.classList.remove("hide");
 
         return structuredSection;
     }
@@ -545,6 +607,8 @@ class StructuredAbilityListHtml {
         if (!structuredSection) return;
         structuredSection.wrapperElement.remove();
         this.sections.unregister(structuredSection);
+
+        if (this.settings.hideIfEmpty && this.sections.size == 0) this.container.classList.add("hide");
     }
 }
 

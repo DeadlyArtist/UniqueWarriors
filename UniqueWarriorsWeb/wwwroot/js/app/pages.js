@@ -23,6 +23,7 @@ class Pages {
     static characters = this.register(new Page(null, "characters", new CharactersPageManager({ registry: Registries.characters })));
     static character = this.register(new Page(null, "character", new CharacterPageManager()));
     static characterCreator = this.register(new Page("character/creator", "character creator", new CharacterCreatorPageManager()));
+    static summonEditor = this.register(new Page("summon/editor", "summon edtior", new SummonEditorPageManager()));
 
     static snippet = this.register(new Page(null, "snippet", new SnippetPageManager()));
 

@@ -99,6 +99,14 @@ class AbilitySectionHelpers {
         return this.getMutatedInfo(section)?.mutation;
     }
 
+    static isVariant(section) {
+        return section.headValues.has("Variant");
+    }
+
+    static getVariantOriginal(section) {
+        return section.getHeadValueValue("Variant")?.replace(/<(.*)>/g, "$1");
+    }
+
     static isTrigger(section) {
         return section.headValues.has("Trigger");
     }
