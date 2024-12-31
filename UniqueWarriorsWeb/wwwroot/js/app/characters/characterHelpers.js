@@ -84,11 +84,6 @@ class CharacterHelpers {
         }
     }
 
-    static downloadCharacter(character) {
-        let json = JSON.stringify(character);
-        downloadJson(character.name, json);
-    }
-
     static createCharacter(openInPage = true) {
         let character = new Character();
         Registries.characters.register(character);
@@ -126,6 +121,38 @@ class CharacterHelpers {
 
         Registries.characters.unregister(character);
         SectionSearch.removeFiltersFromLocalStorage(character.id);
+    }
+
+    static downloadCharacter(character) {
+        this.createCharacterFile(character).download();
+    }
+
+    static createCharacterFile(character) {
+        let wrapper = App.getJsonPrototype("Character", character);;
+        return FakeFile.createJson(character.name, wrapper);
+    }
+
+    static downloadAllCharacters() {
+        downloadZip("Archived_Characters", Registries.characters.map(c => this.createCharacterFile(c)));
+    }
+
+    static async parseCharacterFromFile(file) {
+        let character;
+        try {
+            let json = await App.parseExternalFileContent(file, "Character");
+            character = Character.fromJSON(json);
+        } catch (e) {
+            console.warn("Failed to parse character from file:", file, "With error:", e);
+            return;
+        }
+
+        return character;
+    }
+
+    static importCharacter(character) {
+        if (Registries.characters.has(character)) character.id = generateUniqueId();
+        Registries.characters.register(character);
+        this.saveCharacter(character);
     }
 
     static getDefaultAbilities() {

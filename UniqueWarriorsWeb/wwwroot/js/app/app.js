@@ -3,6 +3,9 @@ class App {
     static appLoaded = false;
     static afterAppLoaded = false;
     static titleSuffix = " - Unique Warriors | Cyberfantasy";
+    static name = "Cyberfantasy: Unique Warriors";
+    static securityId = "_cyberfantasy_unique_warriors_123";
+    static version = "1.0.0";
 
     static setup() {
         window.addEventListener('hashchange', this.#onHashChange);
@@ -49,6 +52,27 @@ class App {
     static setTitle(title, addTitleSuffix = true) {
         if (addTitleSuffix) title += this.titleSuffix;
         document.title = title;
+    }
+
+    static getJsonPrototype(type, content) {
+        return {
+            securityId: App.securityId,
+            source: App.name,
+            version: App.version,
+            type,
+            content,
+        }
+    }
+
+    static async parseExternalFile(file, type = null) {
+        let json = await FileHelpers.getJson(file);
+        if (json.securityId != this.securityId) return;
+        if (type != null && json.type != type) return;
+        return json;
+    }
+
+    static async parseExternalFileContent(file, type = null) {
+        return (await this.parseExternalFile(file, type))?.content;
     }
 
     static run() {

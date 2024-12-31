@@ -23,7 +23,7 @@ class SummonEditorHelpers {
         }
         let rightOfTopBar = fromHTML(`<div class="listHorizontal">`);
         topBar.appendChild(rightOfTopBar);
-        let finishButton = fromHTML(`<button class="largeElement bordered hoverable" tooltip="Exit the summon editor. You can return at any time to continue editing your summon.">Finish`);
+        let finishButton = fromHTML(`<button class="largeElement bordered hoverable noTextWrap" tooltip="Exit the summon editor. You can return at any time to continue editing your summon.">Finish`);
         rightOfTopBar.appendChild(finishButton);
         finishButton.addEventListener('click', () => CharacterHelpers.openCharacterCreator(character, "Techniques"));
 
@@ -43,7 +43,7 @@ class SummonEditorHelpers {
         element.appendChild(fromHTML(`<h1>Name`));
         let nameInputContainer = fromHTML(`<div class="listHorizontal gap-4">`);
         element.appendChild(nameInputContainer);
-        let nameInput = fromHTML(`<input type="text" class="largeElement xl-font" style="width: 400px;">`);
+        let nameInput = fromHTML(`<input type="text" class="largeElement xl-font smallTextInput">`);
         nameInputContainer.appendChild(nameInput);
         nameInput.value = summon.npc.name;
         nameInput.addEventListener('input', () => {
@@ -114,7 +114,7 @@ class SummonEditorHelpers {
 
         let chosenWeapons = summon.npc.weapons;
         if (chosenWeapons.size == 0) {
-            element.setAttribute('tooltip', "No weapons chosen...");
+            element.setAttribute('placeholder', "No weapons chosen...");
             return element;
         }
 
@@ -204,6 +204,7 @@ class SummonEditorHelpers {
 
             return dialogElement;
         });
+        element.addEventListener('removed', () => mutationDialog.container.remove());
 
         function openMutationDialog(techniqueLike) {
             mutationDialog.dialogTitleElement.textContent = `Mutate: ${techniqueLike.title}`;

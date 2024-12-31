@@ -5,7 +5,7 @@ class Character {
         this.id = settings.id ?? generateUniqueId();
         this.imageUrl = settings.imageUrl ?? null;
         this.name = settings.name ?? CharacterHelpers.defaultName;
-        this.stats = settings.stats ?? {};
+        this.stats = { ...CharacterHelpers.getDefaultStats(), ...(settings.stats ?? {}) };
         this.baseStatOverrides = settings.baseStatOverrides ?? {};
         this.statOverrides = settings.statOverrides ?? {};
         this.attributes = {...CharacterHelpers.getEmptyAttributes(), ...(settings.attributes ?? {})};

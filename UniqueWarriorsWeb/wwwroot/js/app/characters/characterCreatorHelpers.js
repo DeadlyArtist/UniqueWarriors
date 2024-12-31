@@ -27,7 +27,7 @@ class CharacterCreatorHelpers {
         }
         let rightOfTopBar = fromHTML(`<div class="listHorizontal">`);
         topBar.appendChild(rightOfTopBar);
-        let finishButton = fromHTML(`<button class="largeElement bordered hoverable" tooltip="Exit the character creator. You can return at any time to continue editing your character.">Finish`);
+        let finishButton = fromHTML(`<button class="largeElement bordered hoverable noTextWrap" tooltip="Exit the character creator. You can return at any time to continue editing your character.">Finish`);
         rightOfTopBar.appendChild(finishButton);
         finishButton.addEventListener('click', () => CharacterHelpers.openCharacter(character));
 
@@ -46,7 +46,7 @@ class CharacterCreatorHelpers {
         element.appendChild(fromHTML(`<h1>Name`));
         let nameInputContainer = fromHTML(`<div class="listHorizontal gap-4">`);
         element.appendChild(nameInputContainer);
-        let nameInput = fromHTML(`<input type="text" class="largeElement xl-font" style="width: 400px;">`);
+        let nameInput = fromHTML(`<input type="text" class="largeElement xl-font smallTextInput">`);
         nameInputContainer.appendChild(nameInput);
         nameInput.value = character.name;
         nameInput.addEventListener('input', () => {
@@ -149,7 +149,7 @@ class CharacterCreatorHelpers {
 
         let chosenWeapons = character.weapons;
         if (chosenWeapons.size == 0) {
-            element.setAttribute('tooltip', "No weapons chosen...");
+            element.setAttribute('placeholder', "No weapons chosen...");
             return element;
         }
 
@@ -243,6 +243,7 @@ class CharacterCreatorHelpers {
 
             return dialogElement;
         });
+        element.addEventListener('removed', () => mutationDialog.container.remove());
 
         function openMutationDialog(techniqueLike) {
             mutationDialog.dialogTitleElement.textContent = `Mutate: ${techniqueLike.title}`;
@@ -655,7 +656,7 @@ class CharacterCreatorHelpers {
 
         let chosenPaths = character.paths;
         if (chosenPaths.size == 0) {
-            element.setAttribute('tooltip', "No path chosen...");
+            element.setAttribute('placeholder', "No path chosen...");
             return element;
         }
 

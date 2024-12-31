@@ -6,6 +6,7 @@ input {
   font-size: 1rem;
   font-family: inherit;
   min-width: 0;
+  width: 100%;
 }
 
 ::placeholder {
@@ -28,19 +29,22 @@ input:focus-visible {
 }
 
 input[type="search"] {
-  width: 100%;
   padding: 6px 12px;
 }
 
 input[type="number"] {
-    width: 100px;
+    max-width: 100px;
     padding: 6px 16px;
 }
 
 input[type="password"] {
-    width: 200px;
+    max-width: 200px;
     padding: 6px 16px;
     line-height: 1;
+}
+
+.smallTextInput {
+  max-width: 400px;
 }
 
 input[type=checkbox], input[type=checkbox]:checked {

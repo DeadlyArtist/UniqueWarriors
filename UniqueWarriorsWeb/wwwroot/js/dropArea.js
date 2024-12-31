@@ -198,7 +198,7 @@ class DropAreaHelpers {
         const input = event.srcElement;
         if (!input.files || input.files.length === 0) return;
     
-        let files = [];
+        const files = [];
         for (let file of input.files) {
             files.push(file);
         }
@@ -212,7 +212,7 @@ class DropAreaHelpers {
     
         if (!event.dataTransfer.items) return;
     
-        let files = [];
+        const files = [];
         for (let item of event.dataTransfer.items) {
             const file = item.getAsFile();
             files.push(file);
@@ -221,12 +221,178 @@ class DropAreaHelpers {
         const target = event.target;
         return DropAreaHelpers.validateFiles(files, DropAreaHelpers.getAllowedMimeTypes(target), DropAreaHelpers.getMaxFileSize(target));
     }
+
+    static getFilesFromPaste(event) {
+        event.preventDefault();
+        if (!event.clipboardData?.items) return;
+
+        const files = [];
+
+        for (let item of event.clipboardData.items) {
+            if (item.kind === 'file') {
+                // Extract the file (e.g., pasted images)
+                const file = item.getAsFile();
+                if (file) {
+                    files.push(file);
+                }
+            }
+        }
+
+        return DropAreaHelpers.validateFiles(files, DropAreaHelpers.getAllowedMimeTypes(target), DropAreaHelpers.getMaxFileSize(target));
+    }
+
+    static create(settings = null) {
+        const element = fromHTML(`<div class="w-100 largeElement bordered">`);
+        const data = new StructuredDropAreaHtml(element, settings);
+
+        const dropArea = fromHTML(`<div class="dropArea" tabIndex="0">`);
+        dropArea.setAttribute('allowed-mime-types', data.allowedMimeTypes);
+        if (data.maxSize) dropArea.setAttribute('max-file-size', data.maxSize);
+        dropArea.addEventListener('drop', e => data.processFileInput(e));
+        dropArea.addEventListener('paste', e => data.processFileInput(e));
+
+        const dropDescriptionElement = fromHTML(`<div>`);
+        dropDescriptionElement.textContent = data.dropDescription;
+        dropArea.appendChild(dropDescriptionElement);
+        dropArea.appendChild(hb(4));
+        const selectFilesElement = fromHTML(`<input type="file" class="dropInput">`);
+        if (data.multiple) selectFilesElement.setAttribute('multiple', '');
+        selectFilesElement.setAttribute('accept', data.allowedExtensions);
+        selectFilesElement.addEventListener('change', e => data.processFileInput(e));
+        dropArea.appendChild(selectFilesElement);
+        const dropButtonElement = fromHTML(`<button class="w-100 dropButton largeElement hoverable bordered">`);
+        dropButtonElement.textContent = data.selectDescription;
+        dropArea.appendChild(dropButtonElement);
+        element.appendChild(dropArea);
+        element.appendChild(hb(4));
+        const filesDisplayElement = fromHTML(`<div class="divList hide">`);
+        const noFileSelectedElement = fromHTML(`<i>`);
+        noFileSelectedElement.textContent = data.noFileSelectedMessage;
+        element.appendChild(noFileSelectedElement);
+        element.appendChild(filesDisplayElement);
+
+        data.noFileSelectedElement = noFileSelectedElement;
+        data.filesDisplayElement = filesDisplayElement;
+        data.dropArea = dropArea;
+        data.dropDescriptionElement = dropDescriptionElement;
+        data.selectFilesElement = selectFilesElement;
+        data.dropButtonElement = dropButtonElement;
+        return data;
+    }
+
+    static createJson(settings = null) {
+        return this.create(StructuredDropAreaHtml.getJsonSettings(settings));
+    }
+
+    static createCsv() {
+        return this.create(StructuredDropAreaHtml.getCsvSettings(settings));
+    }
 }
 
 window.addEventListener('load', e => DropAreaHelpers.setupEventListeners())
 
+class StructuredDropAreaHtml {
+    noFileSelectedElement;
+    filesDisplayElement;
+    dropArea;
+    dropDescriptionElement;
+    selectFilesElement;
+    dropButtonElement;
+
+    constructor(element, settings = null) {
+        this.element = element;
+
+        settings ??= {};
+        this.files = [];
+        this.parsedContents = [];
+        this.allowedMimeTypes = settings.allowedMimeTypes ?? [];
+        this.allowedExtensions = settings.allowedExtensions ?? [];
+        this.dropDescription = settings.dropDescription ?? ("Drag and drop or paste valid files (" + (this.allowedExtensions.length === 0 ? "any type" : this.allowedExtensions.join(', ')) + ").");
+        this.selectDescription = settings.selectDescription ?? 'Or select files';
+        this.noFileSelectedMessage = settings.noFileSelectedMessage ?? 'No file selected.';
+        this.multiple = settings.multiple ?? false;
+        this.maxSize = settings.maxSize;
+        this.filterFile = settings.filterFile;
+        this.parseFile = settings.parseFile;
+        this.onChange = settings.onChange;
+    }
+
+    static getJsonSettings(settings = null) {
+        return { ...(settings ?? {}), allowedMimeTypes: [commonMimeTypes.json], allowedExtensions: [".json"] };
+    }
+
+    static getCsvSettings(settings = null) {
+        return { ...(settings ?? {}), allowedMimeTypes: [commonMimeTypes.csv], allowedExtensions: [".csv"] };
+    }
+
+    async processFileInput(e) {
+        let files = getFilesFromEvent(e);
+        await this.addFiles(files);
+    }
+
+    async addFiles(files) {
+        if (files.length == 0) return;
+        if (this.filterFile) files = files.filter(file => this.filterFile(file, this));
+        if (this.parseFile) {
+            let results = await parallel(files, async file => {
+                let parsed;
+                try {
+                    parsed = await this.parseFile(file, this);
+                } catch (e) {
+                    console.warn(e);
+                }
+                return {file, parsed};
+            });
+            files = [];
+            results.forEach(result => {
+                if (!result.parsed) return;
+                files.push(result.file);
+                this.parsedContents.push(result.parsed);
+            });
+        }
+        if (files.length == 0) return;
+
+        this.files = this.files.concat(files);
+
+        this.filesDisplayElement.innerHTML = '';
+        this.noFileSelectedElement.classList.add('hide');
+        this.filesDisplayElement.classList.remove('hide');
+
+
+        for (let [index, file] of Object.entries(this.files)) {
+            const fileDisplayElement = fromHTML(`<div class="listHorizontal">`);
+            const fileNameElement = fromHTML(`<div>`);
+            fileNameElement.textContent = file.name;
+            fileDisplayElement.appendChild(fileNameElement);
+
+            let deleteButton = fromHTML(`<button class="element hoverable" tooltip="Unselect file">`);
+            fileDisplayElement.appendChild(deleteButton);
+            deleteButton.addEventListener('click', () => this.removeFile(index));
+            let deleteIcon = icons.close();
+            deleteButton.appendChild(deleteIcon);
+            deleteIcon.classList.add("minimalIcon");
+
+            this.filesDisplayElement.appendChild(fileDisplayElement);
+        }
+
+        this.onChange?.();
+    }
+
+    removeFile(index) {
+        this.files.splice(index, 1);
+        spliceChildren(this.filesDisplayElement, index, 1);
+
+        if (this.files.length == 0) {
+            this.noFileSelectedElement.classList.remove('hide');
+            this.filesDisplayElement.classList.add('hide');
+        }
+
+        this.onChange?.();
+    }
+}
 
 function getFilesFromEvent(e) {
-    if (e.srcElement.files && e.srcElement.files.length !== 0) return DropAreaHelpers.getFilesFromSelect(e);
-    else if (e.dataTransfer.items) return DropAreaHelpers.getFilesFromDrop(e);
+    if (e.srcElement?.files && e.srcElement.files.length !== 0) return DropAreaHelpers.getFilesFromSelect(e);
+    else if (e.dataTransfer?.items) return DropAreaHelpers.getFilesFromDrop(e);
+    else if (e.clipboardData.items) return DropAreaHelpers.getFilesFromPaste(e);
 }

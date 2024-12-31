@@ -57,16 +57,16 @@ class NPCSectionHelpers {
         parsedSettings.statOverrides = statOverrides;
         for (let statName of [...NPCHelpers.attributeStatNames, ...NPCHelpers.staticStatNames]) {
             let value = section.getHeadValueValue(statName);
-            if (value) statOverrides[statName] = value;
+            if (value != null) statOverrides[toCamelCase(statName)] = value;
         }
         let stats = {};
         parsedSettings.stats = stats;
         for (let statName of ["Level", "Importance"]) {
             let value = section.getHeadValueValue(statName);
-            if (value) stats[statName] = value;
+            if (value != null) stats[toCamelCase(statName)] = value;
         }
 
-        let npc = new NPC({...parsedSettings, ...settings});
+        let npc = new NPC({ ...parsedSettings, ...settings });
         return npc;
     }
 }

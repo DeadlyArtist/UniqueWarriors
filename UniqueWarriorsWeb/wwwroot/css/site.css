@@ -71,6 +71,11 @@ input:focus-visible {
   border-color: var(--brand-color);
 }
 
+.contenteditableContainer:focus-within {
+  border-color: var(--brand-color);
+  outline: unset;
+}
+
 .sidebarElement.borderedHoverable:hover:not(:disabled) {
   box-shadow: inset 0 0 0 1px var(--brand-color);
 }
