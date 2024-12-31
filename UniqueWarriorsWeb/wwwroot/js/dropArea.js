@@ -162,8 +162,7 @@ class DropAreaHelpers {
         closest('.dropArea')?.
         querySelector('.dropInput')?.
         getAttribute('multiple') ?? false;
-        
-        console.log(multiple, isString(multiple), multiple == null);
+
         if (isString(multiple) && multiple.trim() == '') multiple = true;
         return multiple;
     }
@@ -200,7 +199,7 @@ class DropAreaHelpers {
     
         const files = [];
         for (let file of input.files) {
-            files.push(file);
+            if (file) files.push(file);
         }
         input.value = '';
     
@@ -215,7 +214,7 @@ class DropAreaHelpers {
         const files = [];
         for (let item of event.dataTransfer.items) {
             const file = item.getAsFile();
-            files.push(file);
+            if (file) files.push(file);
         }
     
         const target = event.target;
@@ -229,13 +228,8 @@ class DropAreaHelpers {
         const files = [];
 
         for (let item of event.clipboardData.items) {
-            if (item.kind === 'file') {
-                // Extract the file (e.g., pasted images)
-                const file = item.getAsFile();
-                if (file) {
-                    files.push(file);
-                }
-            }
+            const file = item.getAsFile();
+            if (file) files.push(file);
         }
 
         const target = event.target;
