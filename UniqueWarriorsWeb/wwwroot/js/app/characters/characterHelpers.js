@@ -540,11 +540,18 @@ class CharacterHelpers {
         whyElement.textContent = character.details.why ?? "No reasons written yet...";
 
         element.appendChild(hb(4));
-        let backStoryContainer = fromHTML(`<div class="character-details-backstory-container"><h1>Backstory`);
-        element.appendChild(backStoryContainer);
+        let backstoryContainer = fromHTML(`<div class="character-details-backstory-container"><h1>Backstory`);
+        element.appendChild(backstoryContainer);
         let backstoryElement = fromHTML(`<div class="character-details-backstory">`);
-        backStoryContainer.appendChild(backstoryElement);
+        backstoryContainer.appendChild(backstoryElement);
         backstoryElement.textContent = character.details.backstory ?? "No backstory written yet...";
+
+        element.appendChild(hb(4));
+        let appearanceContainer = fromHTML(`<div class="character-details-backstory-container"><h1>Appearance`);
+        element.appendChild(appearanceContainer);
+        let appearanceElement = fromHTML(`<div class="character-details-appearance">`);
+        appearanceContainer.appendChild(appearanceElement);
+        appearanceElement.textContent = character.details.appearance ?? "No appearance details specified...";
 
         return element;
     }
