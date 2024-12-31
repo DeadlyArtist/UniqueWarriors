@@ -238,6 +238,7 @@ class DropAreaHelpers {
             }
         }
 
+        const target = event.target;
         return DropAreaHelpers.validateFiles(files, DropAreaHelpers.getAllowedMimeTypes(target), DropAreaHelpers.getMaxFileSize(target));
     }
 
@@ -307,7 +308,7 @@ class StructuredDropAreaHtml {
         this.parsedContents = [];
         this.allowedMimeTypes = settings.allowedMimeTypes ?? [];
         this.allowedExtensions = settings.allowedExtensions ?? [];
-        this.dropDescription = settings.dropDescription ?? ("Drag and drop or paste valid files (" + (this.allowedExtensions.length === 0 ? "any type" : this.allowedExtensions.join(', ')) + ").");
+        this.dropDescription = settings.dropDescription ?? ("Drag and drop or click and paste valid files (" + (this.allowedExtensions.length === 0 ? "any type" : this.allowedExtensions.join(', ')) + ").");
         this.selectDescription = settings.selectDescription ?? 'Or select files';
         this.noFileSelectedMessage = settings.noFileSelectedMessage ?? 'No file selected.';
         this.multiple = settings.multiple ?? false;

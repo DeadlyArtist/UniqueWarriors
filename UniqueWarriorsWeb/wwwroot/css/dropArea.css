@@ -6,6 +6,10 @@
     padding: 20px;
 }
 
+/*  .dropArea:focus-within {
+    border-color: var(--raised-border-color);
+  }*/
+
 .dropArea.dragover {
     border-color: var(--success-color);
 }
