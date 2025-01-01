@@ -1353,6 +1353,10 @@ class CharacterCreatorHelpers {
             let mutationInfo = AbilitySectionHelpers.getMutatedInfo(ability);
             if (!targetRegistry.has(mutationInfo.original) || !(techniqueRegistry ?? targetRegistry).has(mutationInfo.mutation)) return false;
             return true;
+        } else if (AbilitySectionHelpers.isVariant(ability)) {
+            let original = AbilitySectionHelpers.getVariantOriginal(ability);
+            if (!targetRegistry.has(original)) return false;
+            return true;
         }
 
         let connections = AbilitySectionHelpers.getConnections(ability);

@@ -397,31 +397,36 @@ class CharacterHelpers {
     }
 
     static getValidationMessages(character) {
+        function tryS(list) {
+            return list.length == 1 ? "" : "s";
+        }
+        function tryY(list) {
+            return list.length == 1 ? "y" : "ies";
+        }
         let validationMessages = [];
         let remainingTechniques = CharacterCreatorHelpers.getRemainingOtherTechniques(character);
         if (remainingTechniques < 0) validationMessages.push(`${-remainingTechniques} too many techniques`);
         let variantWithTooManyTechniques = character.summons.filter(s => AbilitySectionHelpers.isVariant(s) && CharacterCreatorHelpers.getTooManyThingsCountInVariant(character, s) > CharacterCreatorHelpers.getMaxThingsInVariant(character)).length;
-        if (variantWithTooManyTechniques > 0) validationMessages.push(`${variantWithTooManyTechniques} summon variants with too many techniques`);
+        if (variantWithTooManyTechniques > 0) validationMessages.push(`${variantWithTooManyTechniques} summon variant${tryS(variantWithTooManyTechniques)} with too many techniques`);
         if (!character.canHaveFreeMutation()) {
             let count = character.techniques.filter(t => AbilitySectionHelpers.isMutation(t)).length;
             if (count != 0) {
-                validationMessages.push(`${count} mutations which only become available at level 5.`);
+                validationMessages.push(`${count} mutation${tryS(count)} which only become available at level 5.`);
             }
             let variantsWithTooMany = character.summons.filter(s => AbilitySectionHelpers.isVariant(s)).filter(s => SummonHelpers.getTechniquesNotInOriginal(character, s).filter(t => AbilitySectionHelpers.isMutation(t)).length != 0).length;
             if (variantsWithTooMany != 0) {
-                validationMessages.push(`${variantsWithTooMany} summon variants with original mutations which only become available at level 5.`);
+                validationMessages.push(`${variantsWithTooMany} summon variant${tryS(variantsWithTooMany)} with original mutations which only become available at level 5.`);
             }
         }
-        let availableMutations = new Set(CharacterCreatorHelpers.getMutations(character).map(m => m.title));
-        let illegalMutations = character.techniques.filter(t => AbilitySectionHelpers.isMutated(t) && !availableMutations.has(AbilitySectionHelpers.getMutatedOriginal(t))).length;
-        if (illegalMutations != 0) validationMessages.push(`${illegalMutations} techniques mutated without the corresponding mutation`);
-        let variantsWithIllegalMutations = character.summons.filter(s => AbilitySectionHelpers.isVariant(s)).filter(s => {
-            let uniqueTechniques = SummonHelpers.getTechniquesNotInOriginal(character, s);
-            let availableMutations = new Set(uniqueTechniques.filter(t => AbilitySectionHelpers.isMutation(t)).map(m => m.title));
-            let illegalMutations = uniqueTechniques.filter(t => AbilitySectionHelpers.isMutated(t) && !availableMutations.has(AbilitySectionHelpers.getMutatedOriginal(t))).length;
-            return illegalMutations != 0;
-        }).length;
-        if (variantsWithIllegalMutations != 0) validationMessages.push(`${variantsWithIllegalMutations} summon variants with original techniques mutated without the corresponding mutation`);
+
+        let unconnectedTechniques = character.techniques.filter(t => !CharacterCreatorHelpers.canConnectToAbility(character.techniques, t)).length;
+        if (unconnectedTechniques != 0) validationMessages.push(`${unconnectedTechniques} unconnected technique${tryS(unconnectedTechniques)}`);
+        let unconnectedSummons = character.summons.filter(t => !CharacterCreatorHelpers.canConnectToAbility(character.summons, t, character.techniques)).length;
+        if (unconnectedSummons != 0) validationMessages.push(`${unconnectedSummons} unconnected summon${tryS(unconnectedSummons)}`);
+        let unconnectedTechniquesInVariants = character.summons.filter(s => AbilitySectionHelpers.isVariant(s)).flatMap(s => SummonHelpers.getTechniquesNotInOriginal(character, s).filter(t => !CharacterCreatorHelpers.canConnectToAbility(s.npc.techniques, t))).length;
+        if (unconnectedTechniquesInVariants != 0) validationMessages.push(`${unconnectedTechniquesInVariants} unconnected technique${tryS(unconnectedTechniquesInVariants)} in summon variant${tryS(unconnectedTechniquesInVariants)}`);
+        let unconnectedSummonsInVariants = character.summons.filter(s => AbilitySectionHelpers.isVariant(s)).flatMap(s => SummonHelpers.getSummonsNotInOriginal(character, s).filter(t => !CharacterCreatorHelpers.canConnectToAbility(s.npc.summons, t, s.npc.techniques))).length;
+        if (unconnectedSummonsInVariants != 0) validationMessages.push(`${unconnectedSummonsInVariants} unconnected summon${tryS(unconnectedSummonsInVariants)} in summon variant${tryS(unconnectedSummonsInVariants)}`);
 
         let remainingMasteries = CharacterCreatorHelpers.getRemainingMasteries(character);
         if (remainingMasteries < 0) validationMessages.push(`${-remainingMasteries} too many masteries`);
