@@ -2,15 +2,14 @@ class NPC {
     constructor(settings = null) {
         settings ??= {};
 
-        this.subType = settings.subType;
         this.id = settings.id ?? generateUniqueId();
         this.imageUrl = settings.imageUrl ?? null;
-        this.name = settings.name ?? ("New " + this.subType ?? "NPC");
+        this.settings = settings.settings ?? {};
+        this.name = settings.name ?? ("New " + this.settings.subType ?? "NPC");
         this.stats = { ...NPCHelpers.getDefaultStats(), ...(settings.stats ?? {})};
         this.baseStatOverrides = settings.baseStatOverrides ?? {};
         this.statOverrides = settings.statOverrides ?? {};
         this.boons = settings.boons ?? {};
-        this.settings = settings.settings ?? {};
         this.details = settings.details ?? {};
         this.linkedSection = settings.linkedSection ?? {};
 
@@ -69,7 +68,11 @@ class NPC {
     }
 
     isSummon() {
-        return this.subType == "Summon";
+        return this.settings.subType == "Summon";
+    }
+
+    isImmobile() {
+        return this.settings.immobile;
     }
 
     getStats() {
@@ -109,7 +112,7 @@ class NPC {
         let initiative = baseStats.initiative + importance * 2 + attributes.initiative * 3;
         let range = baseStats.range + attributes.range * 6;
 
-        if (this.settings.immobile) speed = 0;
+        if (this.isImmobile()) speed = 0;
 
         return {
             maxHealth: this.statOverrides.maxHealth ?? maxHealth,
@@ -127,7 +130,7 @@ class NPC {
         let baseStats = { ...NPCHelpers.getBaseStats(), ...(this.baseStatOverrides ?? {}) };
         let { importance } = this.getScalingStats();
         let moveActions = baseStats.moveActions;
-        if (this.settings.immobile) moveActions = 0;
+        if (this.isImmobile()) moveActions = 0;
 
         return {
             grazeRange: this.statOverrides.grazeRange ?? baseStats.grazeRange,
@@ -174,6 +177,7 @@ class NPC {
             statOverrides: this.statOverrides,
             boons: this.boons,
             details: this.details,
+            settings: this.settings,
             items: this.items.getAll(),
             techniques: this.techniques.getAll(),
             summons: this.summons.getAll(),

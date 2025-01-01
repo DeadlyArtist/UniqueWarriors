@@ -26,7 +26,7 @@ class NPCSectionHelpers {
     }
 
     static isObject(section) {
-        return section.headValues.has('Object');
+        return section.tags.has('Object');
     }
 
     static isSummon(section) {
@@ -48,10 +48,11 @@ class NPCSectionHelpers {
         let weapons = this.getWeapons(section);
         let object = this.isObject(section);
         let immobile = this.isImmobile(section);
+        let copyStatsFromSummoner = section.getHeadValueValue("Stats") == "Copy";
 
-        let parsedSettings = { name: section.title, boons, weapons, settings: { object, immobile } };
+        let parsedSettings = { name: section.title, boons, weapons, settings: { object, immobile, copyStatsFromSummoner } };
         if (isSummon) {
-            parsedSettings.subType = "Summon";
+            parsedSettings.settings.subType = "Summon";
         }
         let statOverrides = {};
         parsedSettings.statOverrides = statOverrides;

@@ -374,12 +374,12 @@ class SectionHelpers {
         let npc = section.npc;
         if (isNPC) {
             npc = section.npc.clone();
-            let level = settings.variables.get("Level");
+            let level = settings.variables?.get("Level");
             if (level == null) {
                 newVariables = new Map();
             } else {
                 npc.stats.level = level;
-                newVariables = npc.getVariables();
+                newVariables = npc.settings.copyStatsFromSummoner ? SummonHelpers.copyVariablesFromSummoner(section, settings.variables) : npc.getVariables();
                 hasLevel = true;
             }
         }
@@ -463,7 +463,8 @@ class SectionHelpers {
             sectionElement.appendChild(characterContainer);
             if (hasLevel) {
                 function updateCharacter() {
-                    let structuredCharacter = CharacterHelpers.generateStructuredHtmlForCharacter(npc, { embedded: true, noTitle: true, simple: true, });
+                    newVariables.set("Importance", npc.stats.importance);
+                    let structuredCharacter = CharacterHelpers.generateStructuredHtmlForCharacter(npc, { embedded: true, noTitle: true, simple: true, variables: newVariables });
                     structuredSection._structuredCharacter = structuredCharacter;
                     structuredCharacter._section = section;
                     structuredCharacter.element._section = section;
@@ -493,7 +494,7 @@ class SectionHelpers {
 
                 updateCharacter();
             } else {
-                let abilityListElement = CharacterHelpers.generateAbilitiesSubPageHtml(npc, { noVariables: true, simple: true, });
+                let abilityListElement = CharacterHelpers.generateAbilitiesSubPageHtml(npc, { noVariables: true, simple: true, variables: newVariables });
                 characterContainer.appendChild(abilityListElement);
             }
         } else {

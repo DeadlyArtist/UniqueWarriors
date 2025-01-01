@@ -262,7 +262,7 @@ class CharacterHelpers {
             element.appendChild(hb(2));
         }
 
-        let statsContainer = this.generateStatsHtml(character);
+        let statsContainer = this.generateStatsHtml(character, settings);
         element.appendChild(statsContainer);
 
         if (character instanceof Character) {
@@ -330,7 +330,8 @@ class CharacterHelpers {
         return structuredCharacter;
     }
 
-    static generateStatsHtml(character) {
+    static generateStatsHtml(character, settings = null) {
+        settings ??= {};
         let statsContainer = fromHTML(`<div class="character-stats listHorizontal gap-2">`);
         let attributeStatsBar = fromHTML(`<div class="character-attributeStats listHorizontal gap-2">`);
         statsContainer.appendChild(attributeStatsBar);
@@ -341,23 +342,25 @@ class CharacterHelpers {
         let attributeStats = character.getAttributeStats();
         let staticStats = character.getStaticStats();
         let scalingStats = character.getScalingStats();
-        if (character.isSummon?.()) {
+        if (character.isSummon()) {
             let badAttributes = new Set(["Luck", "Initiative"]);
-            attributeStats = ObjectHelpers.filterProperties(attributeStats, key => !badAttributes.has(key));
+            attributeStats = ObjectHelpers.filterProperties(attributeStats, key => !badAttributes.has(toTextCase(key)));
         }
-        if (character.settings.immobile) {
+        if (character.isImmobile()) {
             let badAttributes = new Set(["Speed", "Move Actions"]);
-            attributeStats = ObjectHelpers.filterProperties(attributeStats, key => !badAttributes.has(key));
-            staticStats = ObjectHelpers.filterProperties(staticStats, key => !badAttributes.has(key));
+            attributeStats = ObjectHelpers.filterProperties(attributeStats, key => !badAttributes.has(toTextCase(key)));
+            staticStats = ObjectHelpers.filterProperties(staticStats, key => !badAttributes.has(toTextCase(key)));
         }
         function addStats(stats, element) {
             for (let [name, value] of Object.entries(stats)) {
+                let displayName = CharacterHelpers.getStatName(name);
+                if (settings.variables?.has(displayName)) value = settings.variables.get(displayName);
                 let statElement = fromHTML(`<div class="character-stat divList bordered rounded-xl">`);
                 element.appendChild(statElement);
                 statElement._stat = { name, value };
                 let stateNameElement = fromHTML(`<div class="character-stat-name mediumElement">`);
                 statElement.appendChild(stateNameElement);
-                stateNameElement.textContent = CharacterHelpers.getStatName(name);
+                stateNameElement.textContent = displayName;
                 statElement.appendChild(fromHTML(`<hr class="">`)); // potentially add raised-border
                 let stateValueElement = fromHTML(`<div class="character-stat-value mediumElement">`); /*listHorizontal centerContentHorizontally*/
                 statElement.appendChild(stateValueElement);
