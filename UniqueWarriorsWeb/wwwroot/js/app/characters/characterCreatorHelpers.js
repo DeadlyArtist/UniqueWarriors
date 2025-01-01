@@ -207,7 +207,7 @@ class CharacterCreatorHelpers {
             let dialogNameContainer = fromHTML(`<div class="listHorizontal">`);
             dialogElement.appendChild(dialogNameContainer);
             dialogNameContainer.appendChild(fromHTML(`<div>Name:`));
-            let dialogNameInput = dialog.dialogNameInput = fromHTML(`<input type="text" class="largeElement" placeholder="Enter mutation name..." style="width: 400px;">`);
+            let dialogNameInput = dialog.dialogNameInput = fromHTML(`<input type="text" class="largeElement" placeholder="Enter ability name..." style="width: 400px;">`);
             dialogNameContainer.appendChild(dialogNameInput);
 
             dialogElement.appendChild(hb(4));
@@ -259,6 +259,59 @@ class CharacterCreatorHelpers {
             mutationDialog.dialogMutationInput.value = mutations[0].title;
             mutationDialog.onMutationChange();
             mutationDialog.open();
+        }
+
+        let editMutatedDialog = DialogHelpers.create(dialog => {
+            let dialogElement = fromHTML(`<div class="divList">`);
+            let dialogTitleElement = dialog.dialogTitleElement = fromHTML(`<h1>`);
+            dialogElement.appendChild(dialogTitleElement);
+
+            let dialogNameContainer = fromHTML(`<div class="listHorizontal">`);
+            dialogElement.appendChild(dialogNameContainer);
+            dialogNameContainer.appendChild(fromHTML(`<div>Name:`));
+            let dialogNameInput = dialog.dialogNameInput = fromHTML(`<input type="text" class="largeElement" placeholder="Enter ability name..." style="width: 400px;">`);
+            dialogNameContainer.appendChild(dialogNameInput);
+
+            dialogElement.appendChild(hb(4));
+            let dialogMutationPreviewContainer = dialog.dialogMutationPreviewContainer = fromHTML(`<div class="w-100">`);
+            dialogElement.appendChild(dialogMutationPreviewContainer);
+
+            dialogElement.appendChild(hb(6));
+            let dialogButtonList = fromHTML(`<div class="listHorizontal">`);
+            dialogElement.appendChild(dialogButtonList);
+            let dialogFinishButton = fromHTML(`<button class="largeElement bordered hoverable flexFill w-100">Finish`);
+            dialogButtonList.appendChild(dialogFinishButton);
+            dialog.addCloseButton(dialogFinishButton);
+
+            dialogNameInput.addEventListener('input', () => {
+                let value = dialogNameInput.value;
+                if (!value) value = dialog._structuredSection.section.title;
+                dialog._structuredSection.titleElement.textContent = value;
+                dialog._structuredSection.section.title = value;
+                chosenOverview.sections.get(dialog._section).titleElement.textContent = value;
+                CharacterHelpers.saveCharacter(character);
+            });
+
+            dialog.onSectionChange = () => {
+                let section = dialog._section;
+                dialogTitleElement.textContent = `Edit: ${section.title}`;
+                let structuredSection = dialog._structuredSection = SectionHelpers.generateStructuredHtmlForSection(section, { variables });
+                dialogNameInput.value = section.title;
+                dialogMutationPreviewContainer.innerHTML = "";
+                dialogMutationPreviewContainer.appendChild(structuredSection.wrapperElement);
+            }
+
+            dialog.closeOnOverlayClick = true;
+
+            return dialogElement;
+        });
+        element.addEventListener('removed', () => editMutatedDialog.container.remove());
+
+        function openEditMutatedDialog(techniqueLike) {
+            editMutatedDialog._section = techniqueLike;
+
+            editMutatedDialog.onSectionChange();
+            editMutatedDialog.open();
         }
 
         element.appendChild(fromHTML(`<h1>Choose Techniques`));
@@ -438,8 +491,10 @@ class CharacterCreatorHelpers {
             chosen.register(techniqueLike);
             let structuredSection = overview.addSection(techniqueLike);
             addUnlearnButton(structuredSection);
-            if (NPCSectionHelpers.isSummon(structuredSection.section)) {
+            if (isSummon) {
                 if (AbilitySectionHelpers.isVariant(structuredSection.section)) addEditVariantButton(structuredSection);
+            } else {
+                if (AbilitySectionHelpers.isMutated(structuredSection.section)) addEditMutationButton(structuredSection);
             }
 
             if (update) {
@@ -481,6 +536,10 @@ class CharacterCreatorHelpers {
 
         function mutate(technique) {
             openMutationDialog(technique)
+        }
+
+        function editMutated(technique) {
+            openEditMutatedDialog(technique)
         }
 
         function createVariant(summon) {
@@ -531,6 +590,18 @@ class CharacterCreatorHelpers {
             structuredSection.learnButtonContainer.before(container);
         }
 
+        function addEditMutationButton(structuredSection) {
+            let summon = structuredSection.section;
+            let container = structuredSection.editButtonContainer = fromHTML(`<div>`);
+            container.appendChild(hb(2));
+            let wrapper = fromHTML(`<div class="listHorizontal centerContentHorizontally">`);
+            container.appendChild(wrapper);
+            let button = structuredSection.editButton = fromHTML(`<button class="listHorizontal gap-2 largeElement bordered brand-border-color hoverable centerContentHorizontally w-100">Edit`);
+            wrapper.appendChild(button);
+            button.addEventListener('click', () => editMutated(summon));
+            structuredSection.learnButtonContainer.before(container);
+        }
+
         function addVariantButton(structuredSection) {
             let summon = structuredSection.section;
             let container = structuredSection.variantButtonContainer = fromHTML(`<div>`);
@@ -557,13 +628,12 @@ class CharacterCreatorHelpers {
 
         for (let structuredSection of chosenOverview.sections) {
             addUnlearnButton(structuredSection);
+            if (AbilitySectionHelpers.isMutated(structuredSection.section)) addEditMutationButton(structuredSection);
         }
 
         for (let structuredSection of chosenSummonsOverview.sections) {
             addUnlearnButton(structuredSection);
-            if (NPCSectionHelpers.isSummon(structuredSection.section)) {
-                if (AbilitySectionHelpers.isVariant(structuredSection.section)) addEditVariantButton(structuredSection);
-            }
+            if (AbilitySectionHelpers.isVariant(structuredSection.section)) addEditVariantButton(structuredSection);
         }
 
         for (let structuredSection of availableOverview.sections) {

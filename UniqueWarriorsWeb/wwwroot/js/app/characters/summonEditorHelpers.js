@@ -218,6 +218,59 @@ class SummonEditorHelpers {
             mutationDialog.open();
         }
 
+        let editMutationDialog = DialogHelpers.create(dialog => {
+            let dialogElement = fromHTML(`<div class="divList">`);
+            let dialogTitleElement = dialog.dialogTitleElement = fromHTML(`<h1>`);
+            dialogElement.appendChild(dialogTitleElement);
+
+            let dialogNameContainer = fromHTML(`<div class="listHorizontal">`);
+            dialogElement.appendChild(dialogNameContainer);
+            dialogNameContainer.appendChild(fromHTML(`<div>Name:`));
+            let dialogNameInput = dialog.dialogNameInput = fromHTML(`<input type="text" class="largeElement" placeholder="Enter ability name..." style="width: 400px;">`);
+            dialogNameContainer.appendChild(dialogNameInput);
+
+            dialogElement.appendChild(hb(4));
+            let dialogMutationPreviewContainer = dialog.dialogMutationPreviewContainer = fromHTML(`<div class="w-100">`);
+            dialogElement.appendChild(dialogMutationPreviewContainer);
+
+            dialogElement.appendChild(hb(6));
+            let dialogButtonList = fromHTML(`<div class="listHorizontal">`);
+            dialogElement.appendChild(dialogButtonList);
+            let dialogFinishButton = fromHTML(`<button class="largeElement bordered hoverable flexFill w-100">Finish`);
+            dialogButtonList.appendChild(dialogFinishButton);
+            dialog.addCloseButton(dialogFinishButton);
+
+            dialogNameInput.addEventListener('input', () => {
+                let value = dialogNameInput.value;
+                if (!value) value = dialog._structuredSection.section.title;
+                dialog._structuredSection.titleElement.textContent = value;
+                dialog._structuredSection.section.title = value;
+                chosenOverview.sections.get(dialog._section).titleElement.textContent = value;
+                CharacterHelpers.saveCharacter(character);
+            });
+
+            dialog.onSectionChange = () => {
+                let section = dialog._section;
+                dialogTitleElement.textContent = `Edit: ${section.title}`;
+                let structuredSection = dialog._structuredSection = SectionHelpers.generateStructuredHtmlForSection(section, { variables });
+                dialogNameInput.value = section.title;
+                dialogMutationPreviewContainer.innerHTML = "";
+                dialogMutationPreviewContainer.appendChild(structuredSection.wrapperElement);
+            }
+
+            dialog.closeOnOverlayClick = true;
+
+            return dialogElement;
+        });
+        element.addEventListener('removed', () => editMutationDialog.container.remove());
+
+        function openEditMutationDialog(techniqueLike) {
+            editMutationDialog._section = techniqueLike;
+
+            editMutationDialog.onSectionChange();
+            editMutationDialog.open();
+        }
+
         element.appendChild(fromHTML(`<h1>Choose Techniques`));
         let descriptionElement = fromHTML(`<div>`);
         element.appendChild(descriptionElement);
@@ -375,6 +428,8 @@ class SummonEditorHelpers {
             let structuredSection = overview.addSection(techniqueLike);
             addUnlearnButton(structuredSection);
 
+            if (AbilitySectionHelpers.isMutated(structuredSection.section)) addEditMutationButton(structuredSection);
+
             if (update) {
                 updateAll();
                 CharacterHelpers.saveCharacter(character);
@@ -416,6 +471,10 @@ class SummonEditorHelpers {
             openMutationDialog(techniqueLike)
         }
 
+        function editMutated(technique) {
+            openEditMutationDialog(technique)
+        }
+
         function addUnlearnButton(structuredSection) {
             let technique = structuredSection.section;
             let container = structuredSection.learnButtonContainer = fromHTML(`<div>`);
@@ -427,14 +486,6 @@ class SummonEditorHelpers {
             if (character.settings.validate) button.setAttribute('tooltip', "Warning: If other techniques depend on this, you will unlearn them as well.");
             button.addEventListener('click', () => unlearn(technique));
             structuredSection.element.appendChild(container);
-        }
-
-        for (let structuredSection of chosenOverview.sections) {
-            if (!originalTechniques.has(structuredSection.section)) addUnlearnButton(structuredSection);
-        }
-
-        for (let structuredSection of chosenSummonsOverview.sections) {
-            if (!originalSummons.has(structuredSection.section)) addUnlearnButton(structuredSection);
         }
 
         function addLearnButton(structuredSection) {
@@ -449,14 +500,6 @@ class SummonEditorHelpers {
             structuredSection.element.appendChild(container);
         }
 
-        for (let structuredSection of availableOverview.sections) {
-            addLearnButton(structuredSection);
-        }
-
-        for (let structuredSection of availableSummonsOverview.sections) {
-            addLearnButton(structuredSection);
-        }
-
         function addMutateButton(structuredSection) {
             let technique = structuredSection.section;
             let container = structuredSection.mutateButtonContainer = fromHTML(`<div>`);
@@ -468,6 +511,38 @@ class SummonEditorHelpers {
             button.addEventListener('click', () => mutate(technique));
             if (structuredSection.learnButtonContainer) structuredSection.learnButtonContainer.before(container);
             else structuredSection.element.appendChild(container);
+        }
+
+        function addEditMutatedButton(structuredSection) {
+            let technique = structuredSection.section;
+            let container = structuredSection.mutateButtonContainer = fromHTML(`<div>`);
+            container.appendChild(hb(2));
+            let wrapper = fromHTML(`<div class="listHorizontal centerContentHorizontally">`);
+            container.appendChild(wrapper);
+            let button = structuredSection.mutateButton = fromHTML(`<button class="listHorizontal gap-2 largeElement bordered brand-border-color hoverable centerContentHorizontally w-100">Edit`);
+            wrapper.appendChild(button);
+            button.addEventListener('click', () => editMutated(technique));
+            if (structuredSection.learnButtonContainer) structuredSection.learnButtonContainer.before(container);
+            else structuredSection.element.appendChild(container);
+        }
+
+        for (let structuredSection of chosenOverview.sections) {
+            if (!originalTechniques.has(structuredSection.section)) {
+                addUnlearnButton(structuredSection);
+                if (AbilitySectionHelpers.isMutated(structuredSection.section)) addEditMutationButton(structuredSection);
+            }
+        }
+
+        for (let structuredSection of chosenSummonsOverview.sections) {
+            if (!originalSummons.has(structuredSection.section)) addUnlearnButton(structuredSection);
+        }
+
+        for (let structuredSection of availableOverview.sections) {
+            addLearnButton(structuredSection);
+        }
+
+        for (let structuredSection of availableSummonsOverview.sections) {
+            addLearnButton(structuredSection);
         }
 
         function refreshData() {

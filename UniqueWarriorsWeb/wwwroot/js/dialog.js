@@ -8,12 +8,15 @@ class DialogHelpers {
         let innerContentElement = fromHTML(`<div class="dialogInnerContent largeElement bordered">`);
         contentElement.appendChild(innerContentElement);
 
-        let ovelayElement = fromHTML(`<div class="dialogOverlay">`);
-        container.appendChild(ovelayElement);
+        let overlayElement = fromHTML(`<div class="dialogOverlay">`);
+        container.appendChild(overlayElement);
+        overlayElement.addEventListener('click', () => {
+            if (structuredDialog.closeOnOverlayClick) structuredDialog.close()
+        });
 
         structuredDialog.contentElement = contentElement;
         structuredDialog.innerContentElement = innerContentElement;
-        structuredDialog.ovelayElement = ovelayElement;
+        structuredDialog.overlayElement = overlayElement;
 
         let element = elementProvider(structuredDialog);
         innerContentElement.appendChild(element);
@@ -27,6 +30,7 @@ class StructuredDialogHtml {
     constructor(container) { 
         container._structuredDialog = this;
         this.container = container;
+        this.closeOnOverlayClick = false;
     }
 
     addCloseButton(button) {
