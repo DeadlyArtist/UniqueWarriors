@@ -162,7 +162,7 @@ class Character {
         if (level >= 2) techniques += 2;
         if (level >= 3) techniques += 2;
         if (level >= 4) techniques += 2;
-        if (level >= 5) techniques += 2;
+        if (level >= 5) techniques += 2; // one of which is a mutation
         if (level >= 6) techniques += 1;
         if (level >= 7) techniques += 1;
         if (level >= 9) techniques += 1;
@@ -207,6 +207,10 @@ class Character {
         let ascendancies = 0;
         if (level >= 20) ascendancies += 1;
         return ascendancies;
+    }
+
+    canHaveFreeMutation() {
+        return this.stats.level >= 5;
     }
 
     clone() {

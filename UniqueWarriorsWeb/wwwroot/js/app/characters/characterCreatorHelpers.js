@@ -175,17 +175,21 @@ class CharacterCreatorHelpers {
             return CharacterCreatorHelpers.getRemainingFreeMutations(character, { chosenMutations });
         }
         let remainingFreeMutations = getRemainingFreeMutations();
+        function getHasMutation() {
+            return CharacterCreatorHelpers.getHasMutation(character);
+        }
+        let hasMutation = getHasMutation();
         function getHasWeaponCore() {
             return CharacterCreatorHelpers.getHasWeaponCore(character);
         }
         let hasWeaponCore = getHasWeaponCore();
         function getRemainingOtherTechniques() {
-            return CharacterCreatorHelpers.getRemainingOtherTechniques(character, { hasWeaponCore, maxTechniques, maxOtherTechniques, maxSummonUnlocks, chosenMutations, remainingFreeMutations });
+            return CharacterCreatorHelpers.getRemainingOtherTechniques(character, { hasWeaponCore, hasMutation, maxTechniques, maxOtherTechniques, maxSummonUnlocks, chosenMutations, remainingFreeMutations });
         }
         let remainingOtherTechniques = getRemainingOtherTechniques();
 
         function getAllowedMutations(techniqueLike) {
-            return CharacterCreatorHelpers.getAllowedMutations(character, techniqueLike, { hasWeaponCore, maxTechniques, maxSummonUnlocks, chosenMutations, remainingFreeMutations, remainingOtherTechniques });
+            return CharacterCreatorHelpers.getAllowedMutations(character, techniqueLike, { hasWeaponCore, hasMutation, maxTechniques, maxSummonUnlocks, chosenMutations, remainingFreeMutations, remainingOtherTechniques });
         }
 
         let mutationDialog = DialogHelpers.create(dialog => {
@@ -262,6 +266,7 @@ class CharacterCreatorHelpers {
         element.appendChild(descriptionElement);
         function updateDescription() {
             let other = '';
+            if (character.canHaveFreeMutation()) other += `, ${hasMutation ? 0 : 1}/1 mutation`;
             remainingFreeMutations.forEach((amount, mutation) => {
                 other += `, ${amount}/1 ${mutation.title.toLowerCase()}`;
             });
@@ -317,9 +322,11 @@ class CharacterCreatorHelpers {
                 let isAvailable = true;
                 if (chosenTechniques.has(technique)) isAvailable = false;
                 else if (character.settings.validate) {
-                    if (hasWeaponCore && remainingOtherTechniques <= 0) isAvailable = false;
-                    else if (!hasWeaponCore && !AbilitySectionHelpers.isWeaponCore(technique)) isAvailable = false;
-                    else if (!CharacterCreatorHelpers.canConnectToAbility(chosenTechniques, technique, chosenTechniques)) isAvailable = false;
+                    if (remainingOtherTechniques <= 0 &&
+                        (hasWeaponCore || !AbilitySectionHelpers.isWeaponCore(technique)) &&
+                        (hasMutation || !AbilitySectionHelpers.isMutation(technique))) isAvailable = false;
+                    else if (!character.canHaveFreeMutation() && AbilitySectionHelpers.isMutation(technique)) isAvailable = false;
+                    else if (!isAvailable && !CharacterCreatorHelpers.canConnectToAbility(chosenTechniques, technique, chosenTechniques)) isAvailable = false;
                 }
 
                 if (isAvailable) {
@@ -568,6 +575,7 @@ class CharacterCreatorHelpers {
 
         function refreshData() {
             hasWeaponCore = getHasWeaponCore();
+            hasMutation = getHasMutation();
             chosenMutations = getMutations();
             remainingFreeMutations = getRemainingFreeMutations();
             maxSummonUnlocks = getMaxSummonUnlocks();
@@ -1368,6 +1376,10 @@ class CharacterCreatorHelpers {
         return character.techniques.filter(t => AbilitySectionHelpers.isMutation(t));
     }
 
+    static getHasMutation(character) {
+        return character.techniques.some(t => AbilitySectionHelpers.isMutation(t));
+    }
+
     static getHasWeaponCore(character) {
         return character.techniques.some(t => AbilitySectionHelpers.isWeaponCore(t));
     }
@@ -1470,6 +1482,7 @@ class CharacterCreatorHelpers {
         let chosenTechniques = character.techniques;
 
         let remainingFreeMutations = environment.remainingFreeMutations ?? this.getRemainingFreeMutations(character, environment);
+        let hasMutation = environment.hasMutation ?? this.getHasMutation(character);
         let hasWeaponCore = environment.hasWeaponCore ?? this.getHasWeaponCore(character);
         let freeMutated = this.getFreeMutatedCount(character, { remainingFreeMutations });
         let tooManySummons = this.getTooManySummonsCount(character, environment);
@@ -1477,7 +1490,10 @@ class CharacterCreatorHelpers {
         let tooManyVariantThings = tooManyVariantThingsData.count;
         let divisionOverflow = tooManyVariantThingsData.divisionOverflow;
 
-        let remaining = maxOtherTechniques + freeMutated - (hasWeaponCore ? chosenTechniques.size - 1 : chosenTechniques.size) - tooManySummons - tooManyVariantThings;
+        let freeTechniques = 0;
+        if (hasWeaponCore) freeTechniques += 1;
+        if (character.canHaveFreeMutation() && hasMutation) freeTechniques += 1;
+        let remaining = maxOtherTechniques + freeMutated - chosenTechniques.size + freeTechniques - tooManySummons - tooManyVariantThings;
         return {count:remaining, divisionOverflow};
     }
 

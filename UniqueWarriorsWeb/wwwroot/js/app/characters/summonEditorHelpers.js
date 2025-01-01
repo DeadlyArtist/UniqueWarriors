@@ -285,6 +285,7 @@ class SummonEditorHelpers {
                 if (chosenTechniques.has(technique)) isAvailable = false;
                 else if (character.settings.validate) {
                     if (remainingOtherTechniques <= 0) isAvailable = false;
+                    else if (!character.canHaveFreeMutation() && AbilitySectionHelpers.isMutation(technique)) isAvailable = false;
                     else if (!CharacterCreatorHelpers.canConnectToAbility(chosenTechniques, technique, chosenTechniques)) isAvailable = false;
                 }
 
