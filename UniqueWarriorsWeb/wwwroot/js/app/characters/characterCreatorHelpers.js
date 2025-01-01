@@ -380,7 +380,7 @@ class CharacterCreatorHelpers {
                         (hasWeaponCore || !AbilitySectionHelpers.isWeaponCore(technique)) &&
                         (hasMutation || !AbilitySectionHelpers.isMutation(technique))) isAvailable = false;
                     else if (!character.canHaveFreeMutation() && AbilitySectionHelpers.isMutation(technique)) isAvailable = false;
-                    else if (!isAvailable && !CharacterCreatorHelpers.canConnectToAbility(chosenTechniques, technique, chosenTechniques)) isAvailable = false;
+                    else if (!CharacterCreatorHelpers.canConnectToAbility(chosenTechniques, technique, chosenTechniques)) isAvailable = false;
                 }
 
                 if (isAvailable) {
