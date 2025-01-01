@@ -31,7 +31,6 @@ class SummonHelpers {
             if (value != null) newVariables.set(statName, value);
         }
         for (let statName of Object.keys(summon.npc.statOverrides)) newVariables.set(toTextCase(statName), summon.npc.statOverrides[statName]);
-        console.log(summon.npc, summonerVariables, newVariables);
         return newVariables;
     }
 }
