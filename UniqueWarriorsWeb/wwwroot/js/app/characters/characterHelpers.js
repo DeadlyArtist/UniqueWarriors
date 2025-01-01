@@ -342,11 +342,11 @@ class CharacterHelpers {
         let attributeStats = character.getAttributeStats();
         let staticStats = character.getStaticStats();
         let scalingStats = character.getScalingStats();
-        if (character.isSummon()) {
+        if (character.isSummon?.()) {
             let badAttributes = new Set(["Luck", "Initiative"]);
             attributeStats = ObjectHelpers.filterProperties(attributeStats, key => !badAttributes.has(toTextCase(key)));
         }
-        if (character.isImmobile()) {
+        if (character.isImmobile?.()) {
             let badAttributes = new Set(["Speed", "Move Actions"]);
             attributeStats = ObjectHelpers.filterProperties(attributeStats, key => !badAttributes.has(toTextCase(key)));
             staticStats = ObjectHelpers.filterProperties(staticStats, key => !badAttributes.has(toTextCase(key)));
