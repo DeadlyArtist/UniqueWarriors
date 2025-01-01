@@ -23,6 +23,7 @@ class SectionReferenceHelpers {
 
     static addTooltips(element, variables = null) {
         if (!element) return;
+
         this.addIncreaseDecreaseTooltips(element);
         this.addSectionReferenceTooltip(element);
         if (variables && variables.size != 0) {
@@ -30,6 +31,34 @@ class SectionReferenceHelpers {
             this.addVariableTooltips(element, variables);
         }
         this.addSnippets(element);
+    }
+
+    static updateVariableTooltips(element, variables) {
+        if (!element) return;
+
+        element.querySelectorAll(".section-increaseDecrease").forEach(e => e.outerHTML = e.innerHTML);
+        element.querySelectorAll(".section-specialVariable").forEach(e => e.outerHTML = e.innerHTML);
+        element.querySelectorAll(".section-formula").forEach(e => e.outerHTML = escapeHTML(e.getAttribute('tooltip')));
+
+        this.addIncreaseDecreaseTooltips(element);
+        this.addSpecialWithinVariableTooltips(element, variables);
+        this.addVariableTooltips(element, variables);
+
+        HtmlHelpers.getClosestProperty(element, "_masonry")?.resize();
+    }
+
+    static addTooltipsToStructuredSection(structuredSection) {
+        if (structuredSection.settings.noTooltips) return;
+        SectionReferenceHelpers.addTooltips(structuredSection.attributesElement, structuredSection.settings.variables);
+        SectionReferenceHelpers.addTooltips(structuredSection.contentElement, structuredSection.settings.variables);
+        SectionReferenceHelpers.addTooltips(structuredSection.tableElement, structuredSection.settings.variables);
+    }
+
+    static updateTooltipsOfStructuredSection(structuredSection) {
+        if (structuredSection.settings.noTooltips) return;
+        SectionReferenceHelpers.updateVariableTooltips(structuredSection.attributesElement, structuredSection.settings.variables);
+        SectionReferenceHelpers.updateVariableTooltips(structuredSection.contentElement, structuredSection.settings.variables);
+        SectionReferenceHelpers.updateVariableTooltips(structuredSection.tableElement, structuredSection.settings.variables);
     }
 
     static addIncreaseDecreaseTooltips(element) {
@@ -51,7 +80,7 @@ class SectionReferenceHelpers {
             if (!tooltip) continue;
 
             value = value.replace(/([+-] ?)(\dd)( )/, `$1<span tooltip-path="rules/Mutations/Die Size">$2</span>$3`);
-            let html = `<span tooltip="${escapeHTML(tooltip)}">${operator}</span>` + value.substring(operator.length);
+            let html = `<span class="section-increaseDecrease" tooltip="${escapeHTML(tooltip)}">${operator}</span>` + value.substring(operator.length);
             replaceTextNodeWithHTML(node, html);
         }
     }
@@ -67,7 +96,7 @@ class SectionReferenceHelpers {
         for (let node of textNodes) {
             let value = node.nodeValue;
             let html = value.replace(regex, (matched, group1) => {
-                return `<span tooltip="within ${escapeHTML(variables.get(special[group1.toLowerCase()]))} meters">${matched}</span>`;
+                return `<span class="section-specialVariable" tooltip="within ${escapeHTML(variables.get(special[group1.toLowerCase()]))} meters">${matched}</span>`;
             });
             replaceTextNodeWithHTML(node, html);
         }
@@ -83,25 +112,44 @@ class SectionReferenceHelpers {
         return specialLetters;
     }
 
+    static allSpecialLetters = ['L', 'R', 'T', 'M', 'S'];
     static getSpecialLetterRegex(specialLetters) {
         if (!specialLetters || Object.keys(specialLetters).length == 0) return null;
-        return new RegExp("\\b(" + Object.keys(specialLetters).map(k => escapeRegex(k)).join("|") + ")(\\d+)", "gi"); // Boundary doesn't appear in matched
+        return new RegExp("\\b([" + this.allSpecialLetters.map(k => escapeRegex(k)).join("") + "]+)(\\d+)", "g"); // Boundary doesn't appear in matched
     }
 
     static replaceSpecialLettersWithFormulas(html, variables, specialLetters, specialLetterRegex) {
         if (Object.keys(specialLetters).length == 0) return html;
-        html = html.replace(specialLetterRegex, (formula, letter, number) => {
-            const result = this.parseFormula(formula, variables, specialLetters, specialLetterRegex);
-            if (result != null) return `<span class="section-formula" tooltip="[${escapeHTML(formula)}]">${escapeHTML(result)}</span>`;
-            else return formula;
+        html = html.replace(specialLetterRegex, (formula, fullLetters, number) => {
+            const validLetters = Array.from(fullLetters).filter(letter => specialLetters.hasOwnProperty(letter)).join('');
+            const invalidLetters = Array.from(fullLetters).filter(letter => !specialLetters.hasOwnProperty(letter)).join('');
+
+            if (validLetters.length != 0) {
+                const parsedFormula = `${validLetters}${number}`;
+                const result = this.parseFormula(parsedFormula, variables, specialLetters, specialLetterRegex);
+                if (result != null) {
+                    return `${invalidLetters}<span class="section-formula" tooltip="[${escapeHTML(formula)}]">${escapeHTML(result)}</span>`;
+                }
+            }
+
+            return formula;
         });
         return html;
     }
 
     static replaceSpecialLettersInFormula(formula, specialLetters, specialLetterRegex) {
         if (Object.keys(specialLetters).length == 0) return html;
-        formula = formula.replace(specialLetterRegex, (matched, letter, number) => {
-            return `${specialLetters[letter]} * ${number}`;
+        formula = formula.replace(specialLetterRegex, (matched, fullLetters, number) => {
+            // Separate valid letters (part of specialLetters) from invalid ones
+            const validLetters = Array.from(fullLetters).filter(letter => specialLetters.hasOwnProperty(letter));
+            const invalidLetters = Array.from(fullLetters).filter(letter => !specialLetters.hasOwnProperty(letter));
+
+            if (invalidLetters.length == 0 && validLetters.length != 0) {
+                const parsedFormula = `(${validLetters.map(letter => specialLetters[letter]).join(' * ')} * ${number})`;
+                return parsedFormula;
+            }
+
+            return matched;
         });
         return formula;
     }

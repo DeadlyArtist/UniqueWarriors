@@ -414,7 +414,28 @@ class SectionHelpers {
                         attributeElement = fromHTML(`<span class="section-attribute section-tag">${attr}</span>`);
                         if (isActionTag) attributeElement.classList.add('section-actionTypes');
                     } else if (SectionAttributesHelpers.isHeadValue(attr)) {
-                        attributeElement = fromHTML(`<span class="section-attribute section-headValue"><span class="section-headValue-name">${escapeHTML(attr.name)}</span>: <span class="section-headValue-value">${escapeHTML(attr.value)}</span></span>`);
+                        attributeElement = fromHTML(`<span class="section-attribute section-headValue"><span class="section-headValue-name">${escapeHTML(attr.name)}</span>: </span>`);
+                        if (attr.name == "Severity") {
+                            newVariables.set(attr.name, attr.value);
+                            let severityInput = fromHTML(`<input type="number" class="section-headValue-value smallNumberInput">`);
+                            attributeElement.appendChild(severityInput);
+                            severityInput.value = attr.value;
+                            severityInput.addEventListener('input', () => {
+                                if (severityInput.value == '') return;
+                                let newValue = InputHelpers.fixNumberInput(severityInput);
+                                newValue = InputHelpers.constrainInput(severityInput, value => clamp(value, 0, 10));
+                                if (attr.value == newValue) return;
+                                attr.value = newValue;
+                                SectionReferenceHelpers.updateTooltipsOfStructuredSection(structuredSection);
+                            });
+                            severityInput.addEventListener('focusout', () => {
+                                if (severityInput.value == '') severityInput.value = attr.value;
+                            });
+                        } else {
+                            let valueElement = fromHTML(`<span class="section-headValue-value">${escapeHTML(attr.value)}</span>`);
+                            attributeElement.appendChild(valueElement);
+                        }
+
                         attributeElement._headValue = attr;
                     }
                     attributesLine.appendChild(attributeElement);
@@ -505,11 +526,7 @@ class SectionHelpers {
             }
         }
 
-        if (!settings.noTooltips) {
-            SectionReferenceHelpers.addTooltips(attributesElement, settings.variables);
-            SectionReferenceHelpers.addTooltips(contentElement, settings.variables);
-            SectionReferenceHelpers.addTooltips(tableElement, settings.variables);
-        }
+        SectionReferenceHelpers.addTooltipsToStructuredSection(structuredSection);
 
         return structuredSection;
     }

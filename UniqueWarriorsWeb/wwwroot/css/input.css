@@ -37,14 +37,19 @@ input[type="number"] {
     padding: 6px 16px;
 }
 
+.smallTextInput {
+  max-width: 400px;
+}
+
+input[type="number"].smallNumberInput {
+  padding: 1px 8px;
+  width: 50px;
+}
+
 input[type="password"] {
     max-width: 200px;
     padding: 6px 16px;
     line-height: 1;
-}
-
-.smallTextInput {
-  max-width: 400px;
 }
 
 input[type=checkbox], input[type=checkbox]:checked {
