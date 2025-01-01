@@ -504,9 +504,11 @@ class SectionHelpers {
             }
         }
 
-        SectionReferenceHelpers.addTooltips(attributesElement, settings.variables);
-        SectionReferenceHelpers.addTooltips(contentElement, settings.variables);
-        SectionReferenceHelpers.addTooltips(tableElement, settings.variables);
+        if (!settings.noTooltips) {
+            SectionReferenceHelpers.addTooltips(attributesElement, settings.variables);
+            SectionReferenceHelpers.addTooltips(contentElement, settings.variables);
+            SectionReferenceHelpers.addTooltips(tableElement, settings.variables);
+        }
 
         return structuredSection;
     }

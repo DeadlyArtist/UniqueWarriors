@@ -634,7 +634,7 @@ class StructuredAbilityListHtml {
 
     addAbility(ability, insertSettings) {
         insertSettings ??= {};
-        const structuredSection = CharacterHelpers.wrapAbilitySectionForList(this.character, ability, { ...this.insertSettings, variables: this.settings.variables, simple: this.settings.simple });
+        const structuredSection = CharacterHelpers.wrapAbilitySectionForList(this.character, ability, { ...this.insertSettings, variables: this.settings.variables, simple: this.settings.simple, noVariables: this.settings.noVariables });
 
         this.sections.register(structuredSection, { ...insertSettings, id: ability.id });
         HtmlHelpers.insertAt(this.listElement, this.sections.getIndex(structuredSection), structuredSection.wrapperElement);
