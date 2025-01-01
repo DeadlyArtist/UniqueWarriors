@@ -458,7 +458,9 @@ class SectionHelpers {
         structuredSection.subSectionContainer = subSectionContainer;
         structuredSection.newVariables = newVariables;
         if (isNPC) {
+            sectionElement.appendChild(hb(1));
             let characterContainer = fromHTML(`<div>`);
+            sectionElement.appendChild(characterContainer);
             if (hasLevel) {
                 function updateCharacter() {
                     let structuredCharacter = CharacterHelpers.generateStructuredHtmlForCharacter(npc, { embedded: true, noTitle: true, simple: true, });
@@ -471,7 +473,8 @@ class SectionHelpers {
                 }
 
                 let importanceInputContainer = fromHTML(`<div class="listHorizontal gap-2">`);
-                sectionElement.appendChild(importanceInputContainer);
+                characterContainer.before(importanceInputContainer);
+                characterContainer.before(hb(2));
                 importanceInputContainer.appendChild(fromHTML(`<div>Importance:`));
                 let importanceInput = fromHTML(`<input type="number" class="largeElement rounded">`);
                 importanceInputContainer.appendChild(importanceInput);
@@ -493,7 +496,6 @@ class SectionHelpers {
                 let abilityListElement = CharacterHelpers.generateAbilitiesSubPageHtml(npc, { noVariables: true, simple: true, });
                 characterContainer.appendChild(abilityListElement);
             }
-            sectionElement.appendChild(characterContainer);
         } else {
             if (section.subSections?.length > 0) {
                 section.subSections.forEach(subSection => {

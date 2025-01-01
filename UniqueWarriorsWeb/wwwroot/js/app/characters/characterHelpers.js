@@ -257,13 +257,16 @@ class CharacterHelpers {
             const structuredSection = SectionHelpers.generateStructuredHtmlForSection(section, settings);
             element.appendChild(structuredSection.element);
             structuredSection.element.classList.add("character-summary");
+            element.appendChild(hb(4));
+        } else if (!settings.noTitle) {
+            element.appendChild(hb(2));
         }
 
-        element.appendChild(hb(4));
         let statsContainer = this.generateStatsHtml(character);
         element.appendChild(statsContainer);
 
         if (settings.embedded) {
+            element.appendChild(hb(1));
             let abilitiesSubPageElement = this.generateAbilitiesSubPageHtml(character, settings);
             element.appendChild(abilitiesSubPageElement);
         } else {
@@ -349,7 +352,7 @@ class CharacterHelpers {
                 let stateNameElement = fromHTML(`<div class="character-stat-name mediumElement">`);
                 statElement.appendChild(stateNameElement);
                 stateNameElement.textContent = CharacterHelpers.getStatName(name);
-                statElement.appendChild(hr());
+                statElement.appendChild(fromHTML(`<hr class="">`)); // potentially add raised-border
                 let stateValueElement = fromHTML(`<div class="character-stat-value mediumElement">`); /*listHorizontal centerContentHorizontally*/
                 statElement.appendChild(stateValueElement);
                 stateValueElement.textContent = value;
@@ -400,7 +403,6 @@ class CharacterHelpers {
         let variables = null;
         if (!settings.noVariables) variables = character.getVariables();
         if (settings.simple) {
-            abilitiesContainer.appendChild(hb(2));
             let combinedAbilityList = this.generateAbilityListHtml(character, [...abilities, ...summons], { ...settings, variables, hideIfEmpty: true, });
             abilitiesContainer.appendChild(combinedAbilityList.container);
         } else {

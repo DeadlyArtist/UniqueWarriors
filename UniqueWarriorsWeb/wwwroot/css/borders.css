@@ -23,3 +23,7 @@ hr {
   height: 100%;
   border-right: 1px solid var(--raised-text-color);
 }
+
+.raised-border {
+  border-color: var(--raised-border-color);
+}
