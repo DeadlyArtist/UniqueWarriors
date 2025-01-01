@@ -265,6 +265,12 @@ class CharacterHelpers {
         let statsContainer = this.generateStatsHtml(character);
         element.appendChild(statsContainer);
 
+        if (character instanceof Character) {
+            element.appendChild(hb(1));
+            let validationContainer = this.generateValidationHtml(character, settings);
+            element.appendChild(validationContainer);
+        }
+
         if (settings.embedded) {
             element.appendChild(hb(1));
             let abilitiesSubPageElement = this.generateAbilitiesSubPageHtml(character, settings);
@@ -385,6 +391,95 @@ class CharacterHelpers {
             HtmlHelpers.getClosestProperty(statsContainer, "_masonry")?.resize();
         });
         return statsContainer;
+    }
+
+    static getValidationMessages(character) {
+        let validationMessages = [];
+        let remainingTechniques = CharacterCreatorHelpers.getRemainingOtherTechniques(character);
+        if (remainingTechniques < 0) validationMessages.push(`${-remainingTechniques} too many techniques`);
+        let variantWithTooManyTechniques = character.summons.filter(s => AbilitySectionHelpers.isVariant(s) && CharacterCreatorHelpers.getTooManyThingsCountInVariant(character, s) > CharacterCreatorHelpers.getMaxThingsInVariant(character)).length;
+        if (variantWithTooManyTechniques > 0) validationMessages.push(`${variantWithTooManyTechniques} summon variants with too many techniques`);
+        if (!character.canHaveFreeMutation()) {
+            let count = character.techniques.filter(t => AbilitySectionHelpers.isMutation(t)).length;
+            if (count != 0) {
+                validationMessages.push(`${count} mutations which only become available at level 5.`);
+            }
+            let variantsWithTooMany = character.summons.filter(s => AbilitySectionHelpers.isVariant(s)).filter(s => SummonHelpers.getTechniquesNotInOriginal(character, s).filter(t => AbilitySectionHelpers.isMutation(t)).length != 0).length;
+            if (variantsWithTooMany != 0) {
+                validationMessages.push(`${variantsWithTooMany} summon variants with original mutations which only become available at level 5.`);
+            }
+        }
+        let availableMutations = new Set(CharacterCreatorHelpers.getMutations(character).map(m => m.title));
+        let illegalMutations = character.techniques.filter(t => AbilitySectionHelpers.isMutated(t) && !availableMutations.has(AbilitySectionHelpers.getMutatedOriginal(t))).length;
+        if (illegalMutations != 0) validationMessages.push(`${illegalMutations} techniques mutated without the corresponding mutation`);
+        let variantsWithIllegalMutations = character.summons.filter(s => AbilitySectionHelpers.isVariant(s)).filter(s => {
+            let uniqueTechniques = SummonHelpers.getTechniquesNotInOriginal(character, s);
+            let availableMutations = new Set(uniqueTechniques.filter(t => AbilitySectionHelpers.isMutation(t)).map(m => m.title));
+            let illegalMutations = uniqueTechniques.filter(t => AbilitySectionHelpers.isMutated(t) && !availableMutations.has(AbilitySectionHelpers.getMutatedOriginal(t))).length;
+            return illegalMutations != 0;
+        }).length;
+        if (variantsWithIllegalMutations != 0) validationMessages.push(`${variantsWithIllegalMutations} summon variants with original techniques mutated without the corresponding mutation`);
+
+        let remainingMasteries = CharacterCreatorHelpers.getRemainingMasteries(character);
+        if (remainingMasteries < 0) validationMessages.push(`${-remainingMasteries} too many masteries`);
+        let remainingEvolutions = CharacterCreatorHelpers.getRemainingEvolutions(character);
+        if (remainingEvolutions < 0) validationMessages.push(`${-remainingEvolutions} too many evolutions`);
+        let remainingAscendancies = CharacterCreatorHelpers.getRemainingAscendancies(character);
+        if (remainingAscendancies < 0) validationMessages.push(`${-remainingAscendancies} too many ascendancies`);
+
+        return validationMessages;
+    }
+
+    static generateValidationHtml(character, settings) {
+        let validationMessages = this.getValidationMessages(character);
+
+        let element = fromHTML(`<div class="character-validation-container listContainerHorizontal alignItemsStart gap-2">`);
+        if (validationMessages.length == 0) {
+            element.classList.add('hide');
+            return element;
+        }
+
+        let toggleMoreButton = fromHTML(`<button class="element rounded-xl hoverable">`);
+        element.appendChild(toggleMoreButton);
+        let expandMoreIcon = icons.expandMore();
+        toggleMoreButton.appendChild(expandMoreIcon);
+        let expandLessIcon = icons.expandLess();
+        toggleMoreButton.appendChild(expandLessIcon);
+        expandLessIcon.classList.add('hide');
+
+        let contentContainer = fromHTML(`<div class="divList flexFill">`);
+        element.appendChild(contentContainer);
+        let summaryElement = fromHTML(`<div class="listHorizontal" style="margin-top: 3px;">`);
+        contentContainer.appendChild(summaryElement);
+
+        let messageElement = fromHTML(`<i class="danger-text">Warning: Invalid Character`);
+        summaryElement.appendChild(messageElement);
+
+        let expandedArea = fromHTML(`<div class="character-validation-messages divList hide">`);
+        contentContainer.appendChild(expandedArea);
+
+        for (let message of validationMessages) {
+            let element = fromHTML(`<i class="character-validation-message">`);
+            expandedArea.appendChild(element);
+            element.textContent = message;
+        }
+
+        let isExpanded = false;
+        toggleMoreButton.addEventListener('click', () => {
+            isExpanded = !isExpanded;
+            if (isExpanded) {
+                expandMoreIcon.classList.add('hide');
+                expandLessIcon.classList.remove('hide');
+                expandedArea.classList.remove('hide');
+            } else {
+                expandMoreIcon.classList.remove('hide');
+                expandLessIcon.classList.add('hide');
+                expandedArea.classList.add('hide');
+            }
+            HtmlHelpers.getClosestProperty(toggleMoreButton, "_masonry")?.resize();
+        });
+
+        return element;
     }
 
     static generateAbilitiesSubPageHtml(character, settings = null) {

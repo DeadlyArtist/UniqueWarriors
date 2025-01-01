@@ -266,7 +266,8 @@ class CharacterCreatorHelpers {
         element.appendChild(descriptionElement);
         function updateDescription() {
             let other = '';
-            if (character.canHaveFreeMutation()) other += `, ${hasMutation ? 0 : 1}/1 mutation`;
+            let canHaveFreeMutation = character.canHaveFreeMutation();
+            if (canHaveFreeMutation || hasMutation) other += `, ${(hasMutation ? 0 : 1) - (canHaveFreeMutation ? 0 : 1)}/${canHaveFreeMutation ? 1 : 0} mutation`;
             remainingFreeMutations.forEach((amount, mutation) => {
                 other += `, ${amount}/1 ${mutation.title.toLowerCase()}`;
             });
@@ -673,23 +674,19 @@ class CharacterCreatorHelpers {
         let maxAscendancies = character.getMaxAscendancies();
         let chosenMasteries = character.masteries;
         function getHasPathCore() {
-            return chosenMasteries.some(t => AbilitySectionHelpers.isPathCore(t));
+            return CharacterCreatorHelpers.getHasPathCore(character);
         }
         let hasPathCore = getHasPathCore();
         function getRemainingMasteries() {
-            let upgrades = character.upgrades.size;
-            let pathCores = chosenMasteries.filter(m => AbilitySectionHelpers.isPathCore(m)).length - 1;
-            if (pathCores < 0) pathCores = 0;
-            else pathCores -= 1; // If a path core exists, the cost of the first is removed
-            return maxMasteries - chosenMasteries.size - upgrades - pathCores; // Path cores are subtracted to gain double effect, as they are also included in the masteries
+            return CharacterCreatorHelpers.getRemainingMasteries(character, {maxMasteries});
         }
         let remainingMasteries = getRemainingMasteries();
         function getRemainingEvolutions() {
-            return maxEvolutions - character.evolutions.size;
+            return CharacterCreatorHelpers.getRemainingEvolutions(character, {maxEvolutions});
         }
         let remainingEvolutions = getRemainingEvolutions();
         function getRemainingAscendancies() {
-            return maxAscendancies - character.ascendancies.size;
+            return CharacterCreatorHelpers.getRemainingAscendancies(character, { maxAscendancies });
         }
         let remainingAscendancies = getRemainingAscendancies();
 
@@ -698,8 +695,8 @@ class CharacterCreatorHelpers {
         element.appendChild(descriptionElement);
         function updateDescription() {
             let other = '';
-            if (maxEvolutions != 0) other += `, ${remainingEvolutions}/${maxEvolutions} evolutions`;
-            if (maxAscendancies != 0) other += `, ${remainingAscendancies}/${maxAscendancies} ascendancies`;
+            if (maxEvolutions != 0 || remainingEvolutions < 0) other += `, ${remainingEvolutions}/${maxEvolutions} evolutions`;
+            if (maxAscendancies != 0 || remainingAscendancies < 0) other += `, ${remainingAscendancies}/${maxAscendancies} ascendancies`;
             if (other.length != 0) other += ',';
             let structuredSection = SectionHelpers.generateStructuredHtmlForSection(new Section({
                 content: `Choose ${hasPathCore ? 0 : 1}/1 path core${other} and ${remainingMasteries}/${maxMasteries} masteries.`
@@ -1310,8 +1307,7 @@ class CharacterCreatorHelpers {
 
     static getMaxSummonUnlocksInVariant(character, summon) {
         let unlocks = new Map();
-        let original = SummonHelpers.getVariantOriginal(character, summon);
-        summon.npc.techniques.filter(t => !original.npc.techniques.has(t)).filter(t => AbilitySectionHelpers.hasUnlocks(t)).map(s => AbilitySectionHelpers.getUnlocks(s)).forEach(unlocksList => {
+        SummonHelpers.getTechniquesNotInOriginal(character, summon).filter(t => AbilitySectionHelpers.hasUnlocks(t)).map(s => AbilitySectionHelpers.getUnlocks(s)).forEach(unlocksList => {
             unlocksList.filter(u => u.type == "Summon").forEach(unlock => {
                 let oldAmount = unlocks.get(unlock.target) ?? 0;
                 unlocks.set(unlock.target, oldAmount + unlock.amount);
@@ -1322,7 +1318,7 @@ class CharacterCreatorHelpers {
 
     static getRemainingSummonUnlocks(character, environment = null) {
         environment ??= {};
-        let maxSummonUnlocks = environment.maxSummonUnlocks ?? this.getMaxSummonUnlocks(character);
+        let maxSummonUnlocks = environment.maxSummonUnlocks ??= this.getMaxSummonUnlocks(character);
         let remaining = new Map();
         for (let [category, maxAmount] of maxSummonUnlocks.entries()) {
             let hasAmount = character.summons.filter(s => AbilitySectionHelpers.getMainCategory(s) == category).length;
@@ -1333,11 +1329,11 @@ class CharacterCreatorHelpers {
 
     static getRemainingSummonUnlocksInVariant(character, summon, environment = null) {
         environment ??= {};
-        let maxSummonUnlocks = environment.maxSummonUnlocks ?? this.getMaxSummonUnlocksInVariant(character, summon, environment);
-        let original = SummonHelpers.getVariantOriginal(character, summon);
+        let maxSummonUnlocks = environment.maxSummonUnlocks ??= this.getMaxSummonUnlocksInVariant(character, summon, environment);
+        let uniqueSummons = SummonHelpers.getSummonsNotInOriginal(character, summon);
         let remaining = new Map();
         for (let [category, maxAmount] of maxSummonUnlocks.entries()) {
-            let hasAmount = summon.npc.summons.filter(t => !original.npc.summons.has(t)).filter(s => AbilitySectionHelpers.getMainCategory(s) == category).length;
+            let hasAmount = uniqueSummons.filter(s => AbilitySectionHelpers.getMainCategory(s) == category).length;
             remaining.set(category, clamp(maxAmount - hasAmount, 0, maxAmount));
         }
         return remaining;
@@ -1345,7 +1341,7 @@ class CharacterCreatorHelpers {
 
     static getRemainingFreeMutations(character, environment = null) {
         environment ??= {};
-        let chosenMutations = environment.chosenMutations ?? this.getMutations(character);
+        let chosenMutations = environment.chosenMutations ??= this.getMutations(character);
         let remaining = new Map();
         for (let mutation of chosenMutations) {
             remaining.set(mutation, 1);
@@ -1386,7 +1382,7 @@ class CharacterCreatorHelpers {
 
     static getTooManySummonsCount(character, environment = null) {
         environment ??= {};
-        let maxSummonUnlocks = environment.maxSummonUnlocks ?? this.getMaxSummonUnlocks(character);
+        let maxSummonUnlocks = environment.maxSummonUnlocks ??= this.getMaxSummonUnlocks(character);
         let tooManySummonsTracker = new Map(maxSummonUnlocks);
         let tooManySummons = character.summons.filter(s => !AbilitySectionHelpers.isVariant(s)).filter(summon => {
             let category = AbilitySectionHelpers.getMainCategory(summon);
@@ -1400,10 +1396,9 @@ class CharacterCreatorHelpers {
 
     static getTooManySummonsCountInVariant(character, summon, environment = null) {
         environment ??= {};
-        let original = SummonHelpers.getVariantOriginal(character, summon);
-        let maxSummonUnlocks = environment.maxSummonUnlocks ?? this.getMaxSummonUnlocksInVariant(character, summon);
+        let maxSummonUnlocks = environment.maxSummonUnlocks ??= this.getMaxSummonUnlocksInVariant(character, summon);
         let tooManySummonsTracker = new Map(maxSummonUnlocks);
-        let tooManySummons = summon.npc.summons.filter(t => !original.npc.summons.has(t)).filter(summon => {
+        let tooManySummons = SummonHelpers.getSummonsNotInOriginal(character, summon).filter(summon => {
             let category = AbilitySectionHelpers.getMainCategory(summon);
             let remaining = tooManySummonsTracker.get(category);
             if (remaining == null || remaining == 0) return true;
@@ -1415,7 +1410,7 @@ class CharacterCreatorHelpers {
 
     static getFreeMutatedCount(character, environment = null) {
         environment ??= {};
-        let remainingFreeMutations = environment.remainingFreeMutations ?? this.getRemainingFreeMutations(character, environment);
+        let remainingFreeMutations = environment.remainingFreeMutations ??= this.getRemainingFreeMutations(character, environment);
         let freeMutated = 0;
         remainingFreeMutations.values().forEach(amount => freeMutated += 1 - amount);
         return freeMutated;
@@ -1423,15 +1418,14 @@ class CharacterCreatorHelpers {
 
     static getFreeMutatedCountInVariant(character, summon, environment = null) {
         environment ??= {};
-        let remainingFreeMutations = environment.remainingFreeMutations ?? this.getRemainingFreeMutationsInVariant(character, summon, environment);
+        let remainingFreeMutations = environment.remainingFreeMutations ??= this.getRemainingFreeMutationsInVariant(character, summon, environment);
         let freeMutated = 0;
         remainingFreeMutations.values().forEach(amount => freeMutated += 1 - amount);
         return freeMutated;
     }
 
     static getTooManyTechniquesCountInVariant(character, summon, environment = null) {
-        let original = SummonHelpers.getVariantOriginal(character, summon);
-        return summon.npc.techniques.filter(t => !original.npc.techniques.has(t)).length - this.getFreeMutatedCountInVariant(character, summon, environment);
+        return SummonHelpers.getTechniquesNotInOriginal(character, summon).length - this.getFreeMutatedCountInVariant(character, summon, environment);
     }
 
     static getTooManyThingsCountInVariant(character, summon, environment = null) {
@@ -1477,13 +1471,13 @@ class CharacterCreatorHelpers {
 
     static getRemainingOtherTechniquesData(character, environment = null) {
         environment ??= {};
-        let maxTechniques = environment.maxTechniques ?? character.getMaxTechniques(); // one of which is a weapon core technique
-        let maxOtherTechniques = environment.maxOtherTechniques ?? this.getMaxOtherTechniques(character, { ...environment, maxTechniques });
+        let maxTechniques = environment.maxTechniques ??= character.getMaxTechniques(); // one of which is a weapon core technique
+        let maxOtherTechniques = environment.maxOtherTechniques ??= this.getMaxOtherTechniques(character, environment);
         let chosenTechniques = character.techniques;
 
-        let remainingFreeMutations = environment.remainingFreeMutations ?? this.getRemainingFreeMutations(character, environment);
-        let hasMutation = environment.hasMutation ?? this.getHasMutation(character);
-        let hasWeaponCore = environment.hasWeaponCore ?? this.getHasWeaponCore(character);
+        let remainingFreeMutations = environment.remainingFreeMutations ??= this.getRemainingFreeMutations(character, environment);
+        let hasMutation = environment.hasMutation ??= this.getHasMutation(character);
+        let hasWeaponCore = environment.hasWeaponCore ??= this.getHasWeaponCore(character);
         let freeMutated = this.getFreeMutatedCount(character, { remainingFreeMutations });
         let tooManySummons = this.getTooManySummonsCount(character, environment);
         let tooManyVariantThingsData = this.getTooManyVariantThingsCountData(character, environment);
@@ -1503,9 +1497,9 @@ class CharacterCreatorHelpers {
 
     static getAllowedMutations(character, techniqueLike, environment) {
         environment ??= {};
-        let chosenMutations = environment.chosenMutations ?? this.getMutations(character);
-        let remainingFreeMutations = environment.remainingFreeMutations ?? this.getRemainingFreeMutations(character, { ...environment, chosenMutations });
-        let remainingOtherTechniques = environment.remainingOtherTechniques ?? this.getRemainingOtherTechniques(character, { ...environment, chosenMutations, remainingFreeMutations });
+        let chosenMutations = environment.chosenMutations ??= this.getMutations(character);
+        let remainingFreeMutations = environment.remainingFreeMutations ??= this.getRemainingFreeMutations(character, environment);
+        let remainingOtherTechniques = environment.remainingOtherTechniques ??= this.getRemainingOtherTechniques(character, environment);
 
         let chosen = character.techniques;
         let category = AbilitySectionHelpers.getMainCategory(techniqueLike);
@@ -1531,9 +1525,9 @@ class CharacterCreatorHelpers {
 
     static getAllowedMutationsInVariant(character, summon, techniqueLike, environment) {
         environment ??= {};
-        let chosenMutations = environment.chosenMutations ?? this.getMutations(summon.npc);
-        let remainingFreeMutations = environment.remainingFreeMutations ?? this.getRemainingFreeMutationsInVariant(character, summon, { ...environment, chosenMutations });
-        let remainingOtherTechniques = environment.remainingOtherTechniques ?? this.getRemainingOtherTechniquesInVariant(character, summon, { ...environment, chosenMutations, remainingFreeMutations });
+        let chosenMutations = environment.chosenMutations ??= this.getMutations(summon.npc);
+        let remainingFreeMutations = environment.remainingFreeMutations ??= this.getRemainingFreeMutationsInVariant(character, summon, environment);
+        let remainingOtherTechniques = environment.remainingOtherTechniques ??= this.getRemainingOtherTechniquesInVariant(character, summon, environment);
 
         let chosen = character.techniques;
         let category = AbilitySectionHelpers.getMainCategory(techniqueLike);
@@ -1542,6 +1536,32 @@ class CharacterCreatorHelpers {
             AbilitySectionHelpers.getMainCategory(mutation) != category &&
             (remainingOtherTechniques > 0 || remainingFreeMutations.get(mutation) > 0)
         );
+    }
+
+    static getHasPathCore(character) {
+        return character.masteries.some(t => AbilitySectionHelpers.isPathCore(t));
+    }
+
+    static getRemainingMasteries(character, environment = null) {
+        environment ??= {};
+        let maxMasteries = environment.maxMasteries ??= character.getMaxMasteries();
+        let upgrades = character.upgrades.size;
+        let pathCores = character.masteries.filter(m => AbilitySectionHelpers.isPathCore(m)).length - 1;
+        if (pathCores < 0) pathCores = 0;
+        else pathCores -= 1; // If a path core exists, the cost of the first is removed
+        return maxMasteries - character.masteries.size - upgrades - pathCores; // Path cores are subtracted to gain double effect, as they are also included in the masteries
+    }
+
+    static getRemainingEvolutions(character, environment = null) {
+        environment ??= {};
+        let maxEvolutions = environment.maxEvolutions ??= character.getMaxEvolutions();
+        return maxEvolutions - character.evolutions.size;
+    }
+
+    static getRemainingAscendancies(character, environment = null) {
+        environment ??= {};
+        let maxAscendancies = environment.maxAscendancies ??= character.getMaxAscendancies();
+        return maxAscendancies - character.ascendancies.size;
     }
 }
 
