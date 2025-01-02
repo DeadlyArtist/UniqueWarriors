@@ -51,7 +51,7 @@ body {
 
 @media (min-width: 1666px) {
   .container {
-    max-width: calc(90% - var(--sidebar-width) * 2);
+    max-width: calc(90vw - var(--sidebar-width) * 2);
   }
 }
 
