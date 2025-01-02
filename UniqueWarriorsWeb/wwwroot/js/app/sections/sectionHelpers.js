@@ -391,7 +391,7 @@ class SectionHelpers {
                 newVariables = new Map();
             } else {
                 npc.stats.level = level;
-                newVariables = npc.settings.copyStatsFromSummoner ? SummonHelpers.copyVariablesFromSummoner(section, settings.variables) : npc.getVariables();
+                newVariables = SummonHelpers.getSummonSectionVariables(section, settings.variables, npc);
                 hasLevel = true;
             }
         }
@@ -501,7 +501,7 @@ class SectionHelpers {
             sectionElement.appendChild(characterContainer);
             if (hasLevel) {
                 function updateCharacter() {
-                    newVariables.set("Importance", npc.stats.importance);
+                    newVariables = SummonHelpers.getSummonSectionVariables(section, settings.variables, npc);
                     let structuredCharacter = CharacterHelpers.generateStructuredHtmlForCharacter(npc, { embedded: true, noTitle: true, simple: true, variables: newVariables });
                     structuredSection._structuredCharacter = structuredCharacter;
                     structuredCharacter._section = section;
@@ -515,13 +515,13 @@ class SectionHelpers {
                 characterContainer.before(importanceInputContainer);
                 characterContainer.before(hb(2));
                 importanceInputContainer.appendChild(fromHTML(`<div>Importance:`));
-                let importanceInput = fromHTML(`<input type="number" class="largeElement rounded">`);
+                let importanceInput = fromHTML(`<input type="number" class="largeElement rounded smallNumberInput">`);
                 importanceInputContainer.appendChild(importanceInput);
                 importanceInput.value = npc.stats.importance;
                 importanceInput.addEventListener('input', () => {
                     if (importanceInput.value == '') return;
                     let newValue = InputHelpers.fixNumberInput(importanceInput);
-                    newValue = InputHelpers.constrainInput(importanceInput, value => clamp(value, 0, 3));
+                    newValue = InputHelpers.constrainInput(importanceInput, value => clamp(value, npc.settings.minImportance ?? 0, 3));
                     if (npc.stats.importance == newValue) return;
                     npc.stats.importance = newValue;
                     updateCharacter();

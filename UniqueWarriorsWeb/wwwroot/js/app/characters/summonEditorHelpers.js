@@ -12,8 +12,8 @@ class SummonEditorHelpers {
         let tabBar = fromHTML(`<div class="listHorizontal">`);
         topBar.appendChild(tabBar);
         let pages = structuredSummonEditor.pages = [
-            { name: "Settings", provider: page => this.generateSettingsPageHtml(character, summon, original, page), },
-            { name: "Techniques", provider: page => this.generateTechniquesPageHtml(character, summon, original, page), },
+            { name: "Settings", provider: page => this.generateSettingsPageHtml(character, summon, original, page, structuredSummonEditor), },
+            { name: "Techniques", provider: page => this.generateTechniquesPageHtml(character, summon, original, page, structuredSummonEditor), },
         ];
         for (let page of pages) {
             let element = page.tabElement = fromHTML(`<button class="summonEditor-tab largeElement raised bordered-inset hoverable hideDisabled">`);
@@ -36,7 +36,7 @@ class SummonEditorHelpers {
         return structuredSummonEditor;
     }
 
-    static generateSettingsPageHtml(character, summon, original, page) {
+    static generateSettingsPageHtml(character, summon, original, page, structuredSummonEditor) {
         let summonVariables = summon.npc.getVariables();
         let element = fromHTML(`<div class="characterCreator-page divList children-w-fit">`);
 
@@ -50,6 +50,7 @@ class SummonEditorHelpers {
             if (summon.npc.name == nameInput.value) return;
             summon.npc.name = nameInput.value;
             CharacterHelpers.saveCharacter(character);
+            if (structuredSummonEditor.updateTitle) App.setTitle(`Edit - ${summon.npc.name} - ${character.name}`);
         });
 
         element.appendChild(hb(4));
@@ -108,7 +109,7 @@ class SummonEditorHelpers {
         return element;
     }
 
-    static generateTechniquesPageHtml(character, summon, original, page) {
+    static generateTechniquesPageHtml(character, summon, original, page, structuredSummonEditor) {
         let summonVariables = summon.npc.getVariables();
         let element = fromHTML(`<div class="characterCreator-page divList">`);
 
@@ -588,6 +589,7 @@ class StructuredSummonEditorHtml {
         this.character = character;
         this.summon = summon;
         this.updateHash = settings.updateHash ?? false;
+        this.updateTitle = settings.updateTitle ?? false;
 
         element._character = character;
         element._summon = summon;

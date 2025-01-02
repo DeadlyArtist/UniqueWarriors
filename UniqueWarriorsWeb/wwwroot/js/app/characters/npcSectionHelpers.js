@@ -41,6 +41,11 @@ class NPCSectionHelpers {
         return new Set(section.getHeadValueParts("Weapons"));
     }
 
+    static getMinImportance(section) {
+        let parsed = parseInt(section.headValues.get('Min Importance'));
+        return isNaN(parsed) ? undefined : parsed;
+    }
+
     static parseNPC(section, settings = null) {
         settings ??= {};
         let isSummon = this.isSummon(section);
@@ -48,9 +53,10 @@ class NPCSectionHelpers {
         let weapons = this.getWeapons(section);
         let object = this.isObject(section);
         let immobile = this.isImmobile(section);
+        let minImportance = this.getMinImportance(section);
         let copyStatsFromSummoner = section.getHeadValueValue("Stats") == "Copy";
 
-        let parsedSettings = { name: section.title, boons, weapons, settings: { object, immobile, copyStatsFromSummoner } };
+        let parsedSettings = { name: section.title, boons, weapons, settings: { object, immobile, copyStatsFromSummoner, minImportance } };
         if (isSummon) {
             parsedSettings.settings.subType = "Summon";
         }

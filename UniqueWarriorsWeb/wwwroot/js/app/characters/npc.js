@@ -6,7 +6,8 @@ class NPC {
         this.imageUrl = settings.imageUrl ?? null;
         this.settings = settings.settings ?? {};
         this.name = settings.name ?? ("New " + this.settings.subType ?? "NPC");
-        this.stats = { ...NPCHelpers.getDefaultStats(), ...(settings.stats ?? {})};
+        this.stats = { ...NPCHelpers.getDefaultStats(), ...(settings.stats ?? {}) };
+        if (this.stats.importance < this.settings.minImportance) this.stats.importance = this.settings.minImportance;
         this.baseStatOverrides = settings.baseStatOverrides ?? {};
         this.statOverrides = settings.statOverrides ?? {};
         this.boons = settings.boons ?? {};

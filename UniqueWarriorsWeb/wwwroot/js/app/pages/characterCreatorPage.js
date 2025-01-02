@@ -14,6 +14,8 @@ class CharacterCreatorPageManager extends PageManager {
         settings ??= {};
         let self = this;
         let loadId = this.loadId;
+        this.setTitle = !settings.dontSetTitle
+
         this.characterId = this.characterIdOverride ?? getQueryVariable('id');
         if (!this.characterId) {
             Pages.loadError('No character id provided.');
@@ -25,7 +27,7 @@ class CharacterCreatorPageManager extends PageManager {
             Pages.loadError(`Character not found or invalid: ${this.characterId}`);
             return;
         }
-        if (!settings.dontSetTitle) App.setTitle(`Edit - ${this.character.name}`);
+        if (this.setTitle) App.setTitle(`Edit - ${this.character.name}`);
 
         setTimeout(() => {
             Loader.onCollectionsLoaded(() => {
@@ -35,7 +37,7 @@ class CharacterCreatorPageManager extends PageManager {
     }
 
     delayedLoad() {
-        this.structuredCharacterCreator = CharacterCreatorHelpers.generateStructuredHtmlForCharacterCreator(this.character, { startTab: this.getTab(), updateHash: true });
+        this.structuredCharacterCreator = CharacterCreatorHelpers.generateStructuredHtmlForCharacterCreator(this.character, { startTab: this.getTab(), updateHash: true, updateTitle: this.setTitle });
         this.pageElement.appendChild(this.structuredCharacterCreator.element);
     }
 

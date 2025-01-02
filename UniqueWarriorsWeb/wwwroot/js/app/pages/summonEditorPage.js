@@ -17,6 +17,8 @@ class SummonEditorPageManager extends PageManager {
         settings ??= {};
         let self = this;
         let loadId = this.loadId;
+        this.setTitle = !settings.dontSetTitle
+
         this.characterId = this.characterIdOverride ?? getQueryVariable('characterId');
         if (!this.characterId) {
             Pages.loadError('No character id provided.');
@@ -38,7 +40,7 @@ class SummonEditorPageManager extends PageManager {
             Pages.loadError(`Summon not found or invalid: ${this.summonId}`);
             return;
         }
-        if (!settings.dontSetTitle) App.setTitle(`Edit - ${this.summon.name} - ${this.character.name}`);
+        if (this.setTitle) App.setTitle(`Edit - ${this.summon.npc.name} - ${this.character.name}`);
 
         setTimeout(() => {
             Loader.onCollectionsLoaded(() => {
@@ -48,7 +50,7 @@ class SummonEditorPageManager extends PageManager {
     }
 
     delayedLoad() {
-        this.structuredCharacterCreator = SummonEditorHelpers.generateStructuredHtmlForSummonEditor(this.character, this.summon, { startTab: this.getTab(), updateHash: true });
+        this.structuredCharacterCreator = SummonEditorHelpers.generateStructuredHtmlForSummonEditor(this.character, this.summon, { startTab: this.getTab(), updateHash: true, updateTitle: this.setTitle });
         this.pageElement.appendChild(this.structuredCharacterCreator.element);
     }
 

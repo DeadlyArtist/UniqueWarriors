@@ -11,13 +11,13 @@ class CharacterCreatorHelpers {
         let tabBar = fromHTML(`<div class="listHorizontal">`);
         topBar.appendChild(tabBar);
         let pages = structuredCharacterCreator.pages = [
-            { name: "Settings", provider: page => this.generateSettingsPageHtml(character, page), },
-            { name: "Weapons", provider: page => this.generateWeaponsPageHtml(character, page), },
-            { name: "Techniques", provider: page => this.generateTechniquesPageHtml(character, page), },
-            { name: "Path", provider: page => this.generatePathsPageHtml(character, page), },
-            { name: "Masteries", provider: page => this.generateMasteriesPageHtml(character, page), },
-            { name: "Attributes", provider: page => this.generateAttributesPageHtml(character, page), },
-            { name: "Flavor", provider: page => this.generateFlavorPageHtml(character, page), },
+            { name: "Settings", provider: page => this.generateSettingsPageHtml(character, page, structuredCharacterCreator), },
+            { name: "Weapons", provider: page => this.generateWeaponsPageHtml(character, page, structuredCharacterCreator), },
+            { name: "Techniques", provider: page => this.generateTechniquesPageHtml(character, page, structuredCharacterCreator), },
+            { name: "Path", provider: page => this.generatePathsPageHtml(character, page, structuredCharacterCreator), },
+            { name: "Masteries", provider: page => this.generateMasteriesPageHtml(character, page, structuredCharacterCreator), },
+            { name: "Attributes", provider: page => this.generateAttributesPageHtml(character, page, structuredCharacterCreator), },
+            { name: "Flavor", provider: page => this.generateFlavorPageHtml(character, page, structuredCharacterCreator), },
         ];
         for (let page of pages) {
             let element = page.tabElement = fromHTML(`<button class="characterCreator-tab largeElement raised bordered-inset hoverable hideDisabled">`);
@@ -40,7 +40,7 @@ class CharacterCreatorHelpers {
         return structuredCharacterCreator;
     }
 
-    static generateSettingsPageHtml(character, page) {
+    static generateSettingsPageHtml(character, page, structuredCharacterCreator) {
         let element = fromHTML(`<div class="characterCreator-page divList children-w-fit">`);
 
         element.appendChild(fromHTML(`<h1>Name`));
@@ -53,6 +53,7 @@ class CharacterCreatorHelpers {
             if (character.name == nameInput.value) return;
             character.name = nameInput.value;
             CharacterHelpers.saveCharacter(character);
+            if (structuredCharacterCreator.updateTitle) App.setTitle(`Edit - ${character.name}`);
         });
 
         element.appendChild(hb(3));
@@ -93,7 +94,7 @@ class CharacterCreatorHelpers {
         return element;
     }
 
-    static generateWeaponsPageHtml(character, page) {
+    static generateWeaponsPageHtml(character, page, structuredCharacterCreator) {
         let variables = character.getVariables();
         let element = fromHTML(`<div class="characterCreator-page divList">`);
         element.appendChild(SectionHelpers.generateStructuredHtmlForSection(SectionHelpers.resolveSectionExpression('rules/Character Creation/Choose Weapons*noChildren'), {variables}).element);
@@ -143,7 +144,7 @@ class CharacterCreatorHelpers {
         return element;
     }
 
-    static generateTechniquesPageHtml(character, page) {
+    static generateTechniquesPageHtml(character, page, structuredCharacterCreator) {
         let variables = character.getVariables();
         let element = fromHTML(`<div class="characterCreator-page divList">`);
 
@@ -679,7 +680,7 @@ class CharacterCreatorHelpers {
         return element;
     }
 
-    static generatePathsPageHtml(character, page) {
+    static generatePathsPageHtml(character, page, structuredCharacterCreator) {
         let variables = character.getVariables();
         let element = fromHTML(`<div class="characterCreator-page divList">`);
         element.appendChild(SectionHelpers.generateStructuredHtmlForSection(SectionHelpers.resolveSectionExpression('rules/Character Creation/Choose Path*noChildren'), { variables }).element);
@@ -729,7 +730,7 @@ class CharacterCreatorHelpers {
         return element;
     }
 
-    static generateMasteriesPageHtml(character, page) {
+    static generateMasteriesPageHtml(character, page, structuredCharacterCreator) {
         let variables = character.getVariables();
         let element = fromHTML(`<div class="characterCreator-page divList">`);
 
@@ -998,7 +999,7 @@ class CharacterCreatorHelpers {
         return element;
     }
 
-    static generateAttributesPageHtml(character, page) {
+    static generateAttributesPageHtml(character, page, structuredCharacterCreator) {
         let variables = character.getVariables();
         let element = fromHTML(`<div class="characterCreator-page divList">`);
         let attributes = character.attributes;
@@ -1075,7 +1076,7 @@ class CharacterCreatorHelpers {
         return element;
     }
 
-    static generateFlavorPageHtml(character, page) {
+    static generateFlavorPageHtml(character, page, structuredCharacterCreator) {
         let variables = character.getVariables();
         let element = fromHTML(`<div class="characterCreator-page divList">`);
         element.appendChild(SectionHelpers.generateStructuredHtmlForSection(SectionHelpers.resolveSectionExpression('rules/Character Creation/Choose Ancestry*noChildren'), { variables }).element);
@@ -1305,7 +1306,7 @@ class CharacterCreatorHelpers {
         element.appendChild(hb(4));
         let whyInputContainer = fromHTML(`<div class="contenteditableContainer">`);
         element.appendChild(whyInputContainer);
-        const whyInput = fromHTML(`<div contenteditable-type="plainTextOnly" contenteditable="true" class="w-100 fixText">`);
+        const whyInput = fromHTML(`<div contenteditable-type="plainTextOnly" contenteditable="true" class="w-100 fixText maxHeight-6">`);
         whyInputContainer.appendChild(whyInput);
         whyInput.textContent = character.details.why;
         whyInput.addEventListener('input', e => {
@@ -1320,7 +1321,7 @@ class CharacterCreatorHelpers {
         element.appendChild(hb(4));
         let backstoryInputContainer = fromHTML(`<div class="contenteditableContainer">`);
         element.appendChild(backstoryInputContainer);
-        const backstoryInput = fromHTML(`<div contenteditable-type="plainTextOnly" contenteditable="true" class="w-100 fixText">`);
+        const backstoryInput = fromHTML(`<div contenteditable-type="plainTextOnly" contenteditable="true" class="w-100 fixText maxHeight-6">`);
         backstoryInputContainer.appendChild(backstoryInput);
         backstoryInput.textContent = character.details.backstory;
         backstoryInput.addEventListener('input', e => {
@@ -1335,7 +1336,7 @@ class CharacterCreatorHelpers {
         element.appendChild(hb(4));
         let appearanceInputContainer = fromHTML(`<div class="contenteditableContainer">`);
         element.appendChild(appearanceInputContainer);
-        const appearanceInput = fromHTML(`<div contenteditable-type="plainTextOnly" contenteditable="true" class="w-100 fixText">`);
+        const appearanceInput = fromHTML(`<div contenteditable-type="plainTextOnly" contenteditable="true" class="w-100 fixText maxHeight-6">`);
         appearanceInputContainer.appendChild(appearanceInput);
         appearanceInput.textContent = character.details.appearance;
         appearanceInput.addEventListener('input', e => {
@@ -1649,6 +1650,7 @@ class StructuredCharacterCreatorHtml {
         this.element = element;
         this.character = character;
         this.updateHash = settings.updateHash ?? false;
+        this.updateTitle = settings.updateTitle ?? false;
 
         element._character = character;
     }

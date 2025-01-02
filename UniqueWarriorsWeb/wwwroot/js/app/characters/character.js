@@ -229,6 +229,7 @@ class Character {
             baseStatOverrides: this.baseStatOverrides,
             statOverrides: this.statOverrides,
             attributes: this.attributes,
+            settings: this.settings,
             details: this.details,
             items: this.items.getAll(),
             techniques: this.techniques.getAll(),

@@ -24,13 +24,19 @@ class SummonHelpers {
         return summon.npc.summons.filter(t => !original.npc.summons.has(t));
     }
 
-    static copyVariablesFromSummoner(summon, summonerVariables) {
-        let newVariables = summon.npc.getVariables();
+    static copyVariablesFromSummoner(summon, summonerVariables, npc = null) {
+        npc ??= summon.npc;
+        let newVariables = npc.getVariables();
         for (let statName of this.copyOverridableStatNames) {
             let value = summonerVariables.get(statName);
             if (value != null) newVariables.set(statName, value);
         }
-        for (let statName of Object.keys(summon.npc.statOverrides)) newVariables.set(toTextCase(statName), summon.npc.statOverrides[statName]);
+        for (let statName of Object.keys(npc.statOverrides)) newVariables.set(toTextCase(statName), npc.statOverrides[statName]);
         return newVariables;
+    }
+
+    static getSummonSectionVariables(summon, variables, npc = null) {
+        npc ??= summon.npc;
+        return npc.settings.copyStatsFromSummoner ? SummonHelpers.copyVariablesFromSummoner(summon, variables, npc) : npc.getVariables();
     }
 }
