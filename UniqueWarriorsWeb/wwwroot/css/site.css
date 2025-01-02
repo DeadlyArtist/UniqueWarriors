@@ -103,3 +103,8 @@ input:focus-visible {
 .w-80 {
   width: 80%;
 }
+
+.top-line-section-overview .section:first-of-type .section-title:first-of-type {
+  line-height: 1;
+  padding-bottom: 0.25em;
+}

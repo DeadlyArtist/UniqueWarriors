@@ -128,7 +128,7 @@ class SectionReferenceHelpers {
                 const parsedFormula = `${validLetters}${number}`;
                 const result = this.parseFormula(parsedFormula, variables, specialLetters, specialLetterRegex);
                 if (result != null) {
-                    return `${invalidLetters}<span class="section-formula" tooltip="[${escapeHTML(formula)}]">${escapeHTML(result)}</span>`;
+                    return `${invalidLetters}<span class="section-formula" tooltip="[${escapeHTML(parsedFormula)}]">${escapeHTML(result)}</span>`;
                 }
             }
 

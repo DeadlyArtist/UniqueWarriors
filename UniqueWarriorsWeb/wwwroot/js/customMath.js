@@ -29,7 +29,6 @@ class CustomMath {
     parse(formula) {
         try {
             formula = this.tryIgnoreCase(formula);
-
             // Tokenize input formula
             const tokens = this.tokenize(formula);
             if (tokens === null) return null;
@@ -37,6 +36,7 @@ class CustomMath {
             // Convert tokens to abstract syntax tree (AST)
             const ast = this.buildAST(tokens);
             if (ast === null) return null;
+
             // Return an evaluation function (closure over the AST)
             return this.evaluateAST(ast);
         } catch (error) {
@@ -57,23 +57,23 @@ class CustomMath {
     // Centralized lookup methods
     getVariable(name) {
         if (this.ignoreCase) {
-            return this.lowerCaseVariables[name.toLowerCase()] || null;
+            return this.lowerCaseVariables[name.toLowerCase()] ?? null;
         }
-        return this.variables[name] || null;
+        return this.variables[name] ?? null;
     }
 
     getFunction(name) {
         if (this.ignoreCase) {
-            return this.lowerCaseFunctions[name.toLowerCase()] || null;
+            return this.lowerCaseFunctions[name.toLowerCase()] ?? null;
         }
-        return this.functions[name] || null;
+        return this.functions[name] ?? null;
     }
 
     getOperator(name) {
         if (this.ignoreCase) {
-            return this.lowerCaseOperators[name.toLowerCase()] || null;
+            return this.lowerCaseOperators[name.toLowerCase()] ?? null;
         }
-        return this.operators[name] || null;
+        return this.operators[name] ?? null;
     }
 
     getBracket(token) {
@@ -105,7 +105,7 @@ class CustomMath {
 
         // Dynamically build the regex pattern for brackets and operators
         const allOperators = sortedOperators.join('|');
-        const bracketChars = this.brackets.map(b => `\\${this.tryIgnoreCase(b.open)}\\${this.tryIgnoreCase(b.close)}`).join('');
+        const bracketChars = this.brackets.map(b => `\\${escapeRegex(this.tryIgnoreCase(b.open))}\\${escapeRegex(this.tryIgnoreCase(b.close))}`).join('');
         const regexPattern = `\\s*(${allOperators}|[A-Za-z_][A-Za-z_0-9]*|\\d*\\.?\\d+|[${bracketChars}])\\s*`;
         const regex = new RegExp(regexPattern, 'g');
 

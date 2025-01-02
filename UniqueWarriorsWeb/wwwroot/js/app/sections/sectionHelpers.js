@@ -366,6 +366,18 @@ class SectionHelpers {
             settings,
         );
 
+        this.regenerateHtmlForStructuredSection(structuredSection, true);
+
+        return structuredSection;
+    }
+
+    static regenerateHtmlForStructuredSection(structuredSection, firstRun = false) {
+        let section = structuredSection.section;
+        let settings = structuredSection.settings;
+        let sectionElement = structuredSection.element;
+        sectionElement.innerHTML = '';
+        structuredSection.subSections.clear();
+
         let content = section.content;
         let attributes = section.attributes;
         let newVariables = settings.variables ??= new Map();
@@ -395,7 +407,7 @@ class SectionHelpers {
             titleElement = fromHTML(`<${tag} class="section-title">`);
             titleElement.textContent = section.title;
             sectionElement.appendChild(titleElement);
-        } 
+        }
 
         // Need to extract embedded (summon) variables before here.
         let attributesElement = null;
@@ -416,17 +428,22 @@ class SectionHelpers {
                     } else if (SectionAttributesHelpers.isHeadValue(attr)) {
                         attributeElement = fromHTML(`<span class="section-attribute section-headValue"><span class="section-headValue-name">${escapeHTML(attr.name)}</span>: </span>`);
                         if (attr.name == "Severity") {
-                            newVariables.set(attr.name, attr.value);
+                            let value = settings.variables.get(attr.name);
+                            if (value == null) {
+                                value = attr.value;
+                                settings.variables.set(attr.name, value);
+                            }
                             let severityInput = fromHTML(`<input type="number" class="section-headValue-value smallNumberInput">`);
                             attributeElement.appendChild(severityInput);
-                            severityInput.value = attr.value;
+                            severityInput.value = value;
                             severityInput.addEventListener('input', () => {
                                 if (severityInput.value == '') return;
                                 let newValue = InputHelpers.fixNumberInput(severityInput);
                                 newValue = InputHelpers.constrainInput(severityInput, value => clamp(value, 0, 10));
-                                if (attr.value == newValue) return;
-                                attr.value = newValue;
-                                SectionReferenceHelpers.updateTooltipsOfStructuredSection(structuredSection);
+                                if (value == newValue) return;
+                                value = newValue;
+                                settings.variables.set(attr.name, value);
+                                this.regenerateHtmlForStructuredSection(structuredSection);
                             });
                             severityInput.addEventListener('focusout', () => {
                                 if (severityInput.value == '') severityInput.value = attr.value;
@@ -439,7 +456,7 @@ class SectionHelpers {
                         attributeElement._headValue = attr;
                     }
                     attributesLine.appendChild(attributeElement);
-                    if (index < attributeList.length - 1) attributesLine.appendChild(document.createTextNode(attributesLine.textContent.endsWith('.')  ? " " : ", "));
+                    if (index < attributeList.length - 1) attributesLine.appendChild(document.createTextNode(attributesLine.textContent.endsWith('.') ? " " : ", "));
                 });
             });
             sectionElement.appendChild(attributesElement);
@@ -527,13 +544,13 @@ class SectionHelpers {
         }
 
         SectionReferenceHelpers.addTooltipsToStructuredSection(structuredSection);
-
-        return structuredSection;
+        if (!firstRun) HtmlHelpers.getClosestProperty(sectionElement, "_masonry")?.resize();
     }
 
     static generateStructuredHtmlForSectionOverview(sections, type, settings = null) {
         settings ??= {};
         let container = fromHTML(`<div class="section-overview listContainerVertical children-w-100">`);
+        if (settings.removeTopLineHeight) container.classList.add('top-line-section-overview');
 
         if (settings.title) {
             let titleElement = fromHTML(`<h1 class="xl-title">`);
@@ -660,7 +677,6 @@ class StructuredSectionOverviewHtml {
     addSection(section, insertSettings) {
         insertSettings ??= {};
         const structuredSection = SectionHelpers.wrapSectionForOverview(section, this.type, this.settings);
-        if (this.settings.removeTopLineHeight) structuredSection.titleElement?.classList.add('top-line');
 
         this.sections.register(structuredSection, { ...insertSettings, id: structuredSection.section.id });
         HtmlHelpers.insertAt(this.listElement, this.sections.getIndex(structuredSection), structuredSection.wrapperElement);
