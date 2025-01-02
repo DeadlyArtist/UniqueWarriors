@@ -338,8 +338,12 @@ class SectionHelpers {
             const totalValue = sectionValue + mutationValue;
 
             // Add or update the attribute with the correctly formatted modifier (++ or --)
-            const formattedValue = DamageHelpers.formatModifierValue(totalValue);
-            section.addHeadValue(attribute, formattedValue, { update: sectionValueRaw != null });
+            if (totalValue == 0) {
+                section.removeHeadValue(attribute);
+            } else {
+                const formattedValue = DamageHelpers.formatModifierValue(totalValue);
+                section.addHeadValue(attribute, formattedValue, { update: sectionValueRaw != null });
+            }
         }
     }
 
@@ -514,7 +518,7 @@ class SectionHelpers {
                 let importanceInputContainer = fromHTML(`<div class="listHorizontal gap-2">`);
                 characterContainer.before(importanceInputContainer);
                 characterContainer.before(hb(2));
-                importanceInputContainer.appendChild(fromHTML(`<div>Importance:`));
+                importanceInputContainer.appendChild(fromHTML(`<div class="applySnippets markTooltips">Importance:`));
                 let importanceInput = fromHTML(`<input type="number" class="largeElement rounded smallNumberInput">`);
                 importanceInputContainer.appendChild(importanceInput);
                 importanceInput.value = npc.stats.importance;
@@ -529,6 +533,8 @@ class SectionHelpers {
                 importanceInput.addEventListener('focusout', () => {
                     if (importanceInput.value == '') importanceInput.value = npc.stats.importance;
                 });
+
+                SectionReferenceHelpers.addSnippets(importanceInputContainer);
 
                 updateCharacter();
             } else {

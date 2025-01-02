@@ -588,7 +588,7 @@ class CharacterHelpers {
         toggleMoreButton.appendChild(expandLessIcon);
         expandLessIcon.classList.add('hide');
 
-        let contentContainer = fromHTML(`<div class="divList flexFill gap-2">`);
+        let contentContainer = fromHTML(`<div class="divList flexFill">`);
         element.appendChild(contentContainer);
         let summaryElement = fromHTML(`<div class="listHorizontal" style="margin-top: 3px;">`);
         contentContainer.appendChild(summaryElement);
