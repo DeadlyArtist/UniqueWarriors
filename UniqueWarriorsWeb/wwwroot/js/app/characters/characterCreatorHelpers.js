@@ -1330,6 +1330,21 @@ class CharacterCreatorHelpers {
         updatePassions();
 
         element.appendChild(hb(4));
+        element.appendChild(SectionHelpers.generateStructuredHtmlForSection(SectionHelpers.resolveSectionExpression('rules/Character Creation/Appearance'), { variables }).element);
+        element.appendChild(hb(4));
+        let appearanceInputContainer = fromHTML(`<div class="contenteditableContainer">`);
+        element.appendChild(appearanceInputContainer);
+        const appearanceInput = fromHTML(`<div contenteditable-type="plainTextOnly" contenteditable="true" class="w-100 fixText maxHeight-6">`);
+        appearanceInputContainer.appendChild(appearanceInput);
+        appearanceInput.textContent = character.details.appearance;
+        appearanceInput.addEventListener('input', e => {
+            let text = appearanceInput.innerText;
+            if (ContentEditableHelpers.textNeedsFixing(text)) element.textContent = text = ContentEditableHelpers.fixText(text);
+            character.details.appearance = text;
+            CharacterHelpers.saveCharacter(character);
+        });
+
+        element.appendChild(hb(4));
         element.appendChild(SectionHelpers.generateStructuredHtmlForSection(SectionHelpers.resolveSectionExpression('rules/Character Creation/Why?'), { variables }).element);
         element.appendChild(hb(4));
         let whyInputContainer = fromHTML(`<div class="contenteditableContainer">`);
@@ -1356,21 +1371,6 @@ class CharacterCreatorHelpers {
             let text = backstoryInput.innerText;
             if (ContentEditableHelpers.textNeedsFixing(text)) element.textContent = text = ContentEditableHelpers.fixText(text);
             character.details.backstory = text;
-            CharacterHelpers.saveCharacter(character);
-        });
-
-        element.appendChild(hb(4));
-        element.appendChild(SectionHelpers.generateStructuredHtmlForSection(SectionHelpers.resolveSectionExpression('rules/Character Creation/Appearance'), { variables }).element);
-        element.appendChild(hb(4));
-        let appearanceInputContainer = fromHTML(`<div class="contenteditableContainer">`);
-        element.appendChild(appearanceInputContainer);
-        const appearanceInput = fromHTML(`<div contenteditable-type="plainTextOnly" contenteditable="true" class="w-100 fixText maxHeight-6">`);
-        appearanceInputContainer.appendChild(appearanceInput);
-        appearanceInput.textContent = character.details.appearance;
-        appearanceInput.addEventListener('input', e => {
-            let text = appearanceInput.innerText;
-            if (ContentEditableHelpers.textNeedsFixing(text)) element.textContent = text = ContentEditableHelpers.fixText(text);
-            character.details.appearance = text;
             CharacterHelpers.saveCharacter(character);
         });
 

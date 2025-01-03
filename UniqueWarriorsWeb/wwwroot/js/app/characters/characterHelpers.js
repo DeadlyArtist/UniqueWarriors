@@ -643,6 +643,14 @@ class CharacterHelpers {
 
     static generateFlavorSubPageHtml(character) {
         let element = fromHTML(`<div class="character-subPage-flavor">`);
+
+        let appearanceContainer = fromHTML(`<div class="character-details-backstory-container"><h1>Appearance`);
+        element.appendChild(appearanceContainer);
+        let appearanceElement = fromHTML(`<div class="character-details-appearance">`);
+        appearanceContainer.appendChild(appearanceElement);
+        appearanceElement.textContent = character.details.appearance ?? "No appearance details specified...";
+
+        element.appendChild(hb(4));
         let whyContainer = fromHTML(`<div class="character-details-why-container"><h1>Why?`);
         element.appendChild(whyContainer);
         let whyElement = fromHTML(`<div class="character-details-why">`);
@@ -655,13 +663,6 @@ class CharacterHelpers {
         let backstoryElement = fromHTML(`<div class="character-details-backstory">`);
         backstoryContainer.appendChild(backstoryElement);
         backstoryElement.textContent = character.details.backstory ?? "No backstory written yet...";
-
-        element.appendChild(hb(4));
-        let appearanceContainer = fromHTML(`<div class="character-details-backstory-container"><h1>Appearance`);
-        element.appendChild(appearanceContainer);
-        let appearanceElement = fromHTML(`<div class="character-details-appearance">`);
-        appearanceContainer.appendChild(appearanceElement);
-        appearanceElement.textContent = character.details.appearance ?? "No appearance details specified...";
 
         return element;
     }
