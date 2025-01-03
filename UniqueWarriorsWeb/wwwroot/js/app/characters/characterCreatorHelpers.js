@@ -140,7 +140,7 @@ class CharacterCreatorHelpers {
             }
             for (let weapon of weapons) {
                 let hasWeapon = chosenWeapons.has(weapon);
-                if (!hasWeapon) continue;
+                if (hasWeapon) continue;
                 let element = fromHTML(`<button class="listHorizontal gap-2 largeElement bordered hoverable">`);
                 (hasWeapon ? chosenWeaponsBar : unchosenWeaponsBar).appendChild(element);
                 if (hasWeapon) element.classList.add('brand-border-color');
@@ -740,7 +740,7 @@ class CharacterCreatorHelpers {
             }
             for (let path of paths) {
                 let hasPath = chosenPaths.has(path);
-                if (!hasPath) continue;
+                if (hasPath) continue;
                 let element = fromHTML(`<button class="listHorizontal gap-2 largeElement bordered hoverable">`);
                 (hasPath ? chosenPathsBar : unchosenPathsBar).appendChild(element);
                 if (hasPath) element.classList.add('brand-border-color');
