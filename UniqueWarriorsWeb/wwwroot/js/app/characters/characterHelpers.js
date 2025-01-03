@@ -501,16 +501,17 @@ class CharacterHelpers {
         let abilitiesContainer = fromHTML(`<div class="divList gap-2">`);
         element.appendChild(abilitiesContainer);
 
-        let abilities = character.techniques.getAll().concat(character.masteries.getAll());
-        if (!settings.simple) abilities = abilities.concat(this.getDefaultAbilities());
-        let summons = character.summons.getAll();
-
         let variables = null;
         if (!settings.noVariables) variables = character.getVariables();
+
+        let summons = character.summons.getAll();
         if (settings.simple) {
+            let abilities = character.techniques.getAll().concat(character.masteries.getAll());
             let combinedAbilityList = this.generateAbilityListHtml(character, [...abilities, ...summons], { ...settings, variables, hideIfEmpty: true, });
             abilitiesContainer.appendChild(combinedAbilityList.container);
         } else {
+            let abilities = character.techniques.getAll().concat(this.getDefaultAbilities());
+            let masteries = character.masteries.getAll();
             let triggeredAbilities = [];
             let moveActionAbilities = [];
             let actionAbilities = [];
@@ -534,6 +535,8 @@ class CharacterHelpers {
                 }
             }
 
+            let masteriesList = this.generateAbilityListHtml(character, masteries, { ...settings, title: "Masteries", variables, hideIfEmpty: true, });
+            abilitiesContainer.appendChild(masteriesList.container);
             let triggeredAbilityList = this.generateAbilityListHtml(character, triggeredAbilities, { ...settings, title: "Triggered", variables, hideIfEmpty: true, });
             abilitiesContainer.appendChild(triggeredAbilityList.container);
             let moveActionAbilityList = this.generateAbilityListHtml(character, moveActionAbilities, { ...settings, title: "Move Actions", variables, hideIfEmpty: true, });
@@ -547,7 +550,7 @@ class CharacterHelpers {
             let summonsList = this.generateAbilityListHtml(character, summons, { ...settings, title: "Summons", variables, hideIfEmpty: true, });
             abilitiesContainer.appendChild(summonsList.container);
 
-            if (!settings.noSearch) new SectionSearch(searchContainer, [triggeredAbilityList, moveActionAbilityList, actionAbilityList, quickActionAbilityList, otherAbilityList, summonsList], { filterKey: character.id });
+            if (!settings.noSearch) new SectionSearch(searchContainer, [masteriesList, triggeredAbilityList, moveActionAbilityList, actionAbilityList, quickActionAbilityList, otherAbilityList, summonsList], { filterKey: character.id });
         }
 
         return element;
