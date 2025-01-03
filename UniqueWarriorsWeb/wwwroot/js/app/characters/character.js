@@ -63,7 +63,7 @@ class Character {
     getScalingStats() {
         let level = this.stats.level;
         let rank = 1 + Math.floor(level / 5);
-        let tier = 1 + Math.floor(rank / 3);
+        let tier = 1 + Math.floor(level / 15);
         let maxRunes = 1 + Math.floor(level / 10);
         let attributeIncreases = this.getMaxAttributeIncreases();
         let attributeMaximum = 2 + rank - tier;
