@@ -125,8 +125,22 @@ class CharacterCreatorHelpers {
         function updateWeapons() {
             chosenWeaponsBar.innerHTML = '';
             unchosenWeaponsBar.innerHTML = '';
+            for (let weapon of chosenWeapons) {
+                let hasWeapon = chosenWeapons.has(weapon);
+                let element = fromHTML(`<button class="listHorizontal gap-2 largeElement bordered hoverable">`);
+                (hasWeapon ? chosenWeaponsBar : unchosenWeaponsBar).appendChild(element);
+                if (hasWeapon) element.classList.add('brand-border-color');
+                element.addEventListener('click', () => hasWeapon ? unchooseWeapon(weapon) : chooseWeapon(weapon));
+                let nameElement = fromHTML(`<div>`);
+                element.appendChild(nameElement);
+                nameElement.textContent = weapon;
+                let icon = hasWeapon ? icons.close() : icons.add();
+                element.appendChild(icon);
+                icon.classList.add('minimalIcon');
+            }
             for (let weapon of weapons) {
                 let hasWeapon = chosenWeapons.has(weapon);
+                if (!hasWeapon) continue;
                 let element = fromHTML(`<button class="listHorizontal gap-2 largeElement bordered hoverable">`);
                 (hasWeapon ? chosenWeaponsBar : unchosenWeaponsBar).appendChild(element);
                 if (hasWeapon) element.classList.add('brand-border-color');
@@ -711,8 +725,22 @@ class CharacterCreatorHelpers {
         function updatePaths() {
             chosenPathsBar.innerHTML = '';
             unchosenPathsBar.innerHTML = '';
+            for (let path of chosenPaths) {
+                let hasPath = chosenPaths.has(path);
+                let element = fromHTML(`<button class="listHorizontal gap-2 largeElement bordered hoverable">`);
+                (hasPath ? chosenPathsBar : unchosenPathsBar).appendChild(element);
+                if (hasPath) element.classList.add('brand-border-color');
+                element.addEventListener('click', () => hasPath ? unchoosePath(path) : choosePath(path));
+                let nameElement = fromHTML(`<div>`);
+                element.appendChild(nameElement);
+                nameElement.textContent = path;
+                let icon = hasPath ? icons.close() : icons.add();
+                element.appendChild(icon);
+                icon.classList.add('minimalIcon');
+            }
             for (let path of paths) {
                 let hasPath = chosenPaths.has(path);
+                if (!hasPath) continue;
                 let element = fromHTML(`<button class="listHorizontal gap-2 largeElement bordered hoverable">`);
                 (hasPath ? chosenPathsBar : unchosenPathsBar).appendChild(element);
                 if (hasPath) element.classList.add('brand-border-color');

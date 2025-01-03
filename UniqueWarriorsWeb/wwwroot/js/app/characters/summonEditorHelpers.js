@@ -83,8 +83,29 @@ class SummonEditorHelpers {
         function updateWeapons() {
             chosenWeaponsBar.innerHTML = '';
             unchosenWeaponsBar.innerHTML = '';
+            for (let weapon of chosenWeapons) {
+                let hasWeapon = chosenWeapons.has(weapon);
+                let originalHasWeapon = originalWeapons.has(weapon);
+                let element = fromHTML(`<button class="listHorizontal gap-2 largeElement bordered hoverable">`);
+                (hasWeapon ? chosenWeaponsBar : unchosenWeaponsBar).appendChild(element);
+                if (originalHasWeapon) {
+                    element.setAttribute('disabled', '');
+                    element.setAttribute('tooltip', 'Default weapons cannot be removed.');
+                    element.classList.add('hideDisabled');
+                }
+                if (hasWeapon) element.classList.add('brand-border-color');
+                if (!originalHasWeapon) element.addEventListener('click', () => hasWeapon ? unchooseWeapon(weapon) : chooseWeapon(weapon));
+                let nameElement = fromHTML(`<div>`);
+                element.appendChild(nameElement);
+                nameElement.textContent = weapon;
+                if (originalHasWeapon) continue;
+                let icon = hasWeapon ? icons.close() : icons.add();
+                element.appendChild(icon);
+                icon.classList.add('minimalIcon');
+            }
             for (let weapon of weapons) {
                 let hasWeapon = chosenWeapons.has(weapon);
+                if (!hasWeapon) continue;
                 let originalHasWeapon = originalWeapons.has(weapon);
                 let element = fromHTML(`<button class="listHorizontal gap-2 largeElement bordered hoverable">`);
                 (hasWeapon ? chosenWeaponsBar : unchosenWeaponsBar).appendChild(element);
