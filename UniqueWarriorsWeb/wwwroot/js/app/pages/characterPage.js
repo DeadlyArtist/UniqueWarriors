@@ -35,7 +35,7 @@ class CharacterPageManager extends PageManager {
     }
 
     delayedLoad() {
-        this.pageElement.appendChild(CharacterHelpers.generateStructuredHtmlForCharacter(this.character).element);
+        this.pageElement.appendChild(CharacterHelpers.generateStructuredHtmlForCharacter(this.character, {masonry:true}).element);
     }
 
     unload() {

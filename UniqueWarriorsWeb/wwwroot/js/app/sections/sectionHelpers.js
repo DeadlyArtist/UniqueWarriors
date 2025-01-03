@@ -559,9 +559,9 @@ class SectionHelpers {
         if (settings.removeTopLineHeight) container.classList.add('top-line-section-overview');
 
         if (settings.title) {
-            let titleElement = fromHTML(`<h1 class="xl-title">`);
+            let titleElement = fromHTML(`<h1>`);
             container.appendChild(titleElement);
-            titleElement.textContent = title;
+            titleElement.textContent = settings.title;
         }
 
         let searchContainer;
