@@ -230,13 +230,13 @@ class SectionReferenceHelpers {
                     reference = parsed.reference;
                     let display = parsed.display;
 
-                    isLine = start == 0 && end == value.length - 1;
+                    isLine = start == 0 && end == value.length - 1 && !isHeadValue;
                     path = isLine ? 'techniques/' + reference : this.findPathFromReference(parentSection, reference);
-                    html += `<span tooltip-path="${escapeHTML(path)}" section-formula>${escapeHTML(isLine && !isHeadValue ? "<" + display + ">" : display)}</span>`;
+                    html += `<span tooltip-path="${escapeHTML(path)}" section-formula>${escapeHTML(isLine ? "<" + display + ">" : display)}</span>`;
                 }
             }
 
-            if (isLine && !isHeadValue) {
+            if (isLine) {
                 let section = SectionHelpers.resolveSectionExpression(path);
                 if (section) {
                     let height = 1;
@@ -272,7 +272,6 @@ class SectionReferenceHelpers {
     }
 
     static findPathFromReference(section, reference) {
-        section = section.parent;
         let anchor = 'techniques';
         while (section) {
             if (section.anchor) {
