@@ -1156,7 +1156,7 @@ class CharacterCreatorHelpers {
 
         let characteristicsInputContainer = fromHTML(`<div class="listHorizontal gap-1">`);
         element.appendChild(characteristicsInputContainer);
-        let characteristicsInput = fromHTML(`<input type="text" class="largeElement" style="width: 400px;">`);
+        let characteristicsInput = fromHTML(`<input type="text" class="largeElement smallTextInput">`);
         characteristicsInputContainer.appendChild(characteristicsInput);
         characteristicsInput.value = "";
         let addCharacteristicsButton = fromHTML(`<button class="largeElement bordered hoverable listHorizontal" tooltip="Add characteristics (or press Enter)" disabled>`);
@@ -1241,7 +1241,7 @@ class CharacterCreatorHelpers {
 
         let passionsInputContainer = fromHTML(`<div class="listHorizontal gap-1">`);
         element.appendChild(passionsInputContainer);
-        let passionsInput = fromHTML(`<input type="text" class="largeElement" style="width: 400px;">`);
+        let passionsInput = fromHTML(`<input type="text" class="largeElement smallTextInput">`);
         passionsInputContainer.appendChild(passionsInput);
         passionsInput.value = "";
         let addPassionsButton = fromHTML(`<button class="largeElement bordered hoverable listHorizontal" tooltip="Add passions (or press Enter)" disabled>`);
