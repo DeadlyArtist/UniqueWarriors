@@ -3,6 +3,7 @@ class NPC {
         settings ??= {};
 
         this.id = settings.id ?? generateUniqueId();
+        this.timestamp = settings.timestamp ?? Date.now();
         this.imageUrl = settings.imageUrl ?? null;
         this.settings = settings.settings ?? {};
         this.name = settings.name ?? ("New " + this.settings.subType ?? "NPC");
@@ -173,6 +174,7 @@ class NPC {
     toJSON() {
         return {
             id: this.id,
+            timestamp: this.timestamp,
             imageUrl: this.imageUrl,
             name: this.name,
             stats: this.stats,

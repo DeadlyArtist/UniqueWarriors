@@ -3,6 +3,7 @@ class Character {
         settings ??= {};
 
         this.id = settings.id ?? generateUniqueId();
+        this.timestamp = settings.timestamp ?? Date.now();
         this.imageUrl = settings.imageUrl ?? null;
         this.name = settings.name ?? CharacterHelpers.defaultName;
         this.stats = { ...CharacterHelpers.getDefaultStats(), ...(settings.stats ?? {}) };
@@ -223,6 +224,7 @@ class Character {
     toJSON() {
         return {
             id: this.id,
+            timestamp: this.timestamp,
             imageUrl: this.imageUrl,
             name: this.name,
             stats: this.stats,
