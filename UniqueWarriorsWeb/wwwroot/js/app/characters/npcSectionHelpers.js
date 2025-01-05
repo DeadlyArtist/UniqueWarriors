@@ -5,6 +5,7 @@ class NPCSectionHelpers {
         let result = {};
         let boons = section.getHeadValueParts("Boons");
         let banes = section.getHeadValueParts("Banes");
+
         for (let boon of boons) {
             let amount = 1;
             boon = boon.replace(/^(\d*)x\s+/, (matched, group1) => {

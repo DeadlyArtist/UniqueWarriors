@@ -148,9 +148,11 @@ class NPC {
         let boons = this.boons;
         let { scaling } = this.getScalingStats();
         let attributes = CharacterHelpers.getEmptyAttributes();
-        for (let [key, value] of Object.entries(boons)) {
-            attributes[key] = scaling + value;
+        for (let [key, value] of Object.entries(attributes)) {
+            let boon = boons[key] ?? 0;
+            attributes[key] = scaling + value + boon;
         }
+
         return attributes;
     }
 
