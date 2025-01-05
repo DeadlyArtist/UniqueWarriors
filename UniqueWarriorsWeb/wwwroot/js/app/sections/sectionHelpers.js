@@ -361,6 +361,8 @@ class SectionHelpers {
 
     static generateStructuredHtmlForSection(section, settings = null) {
         settings ??= {};
+        settings = { ...settings };
+        settings.variables = settings.variables ? new Map(settings.variables) : new Map();
 
         const sectionElement = fromHTML(`<div class="section">`);
         const structuredSection = new StructuredSectionHtml(
@@ -377,15 +379,14 @@ class SectionHelpers {
 
     static regenerateHtmlForStructuredSection(structuredSection, firstRun = false) {
         let section = structuredSection.section;
-        let settings = { ...structuredSection.settings };
-        if (settings.variables) settings.variables = new Map(settings.variables);
+        let settings = structuredSection.settings;
         let sectionElement = structuredSection.element;
         sectionElement.innerHTML = '';
         structuredSection.subSections.clear();
 
         let content = section.content;
         let attributes = section.attributes;
-        let newVariables = settings.variables ??= new Map();
+        let newVariables = settings.variables;
         let hasLevel = false;
         let isNPC = section.npc != null;
         let npc = section.npc;
