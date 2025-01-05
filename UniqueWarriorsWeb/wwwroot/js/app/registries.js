@@ -13,6 +13,7 @@ class Registries {
 
     // Game
     static categories = this.register(new Registry("categories"));
+    static defaultAbilities = this.register(new Registry("defaultAbilities"));
     static techniques = this.register(new Registry("techniques"));
     static masteries = this.register(new Registry("masteries"));
     static summons = this.register(new Registry("summons"));

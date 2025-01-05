@@ -12,7 +12,7 @@ class SectionSearch {
         this.filters = [];
         this.filterChanged = false;
         this.storageKey = settings.storageKey ?? SectionSearch.storageKey;
-        this.filterKey = settings.filterKey ?? getPath();
+        if (settings.filterKey !== false) this.filterKey = settings.filterKey ?? getPath();
 
         // Search highlight
         this.rangesByNode = new Map(); // Buffers ranges for deferred highlighting
@@ -104,6 +104,8 @@ class SectionSearch {
     }
 
     loadFiltersFromStorage() {
+        if (!this.filterKey) return;
+
         const allFilters = JSON.parse(localStorage.getItem(this.storageKey)) || {};
         const filterKey = this.filterKey;
         const savedData = allFilters[filterKey];
@@ -133,6 +135,8 @@ class SectionSearch {
     }
 
     storeFiltersInLocalStorage() {
+        if (!this.filterKey) return;
+
         const filterKey = this.filterKey;
         const allFilters = JSON.parse(localStorage.getItem(this.storageKey)) || {};
 
@@ -152,6 +156,8 @@ class SectionSearch {
     }
 
     static removeFiltersFromLocalStorage(filterKey) {
+        if (!this.filterKey) return;
+
         const allFilters = JSON.parse(localStorage.getItem(this.storageKey)) || {};
         delete allFilters[filterKey];
         // Save back to localStorage

@@ -10,7 +10,7 @@ class Snippet {
         this.whitelist = settings.whitelist;
         this.blacklist = settings.blacklist;
 
-        if (this.whitelist == "tags") this.whitelist = ".section-tag, .section-headValue-name";
-        if (this.blacklist == "tags") this.blacklist = ".section-tag, .section-headValue-name";
+        if (this.whitelist == "tags") this.whitelist = Snippets.tagQuery;
+        if (this.blacklist == "tags") this.blacklist = Snippets.tagQuery;
     }
 }

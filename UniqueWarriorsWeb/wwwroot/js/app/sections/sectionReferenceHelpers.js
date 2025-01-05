@@ -231,7 +231,7 @@ class SectionReferenceHelpers {
                     let display = parsed.display;
 
                     isLine = start == 0 && end == value.length - 1 && !isHeadValue;
-                    path = isLine ? 'techniques/' + reference : this.findPathFromReference(parentSection, reference);
+                    path = this.findPathFromReference(parentSection, reference, isLine ? 'techniques' : null);
                     html += `<span tooltip-path="${escapeHTML(path)}" section-formula>${escapeHTML(isLine ? "<" + display + ">" : display)}</span>`;
                 }
             }
@@ -267,18 +267,22 @@ class SectionReferenceHelpers {
         }
         if (mutation) reference += `*mutation=${mutation}`;
         if (name) reference += `*name=${name}`;
-        let display = name ?? reference;
+        let referenceParts = reference.split('/');
+        let display = name ?? referenceParts[referenceParts.length - 1];
         return { reference, name, mutation, display };
     }
 
-    static findPathFromReference(section, reference) {
-        let anchor = 'techniques';
-        while (section) {
-            if (section.anchor) {
-                anchor = section.anchor;
-                break;
+    static findPathFromReference(section, reference, overrideAnchor = null) {
+        if (reference.startsWith('/')) return reference.substring(1);
+        let anchor = overrideAnchor ?? 'techniques';
+        if (overrideAnchor == null) {
+            while (section) {
+                if (section.anchor) {
+                    anchor = section.anchor;
+                    break;
+                }
+                section = section.parent;
             }
-            section = section.parent;
         }
         return anchor + '/' + reference;
     }
@@ -351,8 +355,8 @@ class SectionReferenceHelpers {
                 const newHtml = oldHtml.replace(regex, function (matched, matchedTarget, maybeS) {
                     let targetPath = pathsByTarget[matchedTarget.toLowerCase()];
                     let section = HtmlHelpers.getClosestProperty(node, '_section');
-                    let sectionPath = section.getPath();
-                    if (sectionPath.split('*')[0] == SectionReferenceHelpers.pathEncoder.encode(targetPath.split('*')[0])) return matched;
+                    let sectionPath = section?.getPath();
+                    if (sectionPath && sectionPath.split('*')[0] == SectionReferenceHelpers.pathEncoder.encode(targetPath.split('*')[0])) return matched;
                     return `<span class="snippetTarget" tooltip-path="${escapeHTML(targetPath)}">${matchedTarget + maybeS}</span>`;
                 });
 

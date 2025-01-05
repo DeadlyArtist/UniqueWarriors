@@ -86,6 +86,7 @@
   border-color: transparent var(--tooltip-border-color) transparent transparent;
 }
 
+/* markTooltips required because you only want to target text tooltips, and not e.g. button tooltips. */
 .colorTooltips .markTooltips .tooltipTarget {
   color: var(--stress-color);
 }

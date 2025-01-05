@@ -32,12 +32,22 @@ class Loader {
     ];
     static collectionsByRegistry = new Map();
 
+    static registerDefaultAbilities() {
+        let abilities = Registries.rules.get('PC Sheet').subSections.get('Default Abilities').subSections.getAll();
+        abilities = SectionHelpers.modify(abilities, { clone: true, height: 0 });
+        for (let ability of abilities) {
+            Registries.defaultAbilities.register(ability);
+        }
+    }
+
     static async registerAllCollections() {
         this.collections.forEach(c => this.collectionsByRegistry.set(c.registry, c));
         await parallel(this.collections, async function (collection) {
             await collection.register();
         });
         this.collections.forEach(collection => collection.resolvePendingReferences());
+        this.registerDefaultAbilities();
+        window.dispatchEvent(new CustomEvent('before-collections-loaded'));
         this.collectionsLoaded = true;
         window.dispatchEvent(new CustomEvent('collections-loaded'));
     }
@@ -49,6 +59,19 @@ class Loader {
                 _callback();
             } else {
                 window.addEventListener('collections-loaded', e => {
+                    _callback();
+                });
+            }
+        });
+    }
+
+    static async beforeCollectionsLoaded(callback = doNothing) {
+        return new Promise((resolve, reject) => {
+            let _callback = () => { callback(); resolve(); }
+            if (this.collectionsLoaded) {
+                _callback();
+            } else {
+                window.addEventListener('before-collections-loaded', e => {
                     _callback();
                 });
             }

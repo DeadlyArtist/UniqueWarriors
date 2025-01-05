@@ -156,14 +156,14 @@ class CharacterHelpers {
     }
 
     static getDefaultAbilities() {
-        let abilities = Registries.rules.get('PC Sheet').subSections.get('Basic Abilities').subSections.getAll();
+        let abilities = Registries.defaultAbilities.getAll();
         return SectionHelpers.modify(abilities, {clone: true, height: 0});
     }
 
     static generateStructuredHtmlForCharacter(character, settings = null) {
         settings ??= {};
         let element = fromHTML(`<div class="character divList">`);
-        let structuredCharacter = new StructuredCharacterHtml(character, element);
+        let structuredCharacter = new StructuredCharacterHtml(character, element, settings);
 
         if (!settings.noTitle) {
             let actionBarElement = null;
@@ -359,9 +359,10 @@ class CharacterHelpers {
                 let statElement = fromHTML(`<div class="character-stat divList bordered rounded-xl">`);
                 element.appendChild(statElement);
                 statElement._stat = { name, value };
-                let stateNameElement = fromHTML(`<div class="character-stat-name mediumElement">`);
+                let stateNameElement = fromHTML(`<div class="character-stat-name mediumElement applySnippets markTooltips">`);
                 statElement.appendChild(stateNameElement);
                 stateNameElement.textContent = displayName;
+                SectionReferenceHelpers.addSnippets(stateNameElement);
                 statElement.appendChild(fromHTML(`<hr class="">`)); // potentially add raised-border
                 let stateValueElement = fromHTML(`<div class="character-stat-value mediumElement">`); /*listHorizontal centerContentHorizontally*/
                 statElement.appendChild(stateValueElement);
@@ -730,11 +731,13 @@ CharacterHelpers.setup();
 App.onAppLoaded(() => CharacterHelpers.loadCharacters());
 
 class StructuredCharacterHtml {
-    constructor(character, element) {
+    constructor(character, element, settings = null) {
+        settings ??= {};
         this.element = element;
         this.character = character;
         element._character = character;
         element._structuredCharacter = this;
+        element._variables = settings.variables ??= character.getVariables();
     }
 }
 

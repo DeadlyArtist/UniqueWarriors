@@ -11,6 +11,12 @@ function getUrlBase(url = null) {
     return url;
 }
 
+function getUrlWithoutHash(url = null) {
+    url ??= window.location.href;
+    url = getSubstringBefore(url, '#');
+    return url;
+}
+
 function getUrlModifiers(url = null) {
     url ??= window.location.href;
     hash = url.indexOf('#');

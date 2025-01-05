@@ -163,22 +163,22 @@ class Character {
         if (level >= 3) techniques += 2;
         if (level >= 4) techniques += 2;
         if (level >= 5) techniques += 2; // one of which is a mutation
-        if (level >= 6) techniques += 1;
-        if (level >= 7) techniques += 1;
-        if (level >= 9) techniques += 1;
-        if (level >= 11) techniques += 1;
-        if (level >= 13) techniques += 1;
-        if (level >= 14) techniques += 1;
-        if (level >= 16) techniques += 1;
-        if (level >= 18) techniques += 1;
-        if (level >= 19) techniques += 1;
-        if (level >= 21) techniques += 1;
-        if (level >= 22) techniques += 1;
-        if (level >= 24) techniques += 1;
+        if (level >= 6) techniques += 2;
+        if (level >= 7) techniques += 2;
+        if (level >= 9) techniques += 2;
+        if (level >= 11) techniques += 2;
+        if (level >= 13) techniques += 2;
+        if (level >= 14) techniques += 2;
+        if (level >= 16) techniques += 2;
+        if (level >= 18) techniques += 2;
+        if (level >= 19) techniques += 2;
+        if (level >= 21) techniques += 2;
+        if (level >= 22) techniques += 2;
+        if (level >= 24) techniques += 2;
         if (level >= 25) techniques += 2;
-        if (level >= 26) techniques += 1;
-        if (level >= 28) techniques += 1;
-        if (level >= 29) techniques += 1;
+        if (level >= 26) techniques += 2;
+        if (level >= 28) techniques += 2;
+        if (level >= 29) techniques += 2;
         return techniques;
     }
 

@@ -320,7 +320,7 @@ class SummonEditorHelpers {
 
         element.appendChild(hb(4));
         element.appendChild(fromHTML(`<h1>Learned Techniques`));
-        let chosenOverview = SectionHelpers.generateStructuredHtmlForSectionOverview(chosenTechniques.getAll(), SectionHelpers.MasonryType, { addSearch: true, summonVariables });
+        let chosenOverview = SectionHelpers.generateStructuredHtmlForSectionOverview(chosenTechniques.getAll(), SectionHelpers.MasonryType, { addSearch: true, filterKey: this.getSearchFilterKey('learned_techniques'), summonVariables });
         element.appendChild(chosenOverview.container);
         chosenOverview.listElement.setAttribute('placeholder', 'No techniques learned yet...');
 
@@ -347,7 +347,7 @@ class SummonEditorHelpers {
         element.appendChild(hb(4));
         element.appendChild(fromHTML(`<h1>Available Techniques`));
         let availableTechniques = Registries.techniques.filter(t => chosenWeapons.has(AbilitySectionHelpers.getMainCategory(t)));
-        let availableOverview = SectionHelpers.generateStructuredHtmlForSectionOverview(availableTechniques, SectionHelpers.MasonryType, { addSearch: true, summonVariables });
+        let availableOverview = SectionHelpers.generateStructuredHtmlForSectionOverview(availableTechniques, SectionHelpers.MasonryType, { addSearch: true, filterKey: this.getSearchFilterKey('available_techniques'), summonVariables });
         element.appendChild(availableOverview.container);
         let noTechniquesElement = fromHTML(`<div class="hide" placeholder="No more techniques available...">`);
         element.appendChild(noTechniquesElement);
@@ -388,7 +388,7 @@ class SummonEditorHelpers {
         element.appendChild(summonsContainer);
         summonsContainer.appendChild(hb(4));
         summonsContainer.appendChild(fromHTML(`<h1>Learned Summons`));
-        let chosenSummonsOverview = SectionHelpers.generateStructuredHtmlForSectionOverview(chosenSummons.getAll(), SectionHelpers.MasonryType, { addSearch: true, summonVariables });
+        let chosenSummonsOverview = SectionHelpers.generateStructuredHtmlForSectionOverview(chosenSummons.getAll(), SectionHelpers.MasonryType, { addSearch: true, filterKey: this.getSearchFilterKey('learned_summons'), summonVariables });
         summonsContainer.appendChild(chosenSummonsOverview.container);
         chosenSummonsOverview.listElement.setAttribute('placeholder', 'No summons learned yet...');
 
@@ -398,7 +398,7 @@ class SummonEditorHelpers {
 
         summonsContainer.appendChild(hb(4));
         summonsContainer.appendChild(fromHTML(`<h1>Available Summons`));
-        let availableSummonsOverview = SectionHelpers.generateStructuredHtmlForSectionOverview(availableSummons, SectionHelpers.MasonryType, { addSearch: true, summonVariables });
+        let availableSummonsOverview = SectionHelpers.generateStructuredHtmlForSectionOverview(availableSummons, SectionHelpers.MasonryType, { addSearch: true, filterKey: this.getSearchFilterKey('available_summons'), summonVariables });
         summonsContainer.appendChild(availableSummonsOverview.container);
         let noSummonsElement = fromHTML(`<div class="hide" placeholder="No more summons available...">`);
         summonsContainer.appendChild(noSummonsElement);

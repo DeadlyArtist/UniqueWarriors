@@ -1,4 +1,8 @@
 class CharacterCreatorHelpers {
+    static getSearchFilterKey(field) {
+        return getUrlWithoutHash() + "# #" + field;
+    }
+
     static generateStructuredHtmlForCharacterCreator(character, settings = null) {
         settings ??= {};
 
@@ -352,7 +356,7 @@ class CharacterCreatorHelpers {
 
         element.appendChild(hb(4));
         element.appendChild(fromHTML(`<h1>Learned Techniques`));
-        let chosenOverview = SectionHelpers.generateStructuredHtmlForSectionOverview(chosenTechniques.getAll(), SectionHelpers.MasonryType, { addSearch: true, variables });
+        let chosenOverview = SectionHelpers.generateStructuredHtmlForSectionOverview(chosenTechniques.getAll(), SectionHelpers.MasonryType, { addSearch: true, filterKey: this.getSearchFilterKey('learned_techniques'), variables });
         element.appendChild(chosenOverview.container);
         chosenOverview.listElement.setAttribute('placeholder', 'No techniques learned yet...');
 
@@ -379,7 +383,7 @@ class CharacterCreatorHelpers {
         element.appendChild(hb(4));
         element.appendChild(fromHTML(`<h1>Available Techniques`));
         let availableTechniques = Registries.techniques.filter(t => chosenWeapons.has(AbilitySectionHelpers.getMainCategory(t)));
-        let availableOverview = SectionHelpers.generateStructuredHtmlForSectionOverview(availableTechniques, SectionHelpers.MasonryType, { addSearch: true, variables });
+        let availableOverview = SectionHelpers.generateStructuredHtmlForSectionOverview(availableTechniques, SectionHelpers.MasonryType, { addSearch: true, filterKey: this.getSearchFilterKey('available_techniques'), variables });
         element.appendChild(availableOverview.container);
         let noTechniquesElement = fromHTML(`<div class="hide" placeholder="No more techniques available...">`);
         element.appendChild(noTechniquesElement);
@@ -422,7 +426,7 @@ class CharacterCreatorHelpers {
         element.appendChild(summonsContainer);
         summonsContainer.appendChild(hb(4));
         summonsContainer.appendChild(fromHTML(`<h1>Learned Summons`));
-        let chosenSummonsOverview = SectionHelpers.generateStructuredHtmlForSectionOverview(chosenSummons.getAll(), SectionHelpers.MasonryType, { addSearch: true, variables });
+        let chosenSummonsOverview = SectionHelpers.generateStructuredHtmlForSectionOverview(chosenSummons.getAll(), SectionHelpers.MasonryType, { addSearch: true, filterKey: this.getSearchFilterKey('learned_summons'), variables });
         summonsContainer.appendChild(chosenSummonsOverview.container);
         chosenSummonsOverview.listElement.setAttribute('placeholder', 'No summons learned yet...');
 
@@ -455,7 +459,7 @@ class CharacterCreatorHelpers {
 
         summonsContainer.appendChild(hb(4));
         summonsContainer.appendChild(fromHTML(`<h1>Available Summons`));
-        let availableSummonsOverview = SectionHelpers.generateStructuredHtmlForSectionOverview(availableSummons, SectionHelpers.MasonryType, { addSearch: true, variables });
+        let availableSummonsOverview = SectionHelpers.generateStructuredHtmlForSectionOverview(availableSummons, SectionHelpers.MasonryType, { addSearch: true, filterKey: this.getSearchFilterKey('available_summons'), variables });
         summonsContainer.appendChild(availableSummonsOverview.container);
         let noSummonsElement = fromHTML(`<div class="hide" placeholder="No more summons available...">`);
         summonsContainer.appendChild(noSummonsElement);
@@ -806,7 +810,7 @@ class CharacterCreatorHelpers {
 
         element.appendChild(hb(4));
         element.appendChild(fromHTML(`<h1>Learned Masteries`));
-        let chosenOverview = SectionHelpers.generateStructuredHtmlForSectionOverview(chosenMasteries.getAll().map(mastery => Registries.masteries.get(mastery) ?? mastery), SectionHelpers.MasonryType, { addSearch: true, variables });
+        let chosenOverview = SectionHelpers.generateStructuredHtmlForSectionOverview(chosenMasteries.getAll().map(mastery => Registries.masteries.get(mastery) ?? mastery), SectionHelpers.MasonryType, { addSearch: true, filterKey: this.getSearchFilterKey('learned_masteries'), variables });
         element.appendChild(chosenOverview.container);
         chosenOverview.listElement.setAttribute('placeholder', 'No masteries learned yet...');
         function updateChosenOverview() {
@@ -862,7 +866,7 @@ class CharacterCreatorHelpers {
         element.appendChild(hb(4));
         element.appendChild(fromHTML(`<h1>Available Masteries`));
         let availableMasteries = Registries.masteries.filter(t => chosenPaths.has(AbilitySectionHelpers.getMainCategory(t)));
-        let availableOverview = SectionHelpers.generateStructuredHtmlForSectionOverview(availableMasteries, SectionHelpers.MasonryType, { addSearch: true, variables });
+        let availableOverview = SectionHelpers.generateStructuredHtmlForSectionOverview(availableMasteries, SectionHelpers.MasonryType, { addSearch: true, filterKey: this.getSearchFilterKey('available_masteries'), variables });
         element.appendChild(availableOverview.container);
         let noMasteriesElement = fromHTML(`<div class="hide" placeholder="No more masteries available...">`);
         element.appendChild(noMasteriesElement);

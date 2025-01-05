@@ -623,6 +623,7 @@ class StructuredSectionHtml {
         element._structuredSection = this;
         wrapperElement._section = section;
         wrapperElement._structuredSection = this;
+        element._variables = settings.variables;
     }
 
     addSubSection(subSection, insertSettings = {}) {
@@ -678,7 +679,7 @@ class StructuredSectionOverviewHtml {
     initSearch() {
         if (!this.searchContainer || this.didSearchInit) return;
         this.didSearchInit = true;
-        this.search = new SectionSearch(this.searchContainer, [this]);
+        this.search = new SectionSearch(this.searchContainer, [this], {filterKey: this.settings.filterKey});
         this.searchContainer._search = this.search;
     }
 

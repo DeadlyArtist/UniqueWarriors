@@ -227,7 +227,7 @@ class Tooltip {
             }
         } else if (attribute == 'tooltip-path') {
             let sections = SectionHelpers.resolveMultipleSectionsExpression(value);
-            let variables = HtmlHelpers.getClosestProperty(tooltip.target, "_structuredSection")?.settings?.variables;
+            let variables = HtmlHelpers.getClosestProperty(tooltip.target, "_variables");
             Tooltip.cardTooltip(tooltip, SectionHelpers.generateStructuredHtmlForSectionOverview(sections, SectionHelpers.TextType, { removeTopLineHeight: true, variables }).container);
         }
     }
