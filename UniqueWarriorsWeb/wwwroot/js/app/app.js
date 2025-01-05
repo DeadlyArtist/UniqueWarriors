@@ -5,7 +5,7 @@ class App {
     static titleSuffix = " - Unique Warriors | Cyberfantasy";
     static name = "Cyberfantasy: Unique Warriors";
     static securityId = "_cyberfantasy_unique_warriors_123";
-    static version = "1.0.0";
+    static version = "2.0.0";
 
     static setup() {
         window.addEventListener('hashchange', this.#onHashChange);

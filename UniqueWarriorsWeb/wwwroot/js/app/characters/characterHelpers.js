@@ -255,6 +255,7 @@ class CharacterHelpers {
             const section = CharacterHelpers.getCharacterSection(character);
             section.title = null;
             const structuredSection = SectionHelpers.generateStructuredHtmlForSection(section, settings);
+
             element.appendChild(structuredSection.element);
             structuredSection.element.classList.add("character-summary");
             element.appendChild(hb(4));

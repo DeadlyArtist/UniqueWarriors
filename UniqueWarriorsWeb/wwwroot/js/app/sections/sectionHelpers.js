@@ -384,7 +384,7 @@ class SectionHelpers {
 
         let content = section.content;
         let attributes = section.attributes;
-        let newVariables = settings.variables ??= new Map();
+        let newVariables = settings.variables ?? new Map();
         let hasLevel = false;
         let isNPC = section.npc != null;
         let npc = section.npc;
