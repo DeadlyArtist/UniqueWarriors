@@ -377,7 +377,8 @@ class SectionHelpers {
 
     static regenerateHtmlForStructuredSection(structuredSection, firstRun = false) {
         let section = structuredSection.section;
-        let settings = clone(structuredSection.settings);
+        let settings = { ...structuredSection.settings };
+        if (settings.variables) settings.variables = new Map(settings.variables);
         let sectionElement = structuredSection.element;
         sectionElement.innerHTML = '';
         structuredSection.subSections.clear();
