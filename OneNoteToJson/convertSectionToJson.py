@@ -110,7 +110,6 @@ def rawsectionize(htmlsection: str) -> RawSection:
     if (nextHeader != -1):
         htmlsection = substring_before_first(htmlsection, nextHeader)
     htmlsection = htmlsection.replace('\r\n  ', ' ').replace('\n', ' ').replace('\r', '').replace('&nbsp;', '')
-    htmlsection = htmlHelpers.unescape(htmlsection)
     
     # Transform html links to markdown syntax
     htmlsection = re.sub(
@@ -121,6 +120,8 @@ def rawsectionize(htmlsection: str) -> RawSection:
     
     title = substring_before_first(htmlsection, "</")
     title = substring_after_last(title, ">")
+    title = htmlHelpers.unescape(title)
+    
     rawtable = ""
     paragraphs = []
     if "<div" in htmlsection:
@@ -133,6 +134,7 @@ def rawsectionize(htmlsection: str) -> RawSection:
     while (i < len(paragraphs)):
         paragraphs[i] = substring_after_first(paragraphs[i], ">")
         paragraphs[i] = substring_before_first(paragraphs[i], "</")
+        paragraphs[i] = htmlHelpers.unescape(paragraphs[i])
         i += 1
 
     table = []
@@ -150,6 +152,7 @@ def rawsectionize(htmlsection: str) -> RawSection:
             for i in range(len(rawvalues)):
                 rawvalues[i] = substring_before_first(rawvalues[i], "</")
                 rawvalues[i] = substring_after_last(rawvalues[i], ">")
+                rawvalues[i] = htmlHelpers.unescape(rawvalues[i])
                 values.append(rawvalues[i])
             table.append(values)
 
