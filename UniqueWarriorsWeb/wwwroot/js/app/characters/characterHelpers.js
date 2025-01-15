@@ -1,7 +1,7 @@
 class CharacterHelpers {
     static defaultName = "New Character";
-    static scalingStatNames = new Set(["Level", "Rank", "Tier", "Max Runes", "Attribute Increases", "Attribute Maximum"]);
-    static attributeStatNames = new Set(["Max Health", "Speed", "Power", "Evasion", "Accuracy", "Initiative", "Luck", "Range"]);
+    static scalingStatNames = new Set(["Level", "Rank", "Tier", "Attribute Increases", "Attribute Maximum", "Max Runes", "Max Energy", "Energy Recovery"]);
+    static attributeStatNames = new Set(["Max Health", "Base Shield", "Regeneration", "Speed", "Power", "Evasion", "Accuracy", "Consistency", "Agility", "Potential", "Luck", "Reflex", "Initiative", "Genius", "Multitasking", "Range"]);
     static staticStatNames = new Set(["Graze Range", "Crit Range", "Reach", "Size", "Actions", "Move Actions", "Quick Actions"]);
     static allStatNames = new Set();
 
@@ -18,12 +18,20 @@ class CharacterHelpers {
     static getBaseStats() {
         return {
             maxHealth: 20,
+            baseShield: 5,
+            regeneration: 0,
             power: 1,
             speed: 8,
             evasion: 12,
             accuracy: 2,
+            consistency: 0,
+            agility: 0,
+            potential: 0,
             luck: 1,
+            reflex: 0,
             initiative: 2,
+            genius: 0,
+            multitasking: 2,
             range: 24,
             grazeRange: 5,
             critRange: 1,
@@ -31,19 +39,26 @@ class CharacterHelpers {
             size: 2,
             actions: 2,
             moveActions: 1,
-            quickActions: 3,
+            quickActions: 1,
         };
     }
 
     static getEmptyAttributes() {
         return {
             maxHealth: 0,
+            baseShield: 0,
+            regeneration: 0,
             power: 0,
             speed: 0,
             evasion: 0,
             accuracy: 0,
+            consistency: 0,
+            agility: 0,
+            potential: 0,
             luck: 0,
-            initiative: 0,
+            reflex: 0,
+            genius: 0,
+            multitasking: 0,
             range: 0,
         };
     }
@@ -343,8 +358,16 @@ class CharacterHelpers {
         let attributeStats = character.getAttributeStats();
         let staticStats = character.getStaticStats();
         let scalingStats = character.getScalingStats();
+
+        if (!settings.keepEnergy) {
+            attributeStats.maxEnergy = scalingStats.maxEnergy;
+            attributeStats.energyRecovery = scalingStats.energyRecovery;
+            delete scalingStats.maxEnergy;
+            delete scalingStats.energyRecovery;
+        }
+
         if (character.isSummon?.()) {
-            let badAttributes = new Set(["Luck", "Initiative"]);
+            let badAttributes = new Set(["Regeneration", "Consistency", "Agility", "Potential", "Luck", "Reflex", "Initiative", "Genius", "Multitasking", "Max Energy", "Energy Recovery"]);
             attributeStats = ObjectHelpers.filterProperties(attributeStats, key => !badAttributes.has(toTextCase(key)));
         }
         if (character.isImmobile?.()) {
@@ -352,6 +375,7 @@ class CharacterHelpers {
             attributeStats = ObjectHelpers.filterProperties(attributeStats, key => !badAttributes.has(toTextCase(key)));
             staticStats = ObjectHelpers.filterProperties(staticStats, key => !badAttributes.has(toTextCase(key)));
         }
+
         function addStats(stats, element) {
             for (let [name, value] of Object.entries(stats)) {
                 let displayName = CharacterHelpers.getStatName(name);
@@ -553,6 +577,8 @@ class CharacterHelpers {
                 quickActionAbilityList = SectionHelpers.generateStructuredHtmlForSectionOverview(quickActionAbilities, SectionHelpers.MasonryType, { ...settings, title: "Quick Actions", variables, hideIfEmpty: true, });
                 otherAbilityList = SectionHelpers.generateStructuredHtmlForSectionOverview(otherAbilities, SectionHelpers.MasonryType, { ...settings, title: "Other", variables, hideIfEmpty: true, });
                 summonsList = SectionHelpers.generateStructuredHtmlForSectionOverview(summons, SectionHelpers.MasonryType, { ...settings, title: "Summons", variables, hideIfEmpty: true, });
+
+                if (!settings.simple) for (let list of [masteriesList, triggeredAbilityList, moveActionAbilityList, actionAbilityList, quickActionAbilityList, otherAbilityList, summonsList]) list.listElement.setAttribute('placeholder', "No matching abilities found...");
             } else {
                 masteriesList = this.generateAbilityListHtml(character, masteries, { ...settings, title: "Masteries", variables, hideIfEmpty: true, });
                 triggeredAbilityList = this.generateAbilityListHtml(character, triggeredAbilities, { ...settings, title: "Triggered", variables, hideIfEmpty: true, });
@@ -755,6 +781,8 @@ class StructuredAbilityListHtml {
 
         container._structuredAbilityList = this;
         listElement._structuredAbilityList = this;
+
+        if (this.settings.hideIfEmpty) this.container.classList.add("hide");
     }
 
     initSearch() {

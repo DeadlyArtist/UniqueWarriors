@@ -340,8 +340,10 @@ class SectionReferenceHelpers {
             const pathsByTarget = {};
             for (const snippet of snippets) pathsByTarget[escapeHTML(snippet.target).toLowerCase()] = snippet.path;
 
+            let exactMatches = new Set(snippets.filter(s => s.exact).map(s => s.target.toLowerCase()));
+            let unexactMatches = snippets.filter(s => !s.exact).map(s => s.target);
             // Generate regex for this group of snippets
-            const regex = new RegExp("\\b(" + snippets.map(k => escapeRegex(escapeHTML(k.target))).join("|") + ")(s?)\\b", "gi");
+            const regex = new RegExp("\\b(" + unexactMatches.map(k => escapeRegex(escapeHTML(k))).join("|") + ")(s?)\\b", "gi");
 
             // Get text nodes within the whitelist/blacklist scope
             const nodes = getTextNodesFromArray(snippetElements, {
@@ -352,6 +354,20 @@ class SectionReferenceHelpers {
             // Replace text content with highlighted snippet targets
             for (let node of nodes) {
                 const oldHtml = escapeHTML(node.textContent);
+
+                if (exactMatches.has(node.textContent.toLowerCase())) {
+                    let targetPath = pathsByTarget[oldHtml.toLowerCase()];
+                    let section = HtmlHelpers.getClosestProperty(node, '_section');
+                    let sectionPath = section?.getPath();
+                    if (!sectionPath || sectionPath.split('*')[0] != SectionReferenceHelpers.pathEncoder.encode(targetPath.split('*')[0])) {
+                        let html = `<span class="snippetTarget" tooltip-path="${escapeHTML(targetPath)}">${oldHtml}</span>`;
+                        replaceTextNodeWithHTML(node, html);
+                        continue;
+                    };
+                }
+
+                if (unexactMatches.length == 0) continue;
+                
                 const newHtml = oldHtml.replace(regex, function (matched, matchedTarget, maybeS) {
                     let targetPath = pathsByTarget[matchedTarget.toLowerCase()];
                     let section = HtmlHelpers.getClosestProperty(node, '_section');

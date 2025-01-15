@@ -666,7 +666,9 @@ class StructuredSectionOverviewHtml {
 
         container._sectionOverview = this;
         listElement._sectionOverview = this;
+
         this.updateSearchDisplay();
+        if (this.settings.hideIfEmpty) this.container.classList.add("hide");
     }
 
     updateSearchDisplay() {
@@ -691,6 +693,8 @@ class StructuredSectionOverviewHtml {
         HtmlHelpers.insertAt(this.listElement, this.sections.getIndex(structuredSection), structuredSection.wrapperElement);
 
         this.updateSearchDisplay();
+        if (this.settings.hideIfEmpty && this.sections.size != 0) this.container.classList.remove("hide");
+
         return structuredSection;
     }
 
@@ -699,6 +703,8 @@ class StructuredSectionOverviewHtml {
         if (!structuredSection) return;
         structuredSection.wrapperElement.remove();
         this.sections.unregister(structuredSection);
+
         this.updateSearchDisplay();
+        if (this.settings.hideIfEmpty && this.sections.size == 0) this.container.classList.add("hide");
     }
 }

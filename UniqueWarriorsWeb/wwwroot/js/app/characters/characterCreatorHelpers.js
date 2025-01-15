@@ -1063,7 +1063,7 @@ class CharacterCreatorHelpers {
 
         function updateStats() {
             statsContainer.innerHTML = "";
-            statsContainer.appendChild(CharacterHelpers.generateStatsHtml(character));
+            statsContainer.appendChild(CharacterHelpers.generateStatsHtml(character, {keepEnergy: true}));
         }
 
         function updateAll() {

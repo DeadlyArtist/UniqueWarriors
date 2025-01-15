@@ -86,7 +86,11 @@ class Snippets {
             new Snippet("level", "rules/Stats/Scaling Stats/Level"),
             new Snippet("rank", "rules/Stats/Scaling Stats/Rank"),
             new Snippet("tier", "rules/Stats/Scaling Stats/Tier"),
+            new Snippet("max runes", "rules/Stats/Scaling Stats/Max Runes"),
+            new Snippet("max energy", "rules/Stats/Scaling Stats/Max Energy"),
+            new Snippet("energy recovery", "rules/Stats/Scaling Stats/Energy Recovery"),
             new Snippet("max health", "rules/Stats/Attribute Stats/Max Health"),
+            new Snippet("base shield", "rules/Stats/Attribute Stats/Base Shield"),
             new Snippet("power", "rules/Stats/Attribute Stats/Power"),
             new Snippet("speed", "rules/Stats/Attribute Stats/Speed"),
 
@@ -113,16 +117,18 @@ class Snippets {
             new Snippet("Teleportation", "rules/Descriptive Tags/Teleportation", { whitelist: "tags" }),
             new Snippet("Base Damage", "rules/Mutations/Base Damage", { whitelist: "tags" }),
             new Snippet("scaling", "rules/Stats/Scaling Stats/Scaling", { whitelist: "tags" }),
+            new Snippet("regeneration", "rules/Stats/Attribute Stats/Regeneration", { whitelist: "tags" }),
+            new Snippet("consistency", "rules/Stats/Attribute Stats/Consistency", { whitelist: "tags" }),
+            new Snippet("Potential", "rules/Stats/Attribute Stats/Potential", { whitelist: "tags" }),
+            new Snippet("agility", "rules/Stats/Attribute Stats/Agility", { whitelist: "tags" }),
             new Snippet("luck", "rules/Stats/Attribute Stats/Luck", { whitelist: "tags" }),
-            new Snippet("initiative", "rules/Stats/Attribute Stats/Initiative"),
+            new Snippet("reflex", "rules/Stats/Attribute Stats/Reflex", { whitelist: "tags" }),
+            new Snippet("initiative", "rules/Stats/Attribute Stats/Initiative", { whitelist: "tags" }),
+            new Snippet("genius", "rules/Stats/Attribute Stats/Genius", { whitelist: "tags" }),
+            new Snippet("multitasking", "rules/Stats/Attribute Stats/Multitasking", { whitelist: "tags" }),
             new Snippet("range", "rules/Stats/Attribute Stats/Range", { whitelist: "tags" }),
             new Snippet("reach", "rules/Stats/Static Stats/Reach", { whitelist: "tags" }),
             new Snippet("size", "rules/Stats/Static Stats/Size", { whitelist: "tags" }),
-
-            // Duplicates to avoid tag only conflicts
-            new Snippet("max health", "rules/Stats/Attribute Stats/Max Health", { whitelist: "tags" }),
-            new Snippet("Graze Range", "rules/Attacks/Attack Resolution/Attack Roll Formulas", { whitelist: "tags" }),
-            new Snippet("Crit Range", "rules/Attacks/Attack Resolution/Attack Roll Formulas", { whitelist: "tags" }),
         ]
     }
 

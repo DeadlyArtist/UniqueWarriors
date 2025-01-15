@@ -89,8 +89,10 @@ class NPC {
         let level = this.stats.level;
         let importance = this.stats.importance;
         let rank = 1 + Math.floor(level / 5);
-        let tier = 1 + Math.floor(level / 15);
+        let tier = 1 + Math.floor(level / 10);
         let scaling = importance + rank - tier;
+        let maxEnergy = rank * 3 * importance;
+        let energyRecovery = rank * importance;
 
         return {
             level,
@@ -98,6 +100,8 @@ class NPC {
             rank,
             tier,
             scaling,
+            maxEnergy,
+            energyRecovery,
         };
     }
 
@@ -105,24 +109,34 @@ class NPC {
         let baseStats = { ...NPCHelpers.getBaseStats(), ...(this.baseStatOverrides ?? {}) };
         let { tier, importance } = this.getScalingStats();
         let attributes = this.getAttributes();
-        let maxHealth = (baseStats.maxHealth + tier * 8 + attributes.maxHealth * 2) * Math.pow(2, importance);
+        let maxHealth = (baseStats.maxHealth + tier * 6 + attributes.maxHealth * 2) * Math.pow(2, importance);
+        let baseShield = (baseStats.baseShield + tier * 2 + attributes.baseShield * 3) * Math.pow(2, importance);
+        let regeneration = baseStats.regeneration;
         let power = baseStats.power + attributes.power * 1;
         let speed = baseStats.speed + attributes.speed * 2;
         let evasion = baseStats.evasion + attributes.evasion * 1;
         let accuracy = baseStats.accuracy + attributes.accuracy * 1;
+        let consistency = baseStats.consistency;
+        let potential = baseStats.potential;
         let luck = baseStats.luck + importance;
-        let initiative = baseStats.initiative + importance * 2 + attributes.initiative * 3;
+        let reflex = baseStats.reflex;
+        let initiative = baseStats.initiative + importance * 2 + reflex * 3;
         let range = baseStats.range + attributes.range * 6;
 
         if (this.isImmobile()) speed = 0;
 
         return {
             maxHealth: this.statOverrides.maxHealth ?? maxHealth,
+            baseShield: this.statOverrides.baseShield ?? baseShield,
+            regeneration: this.statOverrides.regeneration ?? regeneration,
             power: this.statOverrides.power ?? power,
             speed: this.statOverrides.speed ?? speed,
             evasion: this.statOverrides.evasion ?? evasion,
             accuracy: this.statOverrides.accuracy ?? accuracy,
+            consistency: this.statOverrides.consistency ?? consistency,
+            potential: this.statOverrides.potential ?? potential,
             luck: this.statOverrides.luck ?? luck,
+            reflex: this.statOverrides.reflex ?? reflex,
             initiative: this.statOverrides.initiative ?? initiative,
             range: this.statOverrides.range ?? range,
         };
@@ -141,14 +155,14 @@ class NPC {
             size: this.statOverrides.size ?? baseStats.size,
             actions: this.statOverrides.actions ?? (baseStats.actions + importance),
             moveActions: this.statOverrides.moveActions ?? moveActions,
-            quickActions: this.statOverrides.quickActions ?? (baseStats.quickActions + importance),
+            quickActions: this.statOverrides.quickActions ?? (baseStats.quickActions + Math.ceil(importance / 2)),
         };
     }
 
     getAttributes() {
         let boons = this.boons;
         let { scaling } = this.getScalingStats();
-        let attributes = CharacterHelpers.getEmptyAttributes();
+        let attributes = NPCHelpers.getEmptyAttributes();
         for (let [key, value] of Object.entries(attributes)) {
             let boon = boons[key] ?? 0;
             attributes[key] = scaling + value + boon;

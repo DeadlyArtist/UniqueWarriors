@@ -64,18 +64,22 @@ class Character {
     getScalingStats() {
         let level = this.stats.level;
         let rank = 1 + Math.floor(level / 5);
-        let tier = 1 + Math.floor(level / 15);
-        let maxRunes = 1 + Math.floor(level / 10);
+        let tier = 1 + Math.floor(level / 10);
         let attributeIncreases = this.getMaxAttributeIncreases();
         let attributeMaximum = 2 + rank - tier;
+        let maxRunes = tier;
+        let maxEnergy = rank * 3;
+        let energyRecovery = rank;
 
         return {
             level,
             rank,
             tier,
-            maxRunes,
             attributeIncreases,
             attributeMaximum,
+            maxRunes,
+            maxEnergy,
+            energyRecovery,
         };
     }
 
@@ -83,22 +87,38 @@ class Character {
         let baseStats = { ...CharacterHelpers.getBaseStats(), ...(this.baseStatOverrides ?? {}) };
         let { tier } = this.getScalingStats();
         let maxHealth = baseStats.maxHealth + tier * 20 + this.attributes.maxHealth * 10;
+        let baseShield = baseStats.baseShield + tier * 5 + this.attributes.baseShield * 5;
+        let regeneration = baseStats.regeneration + this.attributes.regeneration * 1;
         let power = baseStats.power + this.attributes.power * 1;
         let speed = baseStats.speed + this.attributes.speed * 2;
         let evasion = baseStats.evasion + this.attributes.evasion * 1;
         let accuracy = baseStats.accuracy + this.attributes.accuracy * 1;
+        let consistency = baseStats.consistency + this.attributes.consistency * 1;
+        let agility = baseStats.agility + this.attributes.agility * 1;
+        let potential = baseStats.potential + this.attributes.potential * 1;
         let luck = baseStats.luck + this.attributes.luck * 1;
-        let initiative = baseStats.initiative + this.attributes.initiative * 3;
+        let reflex = baseStats.reflex + this.attributes.reflex * 1;
+        let initiative = baseStats.initiative + reflex * 3;
+        let genius = baseStats.genius + this.attributes.genius * 3;
+        let multitasking = baseStats.multitasking + this.attributes.multitasking * 1;
         let range = baseStats.range + this.attributes.range * 6;
 
         return {
             maxHealth: this.statOverrides.maxHealth ?? maxHealth,
+            baseShield: this.statOverrides.baseShield ?? baseShield,
+            regeneration: this.statOverrides.regeneration ?? regeneration,
             power: this.statOverrides.power ?? power,
             speed: this.statOverrides.speed ?? speed,
             evasion: this.statOverrides.evasion ?? evasion,
             accuracy: this.statOverrides.accuracy ?? accuracy,
+            consistency: this.statOverrides.consistency ?? consistency,
+            agility: this.statOverrides.agility ?? agility,
+            potential: this.statOverrides.potential ?? potential,
             luck: this.statOverrides.luck ?? luck,
+            reflex: this.statOverrides.reflex ?? reflex,
             initiative: this.statOverrides.initiative ?? initiative,
+            genius: this.statOverrides.genius ?? genius,
+            multitasking: this.statOverrides.multitasking ?? multitasking,
             range: this.statOverrides.range ?? range,
         };
     }
@@ -159,7 +179,8 @@ class Character {
 
     getMaxTechniques() {
         let level = this.stats.level;
-        let techniques = 3; // one of which is a weapon core technique
+        let { genius } = this.getAttributeStats();
+        let techniques = 3 + genius; // one of which is a weapon core technique
         if (level >= 2) techniques += 2;
         if (level >= 3) techniques += 2;
         if (level >= 4) techniques += 2;
