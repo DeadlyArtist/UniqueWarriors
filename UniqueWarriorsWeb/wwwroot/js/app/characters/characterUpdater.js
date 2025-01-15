@@ -5,6 +5,12 @@ class CharacterUpdater {
 
     static update(character) {
         this.updateAttributes(character);
+
+        this.updateVersion(character);
+    }
+
+    static updateVersion(character) {
+        character.version = App.version;
     }
 
     static updateAttributes(character) {

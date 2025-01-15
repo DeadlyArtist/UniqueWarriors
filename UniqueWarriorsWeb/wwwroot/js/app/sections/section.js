@@ -1,20 +1,21 @@
 class Section {
-    constructor(section) {
-        section ??= {};
-        this.id = section.id;
-        this.title = section.title;
-        this.height = section.height ?? 0;
-        this.attributes = section.attributes ?? [];
-        this.content = section.content ?? null;
-        this.table = section.table ?? null;
-        this.tableHeaderLocation = section.tableHeaderLocation ?? null;
+    constructor(settings) {
+        settings ??= {};
+        this.id = settings.id;
+        this.version = settings.version ?? App.version;
+        this.title = settings.title;
+        this.height = settings.height ?? 0;
+        this.attributes = settings.attributes ?? [];
+        this.content = settings.content ?? null;
+        this.table = settings.table ?? null;
+        this.tableHeaderLocation = settings.tableHeaderLocation ?? null;
         this.subSections = new Registry();
-        if (section.subSections) for (const subSection of section.subSections) this.addSubSection(subSection);
-        this.npc = section.npc;
+        if (settings.subSections) for (const subSection of settings.subSections) this.addSubSection(subSection);
+        this.npc = settings.npc;
 
         // Custom
-        this.parent = section.parent ?? null;
-        this.anchor = section.anchor ?? null;
+        this.parent = settings.parent ?? null;
+        this.anchor = settings.anchor ?? null;
         this.headValues = new Map();
         this.tags = new Set();
 
@@ -266,6 +267,7 @@ class Section {
     toJSON() {
         return {
             id: this._overrideId,
+            version: this.version,
             title: this.title,
             height: this.height,
             attributes: SectionAttributesHelpers.toJSON(this.attributes),

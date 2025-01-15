@@ -348,7 +348,7 @@ class CharacterHelpers {
 
     static generateStatsHtml(character, settings = null) {
         settings ??= {};
-        let statsContainer = fromHTML(`<div class="character-stats listHorizontal gap-2">`);
+        let statsContainer = fromHTML(`<div class="character-stats divList gap-2">`);
         let attributeStatsBar = fromHTML(`<div class="character-attributeStats listHorizontal gap-2">`);
         statsContainer.appendChild(attributeStatsBar);
         let staticStatsBar = fromHTML(`<div class="character-staticStats listHorizontal gap-2 hide">`);

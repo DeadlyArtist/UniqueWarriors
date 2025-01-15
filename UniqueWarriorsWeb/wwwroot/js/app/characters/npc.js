@@ -3,6 +3,7 @@ class NPC {
         settings ??= {};
 
         this.id = settings.id ?? generateUniqueId();
+        this.version = settings.version ?? App.version;
         this.timestamp = settings.timestamp ?? Date.now();
         this.imageUrl = settings.imageUrl ?? null;
         this.settings = settings.settings ?? {};
@@ -188,6 +189,7 @@ class NPC {
     toJSON() {
         return {
             id: this.id,
+            version: this.version,
             timestamp: this.timestamp,
             imageUrl: this.imageUrl,
             name: this.name,
