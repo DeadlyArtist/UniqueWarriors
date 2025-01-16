@@ -9,10 +9,10 @@ A Cyberfantasy flavored TTRPG about tactical combat where you juggle a lot of op
 https://uniquewarriors.deadlyartist.com/
 
 ### Stats
-Dice System: d20s for attack rolls, d4s to d12s for damage
-Measurement System: Metric
-Genre: Cyberfantasy (Cyberpunk x High Fantasy x SciFi)
-Official Settings: None (for now)
+Dice System: d20s for attack rolls, d4s to d12s for damage  
+Measurement System: Metric  
+Genre: Cyberfantasy (Cyberpunk x High Fantasy x SciFi)  
+Official Settings: None (for now)  
 
 ### Progression Fantasy
 Satisfying progression over the course of 30 levels.
