@@ -536,7 +536,16 @@ class CharacterHelpers {
             let combinedAbilityList = this.generateAbilityListHtml(character, [...abilities, ...summons], { ...settings, variables, hideIfEmpty: true, });
             abilitiesContainer.appendChild(combinedAbilityList.container);
         } else {
-            let abilities = character.techniques.getAll().concat(this.getDefaultAbilities());
+            let stats = character.getStats();
+            let abilities = character.techniques.getAll().concat(this.getDefaultAbilities().filter(ability => {
+                if (ability.title == "Dodge" && stats.agility <= 0) return false;
+                if (ability.title == "Self Correction" && stats.consistency <= 0) return false;
+                if (ability.title == "Overexert" && stats.potential <= 0) return false;
+                if (ability.title == "Spend Luck" && stats.luck <= 0) return false;
+                if (ability.title == "Subconscious Impulse" && stats.reflex <= 0) return false;
+
+                return true;
+            }));
             let masteries = character.masteries.getAll();
             let triggeredAbilities = [];
             let moveActionAbilities = [];
