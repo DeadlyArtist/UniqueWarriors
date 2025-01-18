@@ -87,8 +87,8 @@ class Character {
     getAttributeStats() {
         let baseStats = { ...CharacterHelpers.getBaseStats(), ...(this.baseStatOverrides ?? {}) };
         let { tier } = this.getScalingStats();
-        let maxHealth = baseStats.maxHealth + tier * 20 + this.attributes.maxHealth * 8;
-        let baseShield = baseStats.baseShield + tier * 5 + this.attributes.baseShield * 10;
+        let maxHealth = baseStats.maxHealth + level * 3 + this.attributes.maxHealth * 8;
+        let baseShield = baseStats.baseShield + level * 1 + this.attributes.baseShield * 10;
         let regeneration = baseStats.regeneration + this.attributes.regeneration * 1;
         let power = baseStats.power + this.attributes.power * 1;
         let speed = baseStats.speed + this.attributes.speed * 2;
