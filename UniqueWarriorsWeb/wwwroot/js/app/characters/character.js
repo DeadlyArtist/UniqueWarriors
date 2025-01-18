@@ -87,8 +87,8 @@ class Character {
     getAttributeStats() {
         let baseStats = { ...CharacterHelpers.getBaseStats(), ...(this.baseStatOverrides ?? {}) };
         let { tier } = this.getScalingStats();
-        let maxHealth = baseStats.maxHealth + tier * 20 + this.attributes.maxHealth * 10;
-        let baseShield = baseStats.baseShield + tier * 5 + this.attributes.baseShield * 5;
+        let maxHealth = baseStats.maxHealth + tier * 20 + this.attributes.maxHealth * 8;
+        let baseShield = baseStats.baseShield + tier * 5 + this.attributes.baseShield * 10;
         let regeneration = baseStats.regeneration + this.attributes.regeneration * 1;
         let power = baseStats.power + this.attributes.power * 1;
         let speed = baseStats.speed + this.attributes.speed * 2;
@@ -154,20 +154,18 @@ class Character {
 
     getMaxAttributeIncreases() {
         let level = this.stats.level;
-        let attributeIncreases = 4;
-        if (level >= 2) attributeIncreases += 1;
-        if (level >= 3) attributeIncreases += 1;
-        if (level >= 4) attributeIncreases += 2;
+        let attributeIncreases = 8;
+        if (level >= 2) attributeIncreases += 4;
+        if (level >= 4) attributeIncreases += 4;
         if (level >= 5) attributeIncreases += 2;
-        if (level >= 6) attributeIncreases += 2;
+        if (level >= 6) attributeIncreases += 1;
         if (level >= 7) attributeIncreases += 1;
         if (level >= 9) attributeIncreases += 1;
-        if (level >= 10) attributeIncreases += 2;
         if (level >= 11) attributeIncreases += 1;
         if (level >= 13) attributeIncreases += 1;
+        if (level >= 15) attributeIncreases += 2;
         if (level >= 16) attributeIncreases += 1;
         if (level >= 18) attributeIncreases += 1;
-        if (level >= 20) attributeIncreases += 2;
         if (level >= 21) attributeIncreases += 1;
         if (level >= 22) attributeIncreases += 1;
         if (level >= 24) attributeIncreases += 1;
