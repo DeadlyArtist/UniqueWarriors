@@ -463,6 +463,13 @@ class CharacterHelpers {
         let remainingAscendancies = CharacterCreatorHelpers.getRemainingAscendancies(character);
         if (remainingAscendancies < 0) validationMessages.push(`${-remainingAscendancies} too many ascendancies`);
 
+        let remainingAttributeIncreases = character.getRemainingAttributeIncreases();
+        if (remainingAttributeIncreases < 0) validationMessages.push(`${-remainingAttributeIncreases} too many attribute increases used`);
+        let { attributeMaximum } = character.getScalingStats();
+        for (let [key, value] of Object.entries(character.attributes)) {
+            if (value > attributeMaximum) validationMessages.push(`Attribute "${toTextCase(key)}" is above the maximum of ${attributeMaximum}`);
+        }
+
         return validationMessages;
     }
 
