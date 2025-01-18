@@ -86,17 +86,17 @@ class Character {
 
     getAttributeStats() {
         let baseStats = { ...CharacterHelpers.getBaseStats(), ...(this.baseStatOverrides ?? {}) };
-        let { tier, level } = this.getScalingStats();
-        let maxHealth = baseStats.maxHealth + level * 3 + this.attributes.maxHealth * 8;
-        let baseShield = baseStats.baseShield + level * 1 + this.attributes.baseShield * 10;
-        let regeneration = baseStats.regeneration + this.attributes.regeneration * 1;
-        let power = baseStats.power + this.attributes.power * 1;
+        let { level, tier, rank } = this.getScalingStats();
+        let maxHealth = baseStats.maxHealth + level * 3 + this.attributes.maxHealth * rank * 4;
+        let baseShield = baseStats.baseShield + level * 1 + this.attributes.baseShield * rank * 5;
+        let regeneration = baseStats.regeneration + this.attributes.regeneration * tier * 1;
+        let power = baseStats.power + this.attributes.power * tier * 1;
         let speed = baseStats.speed + this.attributes.speed * 2;
         let evasion = baseStats.evasion + this.attributes.evasion * 1;
         let accuracy = baseStats.accuracy + this.attributes.accuracy * 1;
         let consistency = baseStats.consistency + this.attributes.consistency * 1;
         let agility = baseStats.agility + this.attributes.agility * 1;
-        let potential = baseStats.potential + this.attributes.potential * 1;
+        let potential = baseStats.potential + this.attributes.potential * tier * 1;
         let luck = baseStats.luck + this.attributes.luck * 1;
         let reflex = baseStats.reflex + this.attributes.reflex * 1;
         let initiative = baseStats.initiative + reflex * 3;

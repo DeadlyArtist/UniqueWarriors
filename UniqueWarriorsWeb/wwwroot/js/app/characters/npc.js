@@ -110,10 +110,10 @@ class NPC {
         let baseStats = { ...NPCHelpers.getBaseStats(), ...(this.baseStatOverrides ?? {}) };
         let { tier, importance } = this.getScalingStats();
         let attributes = this.getAttributes();
-        let maxHealth = (baseStats.maxHealth + tier * 6 + attributes.maxHealth * 2) * Math.pow(2, importance);
-        let baseShield = (baseStats.baseShield + tier * 2 + attributes.baseShield * 3) * Math.pow(2, importance);
+        let maxHealth = (baseStats.maxHealth + tier * 6 + attributes.maxHealth * tier * 2) * Math.pow(2, importance);
+        let baseShield = (baseStats.baseShield + tier * 2 + attributes.baseShield * tier * 3) * Math.pow(2, importance);
         let regeneration = baseStats.regeneration;
-        let power = baseStats.power + attributes.power * 1;
+        let power = baseStats.power + attributes.power * tier * 1;
         let speed = baseStats.speed + attributes.speed * 2;
         let evasion = baseStats.evasion + attributes.evasion * 1;
         let accuracy = baseStats.accuracy + attributes.accuracy * 1;
