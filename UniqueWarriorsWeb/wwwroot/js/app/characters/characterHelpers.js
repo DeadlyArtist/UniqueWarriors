@@ -1,6 +1,6 @@
 class CharacterHelpers {
     static defaultName = "New Character";
-    static scalingStatNames = new Set(["Level", "Rank", "Tier", "Attribute Increases", "Attribute Maximum", "Max Runes", "Max Energy", "Energy Recovery"]);
+    static scalingStatNames = new Set(["Level", "Rank", "Tier", "Attribute Increases", "Attribute Maximum", "Attribute Boosts", "Max Runes", "Max Energy", "Energy Recovery"]);
     static attributeStatNames = new Set(["Max Health", "Base Shield", "Regeneration", "Speed", "Power", "Evasion", "Accuracy", "Consistency", "Agility", "Potential", "Luck", "Reflex", "Initiative", "Genius", "Multitasking", "Range"]);
     static staticStatNames = new Set(["Graze Range", "Crit Range", "Reach", "Size", "Actions", "Move Actions", "Quick Actions"]);
     static allStatNames = new Set();
@@ -465,10 +465,13 @@ class CharacterHelpers {
 
         let remainingAttributeIncreases = character.getRemainingAttributeIncreases();
         if (remainingAttributeIncreases < 0) validationMessages.push(`${-remainingAttributeIncreases} too many attribute increases used`);
-        let { attributeMaximum } = character.getScalingStats();
-        for (let [key, value] of Object.entries(character.attributes)) {
-            if (value > attributeMaximum) validationMessages.push(`Attribute "${toTextCase(key)}" is above the maximum of ${attributeMaximum}`);
-        }
+        let remainingAttributeBoosts = character.getRemainingAttributeBoosts();
+        if (remainingAttributeBoosts < 0) validationMessages.push(`${-remainingAttributeBoosts} too many attribute boosts used`);
+
+        //let { attributeMaximum } = character.getScalingStats();
+        //for (let [key, value] of Object.entries(character.attributes)) {
+        //    if (value > attributeMaximum) validationMessages.push(`Attribute "${toTextCase(key)}" is above the maximum of ${attributeMaximum}`);
+        //}
 
         return validationMessages;
     }

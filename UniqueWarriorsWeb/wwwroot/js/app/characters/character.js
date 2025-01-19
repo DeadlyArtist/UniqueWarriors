@@ -68,6 +68,7 @@ class Character {
         let tier = 1 + Math.floor(level / 10);
         let attributeIncreases = this.getMaxAttributeIncreases();
         let attributeMaximum = 2 + rank - tier;
+        let attributeBoosts = this.getMaxAttributeBoosts();
         let maxRunes = tier;
         let maxEnergy = rank * 3;
         let energyRecovery = rank;
@@ -78,6 +79,7 @@ class Character {
             tier,
             attributeIncreases,
             attributeMaximum,
+            attributeBoosts,
             maxRunes,
             maxEnergy,
             energyRecovery,
@@ -137,10 +139,30 @@ class Character {
         };
     }
 
+    getRemainingAttributeIncreasesAndBoosts() {
+        let stats = this.getScalingStats();
+        let remainingAttributeIncreases = stats.attributeIncreases;
+        let attributeMaximum = stats.attributeMaximum;
+        let remainingAttributeBoosts = stats.attributeBoosts;
+        Object.entries(this.attributes).forEach(([name, value]) => {
+            remainingAttributeIncreases -= Math.min(value, attributeMaximum);
+            if (value > attributeMaximum) remainingAttributeBoosts -= value - attributeMaximum;
+        });
+        if (remainingAttributeBoosts > 0 && remainingAttributeIncreases < 0) {
+            let boostsWithinIncreases = Math.min(remainingAttributeBoosts, -remainingAttributeIncreases);
+            remainingAttributeBoosts -= boostsWithinIncreases;
+            remainingAttributeIncreases += boostsWithinIncreases;
+        }
+
+        return { remainingAttributeIncreases, remainingAttributeBoosts };
+    }
+
     getRemainingAttributeIncreases() {
-        let amount = this.getScalingStats().attributeIncreases;
-        Object.keys(this.attributes).forEach(name => amount -= [this.attributes[name]]);
-        return amount;
+        return this.getRemainingAttributeIncreasesAndBoosts().remainingAttributeIncreases;
+    }
+
+    getRemainingAttributeBoosts() {
+        return this.getRemainingAttributeIncreasesAndBoosts().remainingAttributeBoosts;
     }
 
     getVariables() {
@@ -159,21 +181,30 @@ class Character {
         if (level >= 4) attributeIncreases += 4;
         if (level >= 5) attributeIncreases += 2;
         if (level >= 6) attributeIncreases += 1;
-        if (level >= 7) attributeIncreases += 1;
         if (level >= 9) attributeIncreases += 1;
         if (level >= 11) attributeIncreases += 1;
         if (level >= 13) attributeIncreases += 1;
         if (level >= 15) attributeIncreases += 2;
         if (level >= 16) attributeIncreases += 1;
         if (level >= 18) attributeIncreases += 1;
+        if (level >= 19) attributeIncreases += 1;
         if (level >= 21) attributeIncreases += 1;
-        if (level >= 22) attributeIncreases += 1;
         if (level >= 24) attributeIncreases += 1;
         if (level >= 25) attributeIncreases += 2;
         if (level >= 26) attributeIncreases += 1;
         if (level >= 28) attributeIncreases += 1;
-        if (level >= 29) attributeIncreases += 1;
         return attributeIncreases;
+    }
+
+    getMaxAttributeBoosts() {
+        let level = this.stats.level;
+        let attributeBoosts = 0;
+        if (level >= 7) attributeBoosts += 1;
+        if (level >= 14) attributeBoosts += 1;
+        if (level >= 22) attributeBoosts += 1;
+        if (level >= 29) attributeBoosts += 1;
+
+        return attributeBoosts;
     }
 
     getMaxTechniques() {

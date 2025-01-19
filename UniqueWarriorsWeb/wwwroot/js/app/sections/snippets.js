@@ -50,6 +50,7 @@ class Snippets {
             new Snippet("attribute", "rules/Attributes"),
             new Snippet("attribute increase", "rules/Attributes/Attribute Increases"),
             new Snippet("attribute maximum", "rules/Attributes/Attribute Increases"),
+            new Snippet("attribute boost", "rules/Attributes/Attribute Boosts"),
             new Snippet("boon", "rules/Boons And Banes"),
             new Snippet("bane", "rules/Boons And Banes"),
             new Snippet("Attack", "rules/Attacks/Attack Resolution*noChildren"),

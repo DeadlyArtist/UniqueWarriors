@@ -1042,10 +1042,14 @@ class CharacterCreatorHelpers {
         function updateDescription() {
             let scalingStats = character.getScalingStats();
             let attributeIncreases = scalingStats.attributeIncreases;
-            let remainingAttributeIncreases = character.getRemainingAttributeIncreases();
             let attributeMaximum = scalingStats.attributeMaximum;
+            let attributeBoosts = scalingStats.attributeBoosts;
+            let { remainingAttributeIncreases, remainingAttributeBoosts } = character.getRemainingAttributeIncreasesAndBoosts();
+
+            let content = `Distribute ${remainingAttributeIncreases}/${attributeIncreases} attribute increases up to a maximum of ${attributeMaximum} each.`;
+            if (attributeBoosts > 0) content += ` Additionally, distribute ${remainingAttributeBoosts}/${attributeBoosts} attribute boosts to go beyond the maximum.`;
             let structuredSection = SectionHelpers.generateStructuredHtmlForSection(new Section({
-                content: `Distribute ${remainingAttributeIncreases}/${attributeIncreases} attribute increases up to a maximum of ${attributeMaximum} each.`
+                content,
             }));
 
             descriptionContainer.innerHTML = "";
@@ -1089,10 +1093,10 @@ class CharacterCreatorHelpers {
                 let newValue = InputHelpers.fixNumberInput(attributeInputElement);
 
                 let scalingStats = character.getScalingStats();
-                let remainingAttributeIncreases = character.getRemainingAttributeIncreases();
+                let { remainingAttributeIncreases, remainingAttributeBoosts } = character.getRemainingAttributeIncreasesAndBoosts();
                 let attributeMaximum = scalingStats.attributeMaximum;
-                let difference = Math.min(newValue - oldValue, remainingAttributeIncreases);
-                if (character.settings.validate) newValue = InputHelpers.constrainInput(attributeInputElement, value => clamp(oldValue + difference, 0, attributeMaximum));
+                let difference = Math.min(newValue - oldValue, remainingAttributeIncreases + remainingAttributeBoosts);
+                if (character.settings.validate) newValue = InputHelpers.constrainInput(attributeInputElement, value => clamp(oldValue + difference, 0, Math.max(oldValue, attributeMaximum) + remainingAttributeBoosts));
                 if (oldValue == newValue) return;
                 character.attributes[name] = newValue;
                 CharacterHelpers.saveCharacter(character);
