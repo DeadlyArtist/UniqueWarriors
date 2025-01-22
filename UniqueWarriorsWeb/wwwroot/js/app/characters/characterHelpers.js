@@ -1,6 +1,6 @@
 class CharacterHelpers {
     static defaultName = "New Character";
-    static scalingStatNames = new Set(["Level", "Rank", "Tier", "Attribute Increases", "Attribute Maximum", "Attribute Boosts", "Max Runes", "Max Energy", "Energy Recovery"]);
+    static scalingStatNames = new Set(["Level", "Rank", "Tier", "Attribute Increases", "Attribute Maximum", "Attribute Boosts", "Max Runes", "Max Energy"]);
     static attributeStatNames = new Set(["Max Health", "Base Shield", "Regeneration", "Speed", "Power", "Evasion", "Accuracy", "Consistency", "Agility", "Potential", "Luck", "Reflex", "Initiative", "Genius", "Multitasking", "Range"]);
     static staticStatNames = new Set(["Graze Range", "Crit Range", "Reach", "Size", "Actions", "Move Actions", "Quick Actions"]);
     static allStatNames = new Set();
@@ -361,13 +361,11 @@ class CharacterHelpers {
 
         if (!settings.keepEnergy) {
             attributeStats.maxEnergy = scalingStats.maxEnergy;
-            attributeStats.energyRecovery = scalingStats.energyRecovery;
             delete scalingStats.maxEnergy;
-            delete scalingStats.energyRecovery;
         }
 
         if (character.isSummon?.()) {
-            let badAttributes = new Set(["Regeneration", "Consistency", "Agility", "Potential", "Luck", "Reflex", "Initiative", "Genius", "Multitasking", "Max Energy", "Energy Recovery"]);
+            let badAttributes = new Set(["Regeneration", "Consistency", "Agility", "Potential", "Luck", "Reflex", "Initiative", "Genius", "Multitasking", "Max Energy"]);
             attributeStats = ObjectHelpers.filterProperties(attributeStats, key => !badAttributes.has(toTextCase(key)));
         }
         if (character.isImmobile?.()) {

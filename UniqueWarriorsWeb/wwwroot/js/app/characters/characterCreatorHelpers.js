@@ -89,9 +89,9 @@ class CharacterCreatorHelpers {
         let validateInput = fromHTML(`<input type="checkbox">`);
         validateInputContainer.appendChild(validateInput);
         validateInput.checked = character.settings.validate;
-        validateInput.addEventListener('input', () => {
-            if (character.stats.validate == validateInput.checked) return;
-            character.stats.validate = validateInput.checked;
+        validateInput.addEventListener('change', () => {
+            if (character.settings.validate == validateInput.checked) return;
+            character.settings.validate = validateInput.checked;
             CharacterHelpers.saveCharacter(character);
         });
 

@@ -1,9 +1,11 @@
 class NPCHelpers {
     static defaultName = "New NPC";
-    static scalingStatNames = new Set(["Level", "Importance", "Rank", "Tier", "Scaling", "Max Energy", "Energy Recovery"]);
+    static scalingStatNames = new Set(["Level", "Importance", "Rank", "Tier", "Scaling", "Max Energy"]);
     static attributeStatNames = new Set(["Max Health", "Base Shield", "Regeneration", "Speed", "Power", "Evasion", "Accuracy", "Consistency", "Potential", "Luck", "Reflex", "Initiative", "Range"]);
     static staticStatNames = new Set(["Graze Range", "Crit Range", "Reach", "Size", "Actions", "Move Actions", "Quick Actions"]);
     static allStatNames = new Set();
+
+    static nonScalingAttributeNames = new Set(["Max Health", "Base Shield"]);
 
     static setup() {
         this.allStatNames = new Set([...this.scalingStatNames, ...this.attributeStatNames, ...this.staticStatNames]);

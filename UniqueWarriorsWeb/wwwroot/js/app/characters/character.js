@@ -70,8 +70,8 @@ class Character {
         let attributeMaximum = 2 + rank - tier;
         let attributeBoosts = this.getMaxAttributeBoosts();
         let maxRunes = tier;
-        let maxEnergy = rank * 3;
-        let energyRecovery = rank;
+        let maxEnergy = Math.floor(rank / 2);
+        if (level >= 3) maxEnergy++;
 
         return {
             level,
@@ -82,7 +82,6 @@ class Character {
             attributeBoosts,
             maxRunes,
             maxEnergy,
-            energyRecovery,
         };
     }
 
@@ -237,12 +236,15 @@ class Character {
     getMaxMasteries() {
         let level = this.stats.level;
         let masteries = 0; // does not include the free path core
-        if (level >= 3) masteries += 1;
+        if (level >= 3) masteries += 2;
         if (level >= 5) masteries += 1;
         if (level >= 8) masteries += 1;
         if (level >= 12) masteries += 1;
+        if (level >= 15) masteries += 1;
         if (level >= 17) masteries += 1;
+        if (level >= 20) masteries += 1;
         if (level >= 23) masteries += 1;
+        if (level >= 25) masteries += 1;
         if (level >= 27) masteries += 1;
         return masteries;
     }

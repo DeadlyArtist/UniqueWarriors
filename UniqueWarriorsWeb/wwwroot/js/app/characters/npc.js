@@ -92,8 +92,7 @@ class NPC {
         let rank = 1 + Math.floor(level / 5);
         let tier = 1 + Math.floor(level / 10);
         let scaling = importance + rank - tier;
-        let maxEnergy = rank * 3 * importance;
-        let energyRecovery = rank * importance;
+        let maxEnergy = importance;
 
         return {
             level,
@@ -102,16 +101,15 @@ class NPC {
             tier,
             scaling,
             maxEnergy,
-            energyRecovery,
         };
     }
 
     getAttributeStats() {
         let baseStats = { ...NPCHelpers.getBaseStats(), ...(this.baseStatOverrides ?? {}) };
-        let { tier, importance } = this.getScalingStats();
+        let { tier, rank, importance } = this.getScalingStats();
         let attributes = this.getAttributes();
-        let maxHealth = (baseStats.maxHealth + tier * 6 + attributes.maxHealth * tier * 2) * Math.pow(2, importance);
-        let baseShield = (baseStats.baseShield + tier * 2 + attributes.baseShield * tier * 3) * Math.pow(2, importance);
+        let maxHealth = (baseStats.maxHealth + rank * 3 + importance * 3 + attributes.maxHealth * tier * 2) * Math.pow(2, importance);
+        let baseShield = (baseStats.baseShield + rank * 1 + importance * 1 + attributes.baseShield * tier * 3) * Math.pow(2, importance);
         let regeneration = baseStats.regeneration;
         let power = baseStats.power + attributes.power * tier * 1;
         let speed = baseStats.speed + attributes.speed * 2;
@@ -164,9 +162,11 @@ class NPC {
         let boons = this.boons;
         let { scaling } = this.getScalingStats();
         let attributes = NPCHelpers.getEmptyAttributes();
-        for (let [key, value] of Object.entries(attributes)) {
-            let boon = boons[key] ?? 0;
-            attributes[key] = scaling + value + boon;
+        let nonScalingAttributes = NPCHelpers.nonScalingAttributeNames;
+        for (let [name, value] of Object.entries(attributes)) {
+            let boon = boons[name] ?? 0;
+            attributes[name] = value + boon;
+            if (!nonScalingAttributes.has(toTextCase(name))) attributes[name] += scaling;
         }
 
         return attributes;

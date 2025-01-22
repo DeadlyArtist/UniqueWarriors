@@ -19,6 +19,7 @@ class Snippets {
             new Snippet("Severity", "rules/Conditions/Severity"),
             new Snippet("Stackable", "rules/Conditions/Stackable"),
             new Snippet("Unstackable", "rules/Conditions/Unstackable"),
+            new Snippet("Upkeep", "rules/Restriction Modifiers/Summons And Terrain (Upkeep)*noChildren"),
             new Snippet("Summon", "rules/Restriction Modifiers/Summons And Terrain (Upkeep)"),
             new Snippet("Terrain", "rules/Restriction Modifiers/Summons And Terrain (Upkeep)*noChildren"),
             new Snippet("Importance", "rules/Restriction Modifiers/Importance"),
@@ -89,7 +90,6 @@ class Snippets {
             new Snippet("tier", "rules/Stats/Scaling Stats/Tier"),
             new Snippet("max runes", "rules/Stats/Scaling Stats/Max Runes"),
             new Snippet("max energy", "rules/Stats/Scaling Stats/Max Energy"),
-            new Snippet("energy recovery", "rules/Stats/Scaling Stats/Energy Recovery"),
             new Snippet("max health", "rules/Stats/Attribute Stats/Max Health"),
             new Snippet("base shield", "rules/Stats/Attribute Stats/Base Shield"),
             new Snippet("power", "rules/Stats/Attribute Stats/Power"),
@@ -101,6 +101,7 @@ class Snippets {
             new Snippet("Trigger", "rules/Restriction Modifiers/Trigger", { whitelist: "tags" }),
             new Snippet("Limit", "rules/Restriction Modifiers/Limit", { whitelist: "tags" }),
             new Snippet("Cooldown", "rules/Restriction Modifiers/Cooldown", { whitelist: "tags" }),
+            new Snippet("Delayed Cooldown", "rules/Restriction Modifiers/Delayed Cooldown", { whitelist: "tags" }),
             new Snippet("Max", "rules/Restriction Modifiers/Max", { whitelist: "tags" }),
             new Snippet("Initial Lock", "rules/Restriction Modifiers/Initial Lock", { whitelist: "tags" }),
             new Snippet("Channel", "rules/Restriction Modifiers/Channel", { whitelist: "tags" }),
@@ -130,6 +131,8 @@ class Snippets {
             new Snippet("range", "rules/Stats/Attribute Stats/Range", { whitelist: "tags" }),
             new Snippet("reach", "rules/Stats/Static Stats/Reach", { whitelist: "tags" }),
             new Snippet("size", "rules/Stats/Static Stats/Size", { whitelist: "tags" }),
+            new Snippet("energy", "rules/Masteries/Energy And Passive Slots", { whitelist: "tags" }),
+            new Snippet("passive slots", "rules/Masteries/Energy And Passive Slots", { whitelist: "tags" }),
         ]
     }
 
