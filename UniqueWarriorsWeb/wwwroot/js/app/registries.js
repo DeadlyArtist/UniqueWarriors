@@ -23,5 +23,9 @@ class Registries {
     static characters = this.register(new Registry("characters"));
     static npcs = this.register(new Registry("npcs"));
 
+    static damageTypes = this.register(new Registry("damageTypes"));
+    static weapons = this.register(new Registry("weapons"));
+    static paths = this.register(new Registry("paths"));
+
     static snippets = this.register(new Registry("snippets"));
 }

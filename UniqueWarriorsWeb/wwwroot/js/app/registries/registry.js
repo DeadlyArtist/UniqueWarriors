@@ -44,6 +44,7 @@ class Registry {
         settings ??= {};
 
         if (entry.id == null) return null;
+        if (this.has(entry) && !settings.replace) return null;
 
         this.unregister(entry);
         if (settings.replace) {
@@ -472,4 +473,7 @@ class Registry {
         return result;
     }
 
+    join(separator = null) {
+        return this.getAll().join(separator);
+    }
 }

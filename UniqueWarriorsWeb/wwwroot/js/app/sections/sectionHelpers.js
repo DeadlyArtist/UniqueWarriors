@@ -267,27 +267,27 @@ class SectionHelpers {
         if (!mutationSection) return;
 
         // Handle "Damage"
-        const damageInfo = DamageHelpers.parseAttribute(section.getHeadValueValue("Damage"));
-        const mutationDamage = DamageHelpers.parseAttribute(mutationSection.getHeadValueValue("Base Damage"));
+        const damageInfo = SectionDamageHelpers.parseAttribute(section.getHeadValueValue("Damage"));
+        const mutationDamage = SectionDamageHelpers.parseAttribute(mutationSection.getHeadValueValue("Base Damage"));
 
         let canAttributesBeChanged = section.content && !section.content.includes("rolled damage") && mutationDamage && damageInfo;
         if (canAttributesBeChanged) {
             // Merge full damage head value
-            const damage = DamageHelpers.updateDiceDamage(damageInfo?.dice, mutationDamage.dice);
-            const damageTypes = DamageHelpers.mergeTypes(damageInfo?.types, mutationDamage.types);
-            const newDamageValue = DamageHelpers.formatDiceDamage(damage, damageTypes);
+            const damage = SectionDamageHelpers.updateDiceDamage(damageInfo?.dice, mutationDamage.dice);
+            const damageTypes = SectionDamageHelpers.mergeTypes(damageInfo?.types, mutationDamage.types);
+            const newDamageValue = SectionDamageHelpers.formatDiceDamage(damage, damageTypes);
             section.addHeadValue("Damage", newDamageValue, { update: true });
         } else {
             // Merge damage head value types only
-            const damageTypes = DamageHelpers.mergeTypes(damageInfo?.types, mutationDamage.types);
-            const newDamageValue = DamageHelpers.formatDiceDamage(damageInfo?.dice, damageTypes); // Keep original dice, just update types
+            const damageTypes = SectionDamageHelpers.mergeTypes(damageInfo?.types, mutationDamage.types);
+            const newDamageValue = SectionDamageHelpers.formatDiceDamage(damageInfo?.dice, damageTypes); // Keep original dice, just update types
             section.addHeadValue("Damage", newDamageValue, { update: true });
         }
 
         if (section.content) {
             if (mutationDamage) {
                 // Find and merge damage types in content
-                const damageTypes = DamageHelpers.damageTypes;
+                const damageTypes = SectionDamageHelpers.damageTypes;
                 section.content.replace(/\(([^)]+)\)/g, (match, capturedGroup) => {
                     const extractedItems = capturedGroup.split(', ').map(type => toTextCase(type));
                     if (extractedItems.some(type => !damageTypes.has(type))) return match;
@@ -341,7 +341,7 @@ class SectionHelpers {
             if (totalValue == 0) {
                 section.removeHeadValue(attribute);
             } else {
-                const formattedValue = DamageHelpers.formatModifierValue(totalValue);
+                const formattedValue = SectionDamageHelpers.formatModifierValue(totalValue);
                 section.addHeadValue(attribute, formattedValue, { update: sectionValueRaw != null });
             }
         }

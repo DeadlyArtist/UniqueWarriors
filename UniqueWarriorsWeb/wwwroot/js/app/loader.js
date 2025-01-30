@@ -1,5 +1,10 @@
 class Loader {
+    static loadingCollectionsBefore = false;
+    static loadingCollections = false;
+    static collectionsLoadedBefore = false;
     static collectionsLoaded = false;
+    static baseCollectionsLoadedBefore = false;
+    static baseCollectionsLoaded = false;
 
     static collections = [
         new Collection(Registries.conditions, [
@@ -23,7 +28,8 @@ class Loader {
         ], { categories: true }),
         new Collection(Registries.techniques, [
             new Collection.SectionResourceWrapper(Resources.techniques_weapon_a),
-            new Collection.SectionResourceWrapper(Resources.techniques_weapon_m),
+            new Collection.SectionResourceWrapper(Resources.techniques_weapon_d),
+            new Collection.SectionResourceWrapper(Resources.techniques_weapon_o),
             new Collection.SectionResourceWrapper(Resources.techniques_element_a),
             new Collection.SectionResourceWrapper(Resources.techniques_element_m),
             new Collection.SectionResourceWrapper(Resources.techniques_special_a),
@@ -41,15 +47,79 @@ class Loader {
     }
 
     static async registerAllCollections() {
+        this.loadingCollectionsBefore = true;
+        window.dispatchEvent(new CustomEvent('before-loading-collections'));
+        this.loadingCollections = true;
+        window.dispatchEvent(new CustomEvent('loading-collections'));
+
         this.collections.forEach(c => this.collectionsByRegistry.set(c.registry, c));
         await parallel(this.collections, async function (collection) {
             await collection.register();
         });
-        this.collections.forEach(collection => collection.resolvePendingReferences());
         this.registerDefaultAbilities();
+        this.baseCollectionsLoadedBefore = true;
+        window.dispatchEvent(new CustomEvent('before-base-collections-loaded'));
+        this.baseCollectionsLoaded = true;
+        window.dispatchEvent(new CustomEvent('base-collections-loaded'));
+
+        this.collections.forEach(collection => collection.resolvePendingReferences());
+
+        this.collectionsLoadedBefore = true;
         window.dispatchEvent(new CustomEvent('before-collections-loaded'));
         this.collectionsLoaded = true;
         window.dispatchEvent(new CustomEvent('collections-loaded'));
+    }
+
+    static async onLoadingCollections(callback = doNothing) {
+        return new Promise((resolve, reject) => {
+            let _callback = () => { callback(); resolve(); }
+            if (this.loadingCollections) {
+                _callback();
+            } else {
+                window.addEventListener('loading-collections', e => {
+                    _callback();
+                });
+            }
+        });
+    }
+
+    static async beforeLoadingCollections(callback = doNothing) {
+        return new Promise((resolve, reject) => {
+            let _callback = () => { callback(); resolve(); }
+            if (this.loadingCollectionsBefore) {
+                _callback();
+            } else {
+                window.addEventListener('before-loading-collections', e => {
+                    _callback();
+                });
+            }
+        });
+    }
+
+    static async onBaseCollectionsLoaded(callback = doNothing) {
+        return new Promise((resolve, reject) => {
+            let _callback = () => { callback(); resolve(); }
+            if (this.baseCollectionsLoaded) {
+                _callback();
+            } else {
+                window.addEventListener('base-collections-loaded', e => {
+                    _callback();
+                });
+            }
+        });
+    }
+
+    static async beforeBaseCollectionsLoaded(callback = doNothing) {
+        return new Promise((resolve, reject) => {
+            let _callback = () => { callback(); resolve(); }
+            if (this.baseCollectionsLoadedBefore) {
+                _callback();
+            } else {
+                window.addEventListener('before-base-collections-loaded', e => {
+                    _callback();
+                });
+            }
+        });
     }
 
     static async onCollectionsLoaded(callback = doNothing) {
@@ -68,7 +138,7 @@ class Loader {
     static async beforeCollectionsLoaded(callback = doNothing) {
         return new Promise((resolve, reject) => {
             let _callback = () => { callback(); resolve(); }
-            if (this.collectionsLoaded) {
+            if (this.collectionsLoadedBefore) {
                 _callback();
             } else {
                 window.addEventListener('before-collections-loaded', e => {

@@ -1,8 +1,8 @@
-class DamageHelpers {
-    static damageTypes = new Registry();
+class SectionDamageHelpers {
+    static damageTypes;
 
     static setup() {
-        ["Bludgeoning, Piercing, Slashing, Cryo, Thermal, Shock, Necrotic, Psychic, Sonic, Holy, Unholy, Metabolism"].forEach(d => this.damageTypes.register(d));
+        this.damageTypes = Registries.damageTypes;
     }
 
     // Utility: Parse dice damage and types
@@ -81,4 +81,4 @@ class DamageHelpers {
         return (value > 0 ? "++" : "--") + Math.abs(value);
     }
 }
-DamageHelpers.setup();
+App.onAppLoaded(() => SectionDamageHelpers.setup());

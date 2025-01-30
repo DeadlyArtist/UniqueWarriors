@@ -27,7 +27,8 @@ class Resources {
     static techniques_special_a = this.register(new Resource("/data/techniques_special_a.json", true));
     static techniques_special_m = this.register(new Resource("/data/techniques_special_m.json", true));
     static techniques_weapon_a = this.register(new Resource("/data/techniques_weapon_a.json", true));
-    static techniques_weapon_m = this.register(new Resource("/data/techniques_weapon_m.json", true));
+    static techniques_weapon_d = this.register(new Resource("/data/techniques_weapon_d.json", true));
+    static techniques_weapon_o = this.register(new Resource("/data/techniques_weapon_o.json", true));
     static tools_sheet_npc = this.register(new Resource("/data/tools_sheet_npc.json", true));
     static tools_sheet_pc = this.register(new Resource("/data/tools_sheet_pc.json", true));
 }

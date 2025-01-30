@@ -21,9 +21,9 @@ class Collection {
 
         // Register top-level sections in categories registry if specified in settings
         if (this.settings.categories) {
-            let categories = sections.map(s => s.cloneWithoutSubSections());
-            all.push({ registry: Registries.categories, sections: categories });
-            for (let category of categories) Registries.categories.register(category, { tags: [CategoryHelpers.getCategoryType(category)] });
+            let categories = sections.map(s => CategoryHelpers.fromSection(s));
+            //all.push({ registry: Registries.categories, sections: categories });
+            for (let category of categories) CategoryHelpers.registerCategory(category);
             for (let section of sections) {
                 if (section.subSections && section.subSections.length > 0) {
                     let subSections = SectionHelpers.modify(section.subSections.getAll(), { height: 1 });

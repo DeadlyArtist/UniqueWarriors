@@ -153,7 +153,7 @@ class Snippets {
             Registries.snippets.register(snippet);
         }
 
-        for (let type of DamageHelpers.damageTypes) {
+        for (let type of SectionDamageHelpers.damageTypes) {
             Registries.snippets.register(new Snippet(type, `rules/Attacks/Damage/Damage Types`));
         }
 
