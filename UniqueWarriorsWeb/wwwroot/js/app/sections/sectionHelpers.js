@@ -270,7 +270,7 @@ class SectionHelpers {
         const damageInfo = SectionDamageHelpers.parseAttribute(section.getHeadValueValue("Damage"));
         const mutationDamage = SectionDamageHelpers.parseAttribute(mutationSection.getHeadValueValue("Base Damage"));
 
-        let canAttributesBeChanged = section.content && !section.content.includes("rolled damage") && mutationDamage && damageInfo;
+        let canAttributesBeChanged = section.content && section.content.match(/ you attack /i) && mutationDamage && damageInfo;
         if (canAttributesBeChanged) {
             // Merge full damage head value
             const damage = SectionDamageHelpers.updateDiceDamage(damageInfo?.dice, mutationDamage.dice);

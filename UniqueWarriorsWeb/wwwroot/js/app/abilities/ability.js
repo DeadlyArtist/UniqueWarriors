@@ -26,6 +26,7 @@ class Ability {
 
         this.trigger = settings.trigger;
         this.damage = settings.damage;
+        this.adjustDamageToStats = settings.adjustDamageToStats ?? false;
         this.targeting = settings.targeting;
 
         // Optional
@@ -132,18 +133,27 @@ class Ability {
         if (this.attack || this.isMutation) {
             let clonedDamage = this.damage.clone();
             let statModifiers = clone(this.statModifiers);
+            statModifiers.dieSize ??= 0;
+
+            if (!this.isMutation) {
+                if (this.statModifiers.reach) {
+                    if (this.description.match(/reach/i)) {
+                        if (this.adjustDamageToStats) statModifiers.dieSize -= 2;
+                    }
+                    else delete this.statModifiers.reach;
+                }
+                if (this.statModifiers.range) {
+                    if (this.description.includes(/range/i)) {
+                        if (this.adjustDamageToStats) statModifiers.dieSize += 2;
+                    }
+                    else delete this.statModifiers.range;
+                }
+            }
 
             // Add dieSize to damage if it exists in statModifiers
             if (statModifiers.dieSize) {
                 this.isMutation ? clonedDamage.dieSize += statModifiers.dieSize : clonedDamage.stepUpDieSize(Math.floor(statModifiers.dieSize / 2));
                 delete statModifiers.dieSize;
-            }
-
-            if (this.statModifiers.reach) {
-                if (!this.description.match(/reach/i)) delete this.statModifiers.reach;
-            }
-            if (this.statModifiers.range) {
-                if (!this.description.includes(/range/i)) delete this.statModifiers.range;
             }
 
             let damage = this.isMutation ? clonedDamage.toMutationString() : clonedDamage.toString();
@@ -263,7 +273,7 @@ class Damage {
 
                 this.dieSize += 2;
                 if (this.dieSize > 12) {
-                    this.dieSize = 6;
+                    this.dieSize = 8;
                     this.amount *= 2;
                 }
             }
@@ -272,7 +282,7 @@ class Damage {
                 if (this.dieSize <= 4) {
                     this.dieSize = Math.max(1, this.dieSize - 1);
                     continue;
-                } else if (this.dieSize == 6 && this.amount % 2 == 0) {
+                } else if (this.dieSize == 8 && this.amount % 2 == 0) {
                     this.dieSize = 12;
                     this.amount /= 2;
                 }
@@ -284,7 +294,7 @@ class Damage {
 
     toString() {
         let string = [...this.scaling].join('') + this.amount;
-        if (this.dieSize > 0) string += "d" + this.dieSize;
+        if (this.dieSize > 1) string += "d" + this.dieSize;
         if (this.bonus != 0) string += (this.bonus > 0 ? '+' : '-') + this.bonus;
         if (this.damageTypes.size != 0) string += ` (${[...this.damageTypes].map(d => d.toLowerCase()).join(', ')})`;
         return string;

@@ -21,6 +21,7 @@ class TechniqueHelpers {
                 dieSize: 8,
                 ...(settings.damage ?? {}),
             },
+            adjustDamageToStats: true,
             ...settings,
         }
 
@@ -77,6 +78,7 @@ class TechniqueHelpers {
         // Evaluate
         if (area.type != AreaTypes.none) {
             ability.actionCost.quickActions = 1;
+            ability.damage.stepUpDieSize(-1);
         }
 
         if (!settings.ability?.description) ability.description = TechniqueDescriptionHelpers.findDescriptionForAttackTechnique(ability);
@@ -125,6 +127,7 @@ class TechniqueHelpers {
             actionCost: {
                 quickActions: 1,
             },
+            adjustDamageToStats: true,
             ...settings,
         }
         let ability = AbiltyHelpers.createTechnique(settings);

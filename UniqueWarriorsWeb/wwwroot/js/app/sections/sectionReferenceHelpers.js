@@ -79,7 +79,7 @@ class SectionReferenceHelpers {
             }
             if (!tooltip) continue;
 
-            value = value.replace(/([+-] ?)(\dd)( )/, `$1<span tooltip-path="rules/Mutations/Die Size">$2</span>$3`);
+            value = value.replace(/([+-] ?)(d\d)( )/, `$1<span tooltip-path="rules/Mutations/Die Size">$2</span>$3`);
             let html = `<span class="section-increaseDecrease" tooltip="${escapeHTML(tooltip)}">${operator}</span>` + value.substring(operator.length);
             replaceTextNodeWithHTML(node, html);
         }

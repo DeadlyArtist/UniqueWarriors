@@ -91,7 +91,7 @@ class Character {
         let maxHealth = baseStats.maxHealth + level * 3 + this.attributes.maxHealth * rank * 4;
         let baseShield = baseStats.baseShield + level * 1 + this.attributes.baseShield * rank * 5;
         let regeneration = baseStats.regeneration + this.attributes.regeneration * tier * 1;
-        let power = baseStats.power + this.attributes.power * tier * 1;
+        let power = baseStats.power * tier + this.attributes.power * tier * 1;
         let speed = baseStats.speed + this.attributes.speed * 2;
         let evasion = baseStats.evasion + this.attributes.evasion * 1;
         let accuracy = baseStats.accuracy + this.attributes.accuracy * 1;

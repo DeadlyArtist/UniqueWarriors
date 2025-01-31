@@ -10,7 +10,7 @@ class Techniques {
 
     static registerAtStart() {
         let weapon, previous, previous_b;
-
+        return;
         // Axe
         weapon = Weapons.axe;
         previous = {
