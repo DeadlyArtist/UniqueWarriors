@@ -1,6 +1,7 @@
 class Resources {
     static preloadableResources = [];
     static precacheUrls = [];
+    static allLoaded = false;
 
     static register(resource) {
         const entry = Registries.resources.register(resource);
@@ -31,4 +32,29 @@ class Resources {
     static techniques_weapon_o = this.register(new Resource("/data/techniques_weapon_o.json", true));
     static tools_sheet_npc = this.register(new Resource("/data/tools_sheet_npc.json", true));
     static tools_sheet_pc = this.register(new Resource("/data/tools_sheet_pc.json", true));
+
+    static setup() {
+        let loadPromises = this.preloadableResources.map(r => r.onLoaded());
+        Promise.allSettled(loadPromises).then(() => {
+            window.dispatchEvent(new CustomEvent('resources-loaded'));
+        });
+    }
+
+    static async onLoaded(callback = doNothing) {
+        return new Promise((resolve, reject) => {
+            let _callback = () => { callback(); resolve(); }
+            if (this.allLoaded) {
+                _callback();
+            } else {
+                window.addEventListener('resources-loaded', e => {
+                    _callback();
+                });
+            }
+        });
+    }
 }
+
+Resources.setup();
+Resources.onLoaded(() => {
+    ServiceWorkerHelpers.tryPromptUpdate();
+});

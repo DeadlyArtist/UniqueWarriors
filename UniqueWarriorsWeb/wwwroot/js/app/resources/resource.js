@@ -15,25 +15,39 @@ class Resource {
 
     async get() {
         let result = await fetchWithCache(this.link);
-        this.onLoaded();
+        this.setLoaded();
         return result;
     }
 
     async getText() {
         let result = await fetchTextWithCache(this.link);
-        this.onLoaded();
+        this.setLoaded();
         return result;
     }
 
     async getFromJson() {
         let result = await fetchFromJsonWithCache(this.link);
-        this.onLoaded();
+        this.setLoaded();
         return result;
     }
 
-    onLoaded() {
+    setLoaded() {
         if (this.loaded) return;
         this.loaded = true;
+        window.dispatchEvent(new CustomEvent('resource-loaded-' + this.id));
+    }
+
+    async onLoaded(callback = doNothing) {
+        return new Promise((resolve, reject) => {
+            let _callback = () => { callback(); resolve(); }
+            if (this.loaded) {
+                _callback();
+            } else {
+                window.addEventListener('resource-loaded-' + this.id, e => {
+                    _callback();
+                });
+            }
+        });
     }
 
     async cache() {
@@ -44,7 +58,7 @@ class Resource {
         });
 
         // Preload into app-level fetch cache for runtime access
-        await fetchWithCache(this.link);
+        await this.get();
     }
 }
 

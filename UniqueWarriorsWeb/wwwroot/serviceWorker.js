@@ -3,6 +3,8 @@ const INDEX_URL = "/"; // Base app shell, always served for valid app paths
 const STATIC_ASSETS = ["/js/serviceWorkerHelpers.js"];
 
 self.addEventListener("install", event => {
+    self.skipWaiting();
+
     event.waitUntil(
         caches.open(CACHE_NAME).then(cache => cache.addAll(STATIC_ASSETS).catch(err => {
             console.error("Error adding static assets to cache:", err);
@@ -13,15 +15,16 @@ self.addEventListener("install", event => {
 
 self.addEventListener("activate", event => {
     event.waitUntil(
-        caches.keys().then(cacheNames =>
-            Promise.all(
+        (async () => {
+            const cacheNames = await caches.keys();
+            await Promise.all(
                 cacheNames
-                    .filter(name => name !== CACHE_NAME) // Remove old caches
+                    .filter(name => name !== CACHE_NAME)
                     .map(name => caches.delete(name))
-            )
-        )
+            );
+        })()
     );
-    return self.clients.claim(); // Claim all clients
+    self.clients.claim();
 });
 
 self.addEventListener("fetch", event => {
@@ -76,7 +79,6 @@ async function handlePageRequest() {
         );
 }
 
-
 /**
  * Implement Stale-While-Revalidate caching strategy:
  * Serve cached content immediately, fetch & update cache in background.
@@ -86,11 +88,20 @@ async function staleWhileRevalidate(request) {
 
     // Try to serve the cached response first
     const cachedResponse = await cache.match(request);
-    const fetchPromise = await fetch(request)
-        .then(networkResponse => {
+    const cachedClone = cachedResponse.clone();
+    const fetchPromise = fetch(request)
+        .then(async networkResponse => {
             if (networkResponse.ok) {
                 //console.log(`Stale-While-Revalidate: Updating cache for ${request.url}`);
-                cache.put(request, networkResponse.clone());
+                await cache.put(request, networkResponse.clone());
+
+                const networkClone = networkResponse.clone();
+                await responsesAreEqual(cachedClone, networkClone).then(isEqual => {
+                    // Notify clients of updates only when changes are detected
+                    if (!isEqual) {
+                        notifyClientsUpdate(request.url);
+                    }
+                });
             } else {
                 //console.warn(`Network response was not OK for ${request.url}:`, networkResponse.status);
             }
@@ -109,6 +120,30 @@ async function staleWhileRevalidate(request) {
 function isPagePath(url) {
     const path = url.pathname;
     return path === "/" || path.startsWith("/app");
+}
+
+/**
+ * Compare two responses (cached and network).
+ * Perform binary comparison between their bodies.
+ */
+async function responsesAreEqual(cachedResponse, networkResponse) {
+    const cachedText = await cachedResponse.text();
+    const networkText = await networkResponse.text();
+    return cachedText === networkText;
+}
+
+/**
+ * Notify all connected clients about changes in the resource.
+ */
+async function notifyClientsUpdate(url) {
+    const clients = await self.clients.matchAll({ type: "window" });
+
+    for (const client of clients) {
+        client.postMessage({
+            type: "RESOURCE_UPDATED",
+            resource: url,
+        });
+    }
 }
 
 // For debugging
