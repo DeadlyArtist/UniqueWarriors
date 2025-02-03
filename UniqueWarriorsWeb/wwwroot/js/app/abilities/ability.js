@@ -157,7 +157,7 @@ class Ability {
             }
 
             let damage = this.isMutation ? clonedDamage.toMutationString() : clonedDamage.toString();
-            let damageLine = [new HeadValue("Damage", damage)];
+            let damageLine = [new HeadValue(this.isMutation ? "Base Damage" : "Damage", damage)];
 
             // Add Stat Modifiers
             if (Object.keys(statModifiers).length > 0) {

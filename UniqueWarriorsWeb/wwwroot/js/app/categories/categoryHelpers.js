@@ -1,6 +1,6 @@
 class CategoryHelpers {
     static registerCategory(category) {
-        Registries.categories.register(category);
+        Registries.categories.register(category, { tags: [category.type] });
 
         if (category.type == "Weapon") {
             Registries.weapons.register(category.name);
