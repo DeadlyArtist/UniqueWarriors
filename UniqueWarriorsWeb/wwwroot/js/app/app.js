@@ -13,6 +13,8 @@ class App {
         window.addEventListener('load-silently', this.#onLoad);
         window.addEventListener('popstate', this.#onLoad);
 
+        sidebarBottomListElement.before(fromHTML(`<div class="sidebarElement info">Version: ${escapeHTML(App.version)}`));
+
         this.appLoaded = true;
         window.dispatchEvent(new CustomEvent('app-loaded'));
         this.afterAppLoaded = true;
