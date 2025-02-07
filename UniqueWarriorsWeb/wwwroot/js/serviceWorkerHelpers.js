@@ -1,5 +1,6 @@
 class ServiceWorkerHelpers {
     static updated = [];
+    static askedForReload = false;
 
     static setup() {
         if ("serviceWorker" in navigator) {
@@ -27,27 +28,42 @@ class ServiceWorkerHelpers {
                 navigator.serviceWorker.addEventListener("message", event => {
                     if (event.data && event.data.type === "RESOURCE_UPDATED") {
                         const resource = event.data.resource;
-                        ServiceWorkerHelpers.updateReceived(resource);
+                        ServiceWorkerHelpers.resourceUpdateReceived(resource);
                     }
                 });
             });
         }
     }
 
-    static updateReceived(resource) {
+    static resourceUpdateReceived(resource) {
         console.log("New version found for resource (reload to update):", resource);
         ServiceWorkerHelpers.updated.push(resource);
+        window.dispatchEvent(new CustomEvent('cached-resource-updated'));
 
         //if (confirm(`A resource has been updated (${resource}). Refresh to apply updates?`)) {
         //    window.location.reload();
         //}
     }
 
-    static tryPromptUpdate() {
+    static async onResourceUpdateReceived(callback = doNothing) {
+        return new Promise((resolve, reject) => {
+            let _callback = () => { callback(); resolve(); }
+            if (this.updated.length != 0) {
+                _callback();
+            }
+            window.addEventListener('cached-resource-updated', e => {
+                _callback();
+            });
+        });
+    }
+
+    static tryPromptResourceUpdate() {
         if (this.updated.length == 0) return;
+        if (this.askedForReload) return;
+        this.askedForReload = true;
 
         if (confirm(`Refresh to apply updates?`)) {
-            window.location.reload();
+            window.location.reload(true);
         }
     }
 }

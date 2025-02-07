@@ -14,6 +14,7 @@ class Resources {
 
     static index_html = this.register(new Resource("/", true));
 
+    // Game
     static conditions = this.register(new Resource("/data/conditions.json", true));
     static masteries_a = this.register(new Resource("/data/masteries_a.json", true));
     static masteries_m = this.register(new Resource("/data/masteries_m.json", true));
@@ -32,6 +33,9 @@ class Resources {
     static techniques_weapon_o = this.register(new Resource("/data/techniques_weapon_o.json", true));
     static tools_sheet_npc = this.register(new Resource("/data/tools_sheet_npc.json", true));
     static tools_sheet_pc = this.register(new Resource("/data/tools_sheet_pc.json", true));
+
+    // Setting
+    static neontris = this.register(new Resource("/data/neontris.json", true));
 
     static setup() {
         let loadPromises = this.preloadableResources.map(r => r.onLoaded());
@@ -56,5 +60,5 @@ class Resources {
 
 Resources.setup();
 Resources.onLoaded(() => {
-    ServiceWorkerHelpers.tryPromptUpdate();
+    ServiceWorkerHelpers.onResourceUpdateReceived(() => ServiceWorkerHelpers.tryPromptResourceUpdate());
 });

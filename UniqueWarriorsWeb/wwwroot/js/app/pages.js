@@ -16,6 +16,8 @@ class Pages {
 
     // Game
     static rules = this.register(new Page(null, "rules", new SectionsPageManager(SectionHelpers.TextType, { registry: Registries.rules })));
+    static neontris = this.register(new Page(null, "neontris", new SectionsPageManager(SectionHelpers.TextType, { registry: Registries.neontris })));
+    static defaultAbilities = this.register(new Page(null, "defaultAbilities", new SectionsPageManager(SectionHelpers.MasonryType, { registry: Registries.defaultAbilities })));
     static techniques = this.register(new Page(null, "techniques", new SectionsPageManager(SectionHelpers.MasonryType, { registry: Registries.techniques })));
     static masteries = this.register(new Page(null, "masteries", new SectionsPageManager(SectionHelpers.MasonryType, { registry: Registries.masteries })));
     static summons = this.register(new Page(null, "summons", new SectionsPageManager(SectionHelpers.MasonryType, { registry: Registries.summons })));
@@ -36,6 +38,8 @@ class Pages {
         let sidebarPages = [
             this.home,
             this.rules,
+            this.neontris,
+            this.defaultAbilities,
             this.techniques,
             this.masteries,
             this.summons,

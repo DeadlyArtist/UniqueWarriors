@@ -28,4 +28,7 @@ class Registries {
     static paths = this.register(new Registry("paths"));
 
     static snippets = this.register(new Registry("snippets"));
+
+    // Setting
+    static neontris = this.register(new Registry("neontris"));
 }

@@ -88,20 +88,22 @@ async function staleWhileRevalidate(request) {
 
     // Try to serve the cached response first
     const cachedResponse = await cache.match(request);
-    const cachedClone = cachedResponse.clone();
+    const cachedClone = cachedResponse?.clone();
     const fetchPromise = fetch(request)
         .then(async networkResponse => {
             if (networkResponse.ok) {
                 //console.log(`Stale-While-Revalidate: Updating cache for ${request.url}`);
                 await cache.put(request, networkResponse.clone());
 
-                const networkClone = networkResponse.clone();
-                await responsesAreEqual(cachedClone, networkClone).then(isEqual => {
-                    // Notify clients of updates only when changes are detected
-                    if (!isEqual) {
-                        notifyClientsUpdate(request.url);
-                    }
-                });
+                if (cachedClone) {
+                    const networkClone = networkResponse.clone();
+                    await responsesAreEqual(cachedClone, networkClone).then(isEqual => {
+                        // Notify clients of updates only when changes are detected
+                        if (!isEqual) {
+                            notifyClientsUpdate(request.url);
+                        }
+                    });
+                }
             } else {
                 //console.warn(`Network response was not OK for ${request.url}:`, networkResponse.status);
             }

@@ -7,6 +7,7 @@ class Loader {
     static baseCollectionsLoaded = false;
 
     static collections = [
+        // Game
         new Collection(Registries.conditions, [
             new Collection.SectionResourceWrapper(Resources.conditions)
         ]),
@@ -34,7 +35,12 @@ class Loader {
             new Collection.SectionResourceWrapper(Resources.techniques_element_m),
             new Collection.SectionResourceWrapper(Resources.techniques_special_a),
             new Collection.SectionResourceWrapper(Resources.techniques_special_m),
-        ], {categories: true}),
+        ], { categories: true }),
+
+        // Setting
+        new Collection(Registries.neontris, [
+            new Collection.SectionResourceWrapper(Resources.neontris),
+        ]),
     ];
     static collectionsByRegistry = new Map();
 
