@@ -43,11 +43,11 @@ class Collection {
                 if (this.registry == Registries.skills) {
                     Registries.skillFields.register(section.cloneWithoutSubSections());
                     let field = section.title;
-                    let branchSections = section.subSections.getAll();
+                    let branchSections = SectionHelpers.modify(section.subSections.getAll(), { height: 1 });
                     for (let branchSection of branchSections) {
                         Registries.skillBranches.register(branchSection.cloneWithoutSubSections(), { tags: [field] });
                         let branch = branchSection.title;
-                        let skillSections = branchSection.subSections.getAll();
+                        let skillSections = SectionHelpers.modify(branchSection.subSections.getAll(), { height: 1 });
                         for (let skillSection of skillSections) {
                             Registries.skills.register(skillSection, { tags: [field, branch] });
                         }

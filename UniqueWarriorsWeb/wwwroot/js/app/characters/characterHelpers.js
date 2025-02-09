@@ -739,7 +739,7 @@ class CharacterHelpers {
     }
 
     static generateSkillsSubPageHtml(character, settings) {
-        let element = fromHTML(`<div class="character-subPage-skills" placeholder="No skill unlocked.">`);
+        let element = fromHTML(`<div class="character-subPage-skills" placeholder="No skills unlocked.">`);
 
         let skillFieldsContainer = fromHTML(`<div class="characterCreator-skillFields divList gap-6 markTooltips">`);
 
