@@ -19,8 +19,8 @@ class Collection {
         let sections = await this.parse();
         let all = [];
 
-        // Register top-level sections in categories registry if specified in settings
         if (this.settings.categories) {
+            // Register top-level sections in categories registry if specified in settings
             let categories = sections.map(s => CategoryHelpers.fromSection(s));
             //all.push({ registry: Registries.categories, sections: categories });
             for (let category of categories) CategoryHelpers.registerCategory(category);
@@ -39,7 +39,22 @@ class Collection {
             // Default behavior: register all sections directly to the target registry
             all.push({ registry: this.registry, sections: sections });
             for (let section of sections) {
-                this.registry.register(section);
+                let settings = {};
+                if (this.registry == Registries.skills) {
+                    Registries.skillFields.register(section.cloneWithoutSubSections());
+                    let field = section.title;
+                    let branchSections = section.subSections.getAll();
+                    for (let branchSection of branchSections) {
+                        Registries.skillBranches.register(branchSection.cloneWithoutSubSections(), { tags: [field] });
+                        let branch = branchSection.title;
+                        let skillSections = branchSection.subSections.getAll();
+                        for (let skillSection of skillSections) {
+                            Registries.skills.register(skillSection, { tags: [field, branch] });
+                        }
+                    }
+                } else {
+                    this.registry.register(section, settings);
+                }
             }
         }
         this.all = all;
@@ -51,7 +66,7 @@ class Collection {
         let allSections = [];
         for (let wrapper of this.sectionResourceWrappers) {
             let sections = await wrapper.resource.getFromJson();
-            sections = SectionHelpers.modify(sections, { ...SectionHelpers.getInitModifySettings(), anchor: this.registry.name,  ...wrapper.settings });
+            sections = SectionHelpers.modify(sections, { ...SectionHelpers.getInitModifySettings(), anchor: this.registry.name, ...wrapper.settings });
             sections.forEach(s => allSections.push(s));
         }
         return allSections;

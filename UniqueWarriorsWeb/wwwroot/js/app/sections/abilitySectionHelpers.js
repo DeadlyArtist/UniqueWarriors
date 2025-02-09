@@ -200,7 +200,20 @@ class AbilitySectionHelpers {
         return unlocks;
     }
 
+    static isSkill(section) {
+        return section.tags.has("Skill");
+    }
+
+    static getSkillField(section) {
+        return section.headValues.get("Skill Field");
+    }
+
+    static getSkillBranch(section) {
+        return section.headValues.get("Skill Branch");
+    }
+
     static categoryHeadValueNames = ["Summon", "Weapon", "Weapon Core", "Weapon Mutation", "Path", "Path Core"];
+    static skillCategoryHeadValueNames = ["Skill Branch", "Skill Field"];
     static getCategories(section) {
         for (let headValueName of this.categoryHeadValueNames) {
             let values = section.getHeadValueParts(headValueName);

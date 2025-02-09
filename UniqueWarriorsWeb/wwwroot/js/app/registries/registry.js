@@ -340,6 +340,7 @@ class Registry {
 
     // Tags
     tryInitTag(tag) {
+        tag = RegistryEntry.extractId(tag);
         if (!this.tags.has(tag)) {
             this.tags.set(tag, new Registry(tag));
         }
@@ -349,10 +350,12 @@ class Registry {
      * @returns {Registry}
      */
     getTagRegistry(tag) {
+        tag = RegistryEntry.extractId(tag);
         return this.tags.get(tag);
     }
 
     addToTag(tag, entry, addToEntry = true) {
+        tag = RegistryEntry.extractId(tag);
         this.tryInitTag(tag);
         const tagRegistry = this.getTagRegistry(tag);
         tagRegistry.register(entry.obj);
@@ -360,6 +363,7 @@ class Registry {
     }
 
     removeFromTag(tag, entry, removeFromEntry = true) {
+        tag = RegistryEntry.extractId(tag);
         if (removeFromEntry) entry.tags.delete(tag);
 
         const tagRegistry = this.getTagRegistry(tag);
@@ -379,6 +383,7 @@ class Registry {
     }
 
     tagExists(tag) {
+        tag = RegistryEntry.extractId(tag);
         return this.tags.get(tag)?.size > 0;
     }
 

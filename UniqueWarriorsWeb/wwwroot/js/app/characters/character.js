@@ -10,7 +10,8 @@ class Character {
         this.stats = { ...CharacterHelpers.getDefaultStats(), ...(settings.stats ?? {}) };
         this.baseStatOverrides = settings.baseStatOverrides ?? {};
         this.statOverrides = settings.statOverrides ?? {};
-        this.attributes = {...CharacterHelpers.getEmptyAttributes(), ...(settings.attributes ?? {})};
+        this.attributes = { ...CharacterHelpers.getEmptyAttributes(), ...(settings.attributes ?? {}) };
+        this.skills = settings.skills ?? {};
         this.settings = settings.settings ?? {};
         this.settings.validate ??= true;
         this.details = settings.details ?? {};
@@ -69,9 +70,11 @@ class Character {
         let attributeIncreases = this.getMaxAttributeIncreases();
         let attributeMaximum = 2 + rank - tier;
         let attributeBoosts = this.getMaxAttributeBoosts();
+        let skillIncreases = 10 + Math.floor(level / 2);
+        let skillMaximum = 1 + tier;
         let maxRunes = tier;
         let maxEnergy = Math.floor(rank / 2);
-        if (level >= 3) maxEnergy++;
+        if (level >= 3) maxEnergy += 2;
 
         return {
             level,
@@ -80,6 +83,8 @@ class Character {
             attributeIncreases,
             attributeMaximum,
             attributeBoosts,
+            skillIncreases,
+            skillMaximum,
             maxRunes,
             maxEnergy,
         };
@@ -138,6 +143,61 @@ class Character {
         };
     }
 
+    setBaseSkillLevel(skill, newValue) {
+        skill = Registries.skills.get(skill);
+        let name = skill.title;
+        if (newValue == 0) {
+            delete this.skills[name];
+        } else {
+            this.skills[name] = newValue;
+        }
+    }
+
+    getBaseSkillLevel(skill) {
+        skill = Registries.skills.get(skill);
+        return this.skills[skill.title] ?? 0;
+    }
+
+    getBaseSkillBranchLevel(branch) {
+        let skillNames = CharacterHelpers.getSkillNamesByBranch(branch);
+        let skillLevels = skillNames.map(skill => this.getBaseSkillLevel(skill));
+        let topThree = skillLevels.sort(function (a, b) { return b - a; }).slice(0, 3);
+        let average = Math.floor(topThree.reduce((sum, level) => sum + level, 0) / topThree.length);
+        return average;
+    }
+
+    getBaseSkillFieldLevel(field) {
+        let skillBranchNames = CharacterHelpers.getSkillBranchNamesByField(field);
+        let skillBranchLevels = skillBranchNames.map(branch => this.getBaseSkillBranchLevel(branch));
+        let topThree = skillBranchLevels.sort(function (a, b) { return b - a; }).slice(0, 3);
+        let average = Math.floor(topThree.reduce((sum, level) => sum + level, 0) / topThree.length);
+        return average;
+    }
+
+    getSkillBranchLevel(branch) {
+        branch = Registries.skillBranches.get(branch);
+        let skillLevel = this.getBaseSkillBranchLevel(branch);
+        if (skillLevel != 0) skillLevel += this.getBaseSkillFieldLevel(AbilitySectionHelpers.getSkillField(branch));
+        return skillLevel;
+    }
+
+    getSkillLevel(skill) {
+        skill = Registries.skills.get(skill);
+        let skillLevel = this.getBaseSkillLevel(skill);
+        skillLevel += this.getBaseSkillBranchLevel(AbilitySectionHelpers.getSkillBranch(skill));
+        if (skillLevel != 0) skillLevel += this.getBaseSkillFieldLevel(AbilitySectionHelpers.getSkillField(skill));
+        return skillLevel;
+    }
+
+    getVariables() {
+        let stats = this.getStats();
+        let variables = new Map();
+        for (let [name, value] of Object.entries(stats)) {
+            variables.set(toTextCase(name), value);
+        }
+        return variables;
+    }
+
     getRemainingAttributeIncreasesAndBoosts() {
         let stats = this.getScalingStats();
         let remainingAttributeIncreases = stats.attributeIncreases;
@@ -164,13 +224,13 @@ class Character {
         return this.getRemainingAttributeIncreasesAndBoosts().remainingAttributeBoosts;
     }
 
-    getVariables() {
-        let stats = this.getStats();
-        let variables = new Map();
-        for (let [name, value] of Object.entries(stats)) {
-            variables.set(toTextCase(name), value);
-        }
-        return variables;
+    getRemainingSkillIncreases() {
+        let stats = this.getScalingStats();
+        let remainingSkillIncreases = stats.skillIncreases;
+        Object.entries(this.skills).forEach(([name, value]) => {
+            remainingSkillIncreases -= value;
+        });
+        return remainingSkillIncreases;
     }
 
     getMaxAttributeIncreases() {
@@ -285,6 +345,7 @@ class Character {
             baseStatOverrides: this.baseStatOverrides,
             statOverrides: this.statOverrides,
             attributes: this.attributes,
+            skills: this.skills,
             settings: this.settings,
             details: this.details,
             items: this.items.getAll(),

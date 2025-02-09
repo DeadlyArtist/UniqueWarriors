@@ -98,6 +98,14 @@ class Snippets {
             new Snippet("base shield", "rules/Stats/Attribute Stats/Base Shield"),
             new Snippet("power", "rules/Stats/Attribute Stats/Power"),
             new Snippet("speed", "rules/Stats/Attribute Stats/Speed"),
+            new Snippet("skill", "rules/Skills*noChildren"),
+            new Snippet("skill branch", "rules/Skills/Skill Branches And Fields"),
+            new Snippet("skill branches", "rules/Skills/Skill Branches And Fields"),
+            new Snippet("skill field", "rules/Skills/Skill Branches And Fields"),
+            new Snippet("skill check", "rules/Skills/Skill Checks"),
+            new Snippet("skill check modifier", "rules/Skills/Skill Checks/Skill Check Modifier"),
+            new Snippet("skill level", "rules/Skills/Skill Level"),
+            new Snippet("skill increase", "rules/Skills/Skill Level/Skill Increases"),
 
 
             // Tag only

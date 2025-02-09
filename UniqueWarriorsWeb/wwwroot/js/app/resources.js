@@ -19,10 +19,16 @@ class Resources {
     static masteries_a = this.register(new Resource("/data/masteries_a.json", true));
     static masteries_m = this.register(new Resource("/data/masteries_m.json", true));
     static rules_attacks = this.register(new Resource("/data/rules_attacks.json", true));
+    static rules_skills = this.register(new Resource("/data/rules_skills.json", true));
     static rules_character_creation = this.register(new Resource("/data/rules_character_creation.json", true));
     static rules_character_leveling = this.register(new Resource("/data/rules_character_leveling.json", true));
     static rules_introduction = this.register(new Resource("/data/rules_introduction.json", true));
     static rules_main = this.register(new Resource("/data/rules_main.json", true));
+    static skills_tech = this.register(new Resource("/data/skills_tech.json", true));
+    static skills_magic = this.register(new Resource("/data/skills_magic.json", true));
+    static skills_physical = this.register(new Resource("/data/skills_physical.json", true));
+    static skills_social = this.register(new Resource("/data/skills_social.json", true));
+    static skills_book = this.register(new Resource("/data/skills_book.json", true));
     static summons_a = this.register(new Resource("/data/summons_a.json", true));
     static techniques_element_a = this.register(new Resource("/data/techniques_element_a.json", true));
     static techniques_element_m = this.register(new Resource("/data/techniques_element_m.json", true));

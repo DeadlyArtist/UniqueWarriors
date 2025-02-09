@@ -21,8 +21,16 @@ class Loader {
             new Collection.SectionResourceWrapper(Resources.rules_character_leveling),
             new Collection.SectionResourceWrapper(Resources.rules_main),
             new Collection.SectionResourceWrapper(Resources.rules_attacks),
+            new Collection.SectionResourceWrapper(Resources.rules_skills),
             new Collection.SectionResourceWrapper(Resources.tools_sheet_pc),
             new Collection.SectionResourceWrapper(Resources.tools_sheet_npc),
+        ]),
+        new Collection(Registries.skills, [
+            new Collection.SectionResourceWrapper(Resources.skills_tech),
+            new Collection.SectionResourceWrapper(Resources.skills_magic),
+            new Collection.SectionResourceWrapper(Resources.skills_physical),
+            new Collection.SectionResourceWrapper(Resources.skills_social),
+            new Collection.SectionResourceWrapper(Resources.skills_book),
         ]),
         new Collection(Registries.summons, [
             new Collection.SectionResourceWrapper(Resources.summons_a),

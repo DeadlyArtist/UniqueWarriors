@@ -319,8 +319,8 @@ class SectionSearch {
         if (filterType === "Category") {
             return [...(structuredSection.attributesElement?.querySelectorAll('.section-attribute') || [])]
                 .filter(e => e.classList.contains('section-headValue') &&
-                    AbilitySectionHelpers.categoryHeadValueNames.includes(e._headValue?.name))
-                .map(e => e.querySelector('.section-headValue-value'));
+                    (AbilitySectionHelpers.categoryHeadValueNames.includes(e._headValue?.name) || AbilitySectionHelpers.skillCategoryHeadValueNames.includes(e._headValue?.name))
+                ).map(e => e.querySelector('.section-headValue-value'));
         }
         if (filterType === "Action Type") {
             return [...(structuredSection.attributesElement?.querySelectorAll('.section-actionType, .section-actionTypes') || [])];

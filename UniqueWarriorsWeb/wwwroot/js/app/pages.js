@@ -21,6 +21,7 @@ class Pages {
     static techniques = this.register(new Page(null, "techniques", new SectionsPageManager(SectionHelpers.MasonryType, { registry: Registries.techniques })));
     static masteries = this.register(new Page(null, "masteries", new SectionsPageManager(SectionHelpers.MasonryType, { registry: Registries.masteries })));
     static summons = this.register(new Page(null, "summons", new SectionsPageManager(SectionHelpers.MasonryType, { registry: Registries.summons })));
+    static skills = this.register(new Page(null, "skills", new SectionsPageManager(SectionHelpers.MasonryType, { registry: Registries.skills })));
     static conditions = this.register(new Page(null, "conditions", new SectionsPageManager(SectionHelpers.MasonryType, { registry: Registries.conditions })));
     static characters = this.register(new Page(null, "characters", new CharactersPageManager({ registry: Registries.characters })));
     static character = this.register(new Page(null, "character", new CharacterPageManager()));
@@ -39,6 +40,7 @@ class Pages {
             this.home,
             this.rules,
             this.neontris,
+            this.skills,
             this.defaultAbilities,
             this.techniques,
             this.masteries,

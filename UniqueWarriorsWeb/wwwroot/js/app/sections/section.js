@@ -218,6 +218,21 @@ class Section {
         if (classified.attributes) classified.attributes = SectionAttributesHelpers.classify(classified.attributes);
         if (classified.npc) classified.npc = NPC.fromJSON(classified.npc);
         section = new Section(classified);
+
+        if (section.tags.has("Skill Field")) {
+            for (let subSection of section.subSections) {
+                if (subSection.tags.has("Skill Branch")) {
+                    subSection.addHeadValue("Skill Field", section.title, { lineIndex: 0 });
+                    for (let subSubSection of subSection.subSections) {
+                        if (subSubSection.tags.has("Skill")) {
+                            subSubSection.addHeadValue("Skill Branch", subSection.title, { lineIndex: 0 });
+                            subSubSection.addHeadValue("Skill Field", section.title, { lineIndex: 0 });
+                        }
+                    }
+                }
+            }
+        }
+
         return section;
     }
 

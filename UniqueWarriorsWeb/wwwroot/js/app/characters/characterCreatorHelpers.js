@@ -21,6 +21,7 @@ class CharacterCreatorHelpers {
             { name: "Path", provider: page => this.generatePathsPageHtml(character, page, structuredCharacterCreator), },
             { name: "Masteries", provider: page => this.generateMasteriesPageHtml(character, page, structuredCharacterCreator), },
             { name: "Attributes", provider: page => this.generateAttributesPageHtml(character, page, structuredCharacterCreator), },
+            { name: "Skills", provider: page => this.generateSkillsPageHtml(character, page, structuredCharacterCreator), },
             { name: "Flavor", provider: page => this.generateFlavorPageHtml(character, page, structuredCharacterCreator), },
         ];
         for (let page of pages) {
@@ -1108,6 +1109,150 @@ class CharacterCreatorHelpers {
         }
 
         updateAll();
+
+        return element;
+    }
+
+    static generateSkillsPageHtml(character, page, structuredCharacterCreator) {
+        let variables = character.getVariables();
+        let element = fromHTML(`<div class="characterCreator-page divList">`);
+
+        element.appendChild(fromHTML(`<h1>Distribute Skill Increases`));
+        let descriptionContainer = fromHTML(`<div class="sticky">`);
+        element.appendChild(descriptionContainer);
+        function updateDescription() {
+            let scalingStats = character.getScalingStats();
+            let skillIncreases = scalingStats.skillIncreases;
+            let skillMaximum = scalingStats.skillMaximum;
+            let remainingSkillIncreases = character.getRemainingSkillIncreases();
+
+            let content = `Distribute ${remainingSkillIncreases}/${skillIncreases} skill increases up to a maximum of ${skillMaximum} each.`;
+            let structuredSection = SectionHelpers.generateStructuredHtmlForSection(new Section({
+                content,
+            }));
+
+            descriptionContainer.innerHTML = "";
+            descriptionContainer.appendChild(structuredSection.wrapperElement);
+        }
+        updateDescription();
+
+        element.appendChild(hb(4));
+        let skillFieldsContainer = fromHTML(`<div class="characterCreator-skillFields divList gap-8 markTooltips">`);
+        element.appendChild(skillFieldsContainer);
+
+        let updateFunctions = [];
+
+        let fields = CharacterHelpers.getSkillFieldNames();
+        for (let field of fields) {
+            let branches = CharacterHelpers.getSkillBranchNamesByField(field);
+            let baseFieldLevel = character.getBaseSkillFieldLevel(field);
+
+
+            let skillFieldContainer = fromHTML(`<div class="characterCreator-skillField-container divList gap-2">`);
+            skillFieldsContainer.appendChild(skillFieldContainer);
+            skillFieldContainer._skillField = field;
+
+            let fieldElement = fromHTML(`<div class="characterCreator-skillField listHorizontal gap-4">`);
+            skillFieldContainer.appendChild(fieldElement);
+            let fieldNameElement = fromHTML(`<h1 class="characterCreator-skillField-name">`);
+            fieldElement.appendChild(fieldNameElement);
+            fieldNameElement.textContent = field;
+            let fieldValueElement = fromHTML(`<div class="characterCreator-skillField-value">`);
+            fieldElement.appendChild(fieldValueElement);
+            function updateFieldValue() {
+                baseFieldLevel = character.getBaseSkillFieldLevel(field);
+                fieldValueElement.textContent = baseFieldLevel;
+            }
+            updateFieldValue();
+            updateFunctions.push(updateFieldValue);
+
+            let branchesContainer = fromHTML(`<div class="characterCreator-branches-container divList gap-2">`);
+            skillFieldContainer.appendChild(branchesContainer);
+
+            for (let branch of branches) {
+                let skills = CharacterHelpers.getSkillNamesByBranch(branch);
+                let baseBranchLevel = character.getBaseSkillBranchLevel(branch);
+                let branchLevel = character.getSkillBranchLevel(branch);
+
+                let skillBranchContainer = fromHTML(`<div class="characterCreator-skillBranch-container divList gap-2">`);
+                branchesContainer.appendChild(skillBranchContainer);
+                skillBranchContainer._skillBranch = branch;
+
+                let branchElement = fromHTML(`<div class="characterCreator-skillBranch listHorizontal gap-4">`);
+                skillBranchContainer.appendChild(branchElement);
+                let branchNameElement = fromHTML(`<h2 class="characterCreator-skillBranch-name">`);
+                branchElement.appendChild(branchNameElement);
+                branchNameElement.textContent = branch;
+                let branchValueElement = fromHTML(`<div class="characterCreator-skillBranch-value">`);
+                branchElement.appendChild(branchValueElement);
+                function updateBranchValue() {
+                    baseBranchLevel = character.getBaseSkillBranchLevel(branch);
+                    branchLevel = character.getSkillBranchLevel(branch);
+                    branchValueElement.textContent = `${baseBranchLevel} | ${branchLevel}`;
+                }
+                updateBranchValue();
+                updateFunctions.push(updateBranchValue);
+
+                let skillsContainer = fromHTML(`<div class="characterCreator-skills-container listHorizontal gap-2">`);
+                skillBranchContainer.appendChild(skillsContainer);
+
+                for (let skill of skills) {
+                    let baseSkillLevel = character.getBaseSkillLevel(skill);
+                    let skillLevel = character.getSkillLevel(skill);
+                    let description = Registries.skills.get(skill).content;
+
+                    let skillElement = fromHTML(`<div class="character-skill divList bordered rounded-xl">`);
+                    skillsContainer.appendChild(skillElement);
+                    skillElement._skill = skill;
+
+                    let skillNameElement = fromHTML(`<div class="character-skill-name mediumElement">`);
+                    skillNameElement.setAttribute('tooltip', description);
+                    skillElement.appendChild(skillNameElement);
+                    skillNameElement.textContent = skill;
+                    skillElement.appendChild(hr());
+                    let skillValueElement = fromHTML(`<div class="character-skill-value largeElement listHorizontal gap-2">`);
+                    skillElement.appendChild(skillValueElement);
+                    let skillInputElement = fromHTML(`<input type="number" class="character-skill-base-value mediumElement rounded">`);
+                    skillValueElement.appendChild(skillInputElement);
+                    let skillTotalValueElement = fromHTML(`<div class="character-skill-total-value largeElement">`);
+                    skillValueElement.appendChild(skillTotalValueElement);
+
+                    function updateSkillValue() {
+                        skillLevel = character.getSkillLevel(skill);
+                        skillTotalValueElement.textContent = skillLevel;
+                    }
+                    updateSkillValue();
+                    updateFunctions.push(updateSkillValue);
+
+                    skillInputElement.value = baseSkillLevel;
+                    skillInputElement.addEventListener('input', () => {
+                        if (skillInputElement.value == '') return;
+                        let oldValue = baseSkillLevel;
+                        let newValue = InputHelpers.fixNumberInput(skillInputElement);
+
+                        let scalingStats = character.getScalingStats();
+                        let remainingSkillIncreases = character.getRemainingSkillIncreases();
+                        let skillMaximum = scalingStats.skillMaximum;
+                        let difference = Math.min(newValue - oldValue, remainingSkillIncreases);
+                        if (character.settings.validate) newValue = InputHelpers.constrainInput(skillInputElement, value => clamp(oldValue + difference, 0, skillMaximum));
+                        if (oldValue == newValue) return;
+
+                        baseSkillLevel = newValue;
+                        character.setBaseSkillLevel(skill, newValue);
+                        CharacterHelpers.saveCharacter(character);
+                        updateAll();
+                    });
+                    skillInputElement.addEventListener('focusout', () => {
+                        if (skillInputElement.value == '') skillInputElement.value = baseSkillLevel;
+                    });
+                }
+            }
+        }
+
+        function updateAll() {
+            updateFunctions.forEach(f => f());
+            updateDescription();
+        }
 
         return element;
     }

@@ -1,6 +1,6 @@
 class CharacterHelpers {
     static defaultName = "New Character";
-    static scalingStatNames = new Set(["Level", "Rank", "Tier", "Attribute Increases", "Attribute Maximum", "Attribute Boosts", "Max Runes", "Max Energy"]);
+    static scalingStatNames = new Set(["Level", "Rank", "Tier", "Attribute Increases", "Attribute Maximum", "Attribute Boosts", "Skill Increases", "Skill Maximum", "Max Runes", "Max Energy"]);
     static attributeStatNames = new Set(["Max Health", "Base Shield", "Regeneration", "Speed", "Power", "Evasion", "Accuracy", "Consistency", "Agility", "Potential", "Luck", "Reflex", "Initiative", "Genius", "Multitasking", "Range"]);
     static staticStatNames = new Set(["Graze Range", "Crit Range", "Reach", "Size", "Actions", "Move Actions", "Quick Actions"]);
     static allStatNames = new Set();
@@ -65,6 +65,38 @@ class CharacterHelpers {
 
     static getStatName(stat) {
         return toTextCase(stat);
+    }
+
+    static getSkillsByBranch(branch) {
+        return Registries.skills.getAllByTag(branch);
+    }
+
+    static getSkillNamesByBranch(branch) {
+        return this.getSkillsByBranch(branch).map(s => s.title);
+    }
+
+    static getSkillsByField(field) {
+        return Registries.skills.getAllByTag(field);
+    }
+
+    static getSkillNamesByField(field) {
+        return this.getSkillsByField(field).map(s => s.title);
+    }
+
+    static getSkillBranchesByField(field) {
+        return Registries.skillBranches.getAllByTag(field);
+    }
+
+    static getSkillBranchNamesByField(field) {
+        return this.getSkillBranchesByField(field).map(s => s.title);
+    }
+
+    static getSkillFields() {
+        return Registries.skillFields.getAll();
+    }
+
+    static getSkillFieldNames() {
+        return this.getSkillFields().map(s => s.title);
     }
 
     static loadCharacters() {
@@ -295,52 +327,53 @@ class CharacterHelpers {
             element.appendChild(hb(4));
             let menuElement = fromHTML(`<div class="character-menu divList">`);
             element.appendChild(menuElement);
-            let tabsBar = fromHTML(`<div class="character-menu-tabs listHorizontal">`);
-            menuElement.appendChild(tabsBar);
-            let abilitiesTabElement = fromHTML(`<button class="character-menu-tab largeElement bordered-inset raised hideDisabled" disabled>Abilities`);
-            tabsBar.appendChild(abilitiesTabElement);
-            let flavorTabElement = fromHTML(`<button class="character-menu-tab largeElement hoverable hideDisabled">Flavor`);
-            tabsBar.appendChild(flavorTabElement);
+            let tabBar = fromHTML(`<div class="character-menu-tabs listHorizontal">`);
+            menuElement.appendChild(tabBar);
+
+            let pages = [
+                { name: "Abilities", provider: page => this.generateAbilitiesSubPageHtml(character, settings), },
+                { name: "Skills", provider: page => this.generateSkillsSubPageHtml(character, settings), },
+                { name: "Flavor", provider: page => this.generateFlavorSubPageHtml(character, settings), },
+            ];
+            let currentPage = null;
+            function updatePages() {
+                for (let page of pages) {
+                    if (page == currentPage) {
+                        page.tabElement.classList.add('raised');
+                        page.tabElement.classList.add('bordered-inset');
+                        page.tabElement.classList.remove('hoverable');
+                        page.tabElement.setAttribute('disabled', '');
+                    } else {
+                        page.tabElement.classList.remove('raised');
+                        page.tabElement.classList.remove('bordered-inset');
+                        page.tabElement.classList.add('hoverable');
+                        page.tabElement.removeAttribute('disabled');
+                    }
+                }
+            }
+            for (let page of pages) {
+                let element = page.tabElement = fromHTML(`<button class="character-tab largeElement raised bordered-inset hoverable hideDisabled">`);
+                tabBar.appendChild(element);
+                element.textContent = page.name;
+                element.addEventListener('click', () => {
+                    openPage(page)
+                });
+            }
 
             menuElement.appendChild(hb(2));
             let subPageElement = fromHTML(`<div class="character-menu-subPage">`);
             menuElement.appendChild(subPageElement);
-            let abilitiesSubPageElement = this.generateAbilitiesSubPageHtml(character, settings);
-            subPageElement.appendChild(abilitiesSubPageElement);
-            let flavorSubPageElement = this.generateFlavorSubPageHtml(character);
-            subPageElement.appendChild(flavorSubPageElement);
-            flavorSubPageElement.classList.add('hide');
 
-            abilitiesTabElement.addEventListener('click', () => {
-                abilitiesTabElement.setAttribute('disabled', '');
-                flavorTabElement.removeAttribute('disabled');
+            function openPage(page) {
+                if (currentPage == page) return;
+                currentPage = page;
+                updatePages();
 
-                abilitiesTabElement.classList.add('raised');
-                abilitiesTabElement.classList.add('bordered-inset');
-                abilitiesTabElement.classList.remove('hoverable');
-                flavorTabElement.classList.remove('raised');
-                flavorTabElement.classList.remove('bordered-inset');
-                flavorTabElement.classList.add('hoverable');
-
-                // Pages
-                abilitiesSubPageElement.classList.remove('hide');
-                flavorSubPageElement.classList.add('hide');
-            });
-            flavorTabElement.addEventListener('click', () => {
-                abilitiesTabElement.removeAttribute('disabled');
-                flavorTabElement.setAttribute('disabled', '');
-
-                abilitiesTabElement.classList.remove('raised');
-                abilitiesTabElement.classList.remove('bordered-inset');
-                abilitiesTabElement.classList.add('hoverable');
-                flavorTabElement.classList.add('raised');
-                flavorTabElement.classList.add('bordered-inset');
-                flavorTabElement.classList.remove('hoverable');
-
-                // Pages
-                abilitiesSubPageElement.classList.add('hide');
-                flavorSubPageElement.classList.remove('hide');
-            });
+                subPageElement.innerHTML = '';
+                let element = page.element = page.provider(page);
+                subPageElement.appendChild(element);
+            }
+            openPage(pages[0]);
         }
 
         return structuredCharacter;
@@ -705,7 +738,88 @@ class CharacterHelpers {
         return structuredSection;
     }
 
-    static generateFlavorSubPageHtml(character) {
+    static generateSkillsSubPageHtml(character, settings) {
+        let element = fromHTML(`<div class="character-subPage-skills" placeholder="No skill unlocked.">`);
+
+        let skillFieldsContainer = fromHTML(`<div class="characterCreator-skillFields divList gap-6 markTooltips">`);
+
+        let hasSkillAbove0 = false;
+        let fields = CharacterHelpers.getSkillFieldNames();
+        for (let field of fields) {
+            let branches = CharacterHelpers.getSkillBranchNamesByField(field);
+            let baseFieldLevel = character.getBaseSkillFieldLevel(field);
+
+
+            let skillFieldContainer = fromHTML(`<div class="characterCreator-skillField-container divList gap-0">`);
+            skillFieldContainer._skillField = field;
+
+            let fieldElement = fromHTML(`<div class="characterCreator-skillField listHorizontal gap-4">`);
+            skillFieldContainer.appendChild(fieldElement);
+            let fieldNameElement = fromHTML(`<h1 class="characterCreator-skillField-name">`);
+            fieldElement.appendChild(fieldNameElement);
+            fieldNameElement.textContent = field;
+            let fieldValueElement = fromHTML(`<div class="characterCreator-skillField-value">`);
+            fieldElement.appendChild(fieldValueElement);
+            fieldValueElement.textContent = baseFieldLevel;
+
+            let branchesContainer = fromHTML(`<div class="characterCreator-branches-container divList gap-4">`);
+            skillFieldContainer.appendChild(branchesContainer);
+
+            let fieldHasSkillAbove0 = false;
+            for (let branch of branches) {
+                let skills = CharacterHelpers.getSkillNamesByBranch(branch);
+                let branchLevel = character.getSkillBranchLevel(branch);
+
+                let skillBranchContainer = fromHTML(`<div class="characterCreator-skillBranch-container divList gap-0">`);
+                skillBranchContainer._skillBranch = branch;
+
+                let branchElement = fromHTML(`<div class="characterCreator-skillBranch listHorizontal gap-4">`);
+                skillBranchContainer.appendChild(branchElement);
+                let branchNameElement = fromHTML(`<h2 class="characterCreator-skillBranch-name">`);
+                branchElement.appendChild(branchNameElement);
+                branchNameElement.textContent = branch;
+                let branchValueElement = fromHTML(`<div class="characterCreator-skillBranch-value">`);
+                branchElement.appendChild(branchValueElement);
+                branchValueElement.textContent = branchLevel;
+
+                let skillsContainer = fromHTML(`<div class="characterCreator-skills-container divList">`);
+                skillBranchContainer.appendChild(skillsContainer);
+
+                let branchHasSkillAbove0 = false;
+                for (let skill of skills) {
+                    let skillLevel = character.getSkillLevel(skill);
+                    if (skillLevel == 0) continue;
+                    branchHasSkillAbove0 = true;
+                    let description = Registries.skills.get(skill).content;
+
+                    let skillElement = fromHTML(`<div class="characterCreator-skill listHorizontal gap-4">`);
+                    skillsContainer.appendChild(skillElement);
+                    let skillNameElement = fromHTML(`<div class="characterCreator-skill-name">`);
+                    skillElement.appendChild(skillNameElement);
+                    skillNameElement.textContent = skill;
+                    skillNameElement.setAttribute('tooltip', description);
+                    let skillValueElement = fromHTML(`<div class="characterCreator-skill-value">`);
+                    skillElement.appendChild(skillValueElement);
+                    skillValueElement.textContent = skillLevel;
+                }
+                if (branchHasSkillAbove0) {
+                    fieldHasSkillAbove0 = true;
+                    branchesContainer.appendChild(skillBranchContainer);
+                }
+            }
+            if (fieldHasSkillAbove0) {
+                hasSkillAbove0 = true;
+                skillFieldsContainer.appendChild(skillFieldContainer);
+            }
+        }
+        if (hasSkillAbove0) {
+            element.appendChild(skillFieldsContainer);
+        }
+
+        return element;
+    }
+
+    static generateFlavorSubPageHtml(character, settings) {
         let element = fromHTML(`<div class="character-subPage-flavor">`);
 
         let appearanceContainer = fromHTML(`<div class="character-details-backstory-container"><h1>Appearance`);

@@ -89,7 +89,7 @@ async function staleWhileRevalidate(request) {
     // Try to serve the cached response first
     const cachedResponse = await cache.match(request);
     const cachedClone = cachedResponse?.clone();
-    const fetchPromise = fetch(request)
+    const fetchPromise = fetch(request, { cache: "reload" })
         .then(async networkResponse => {
             if (networkResponse.ok) {
                 //console.log(`Stale-While-Revalidate: Updating cache for ${request.url}`);
