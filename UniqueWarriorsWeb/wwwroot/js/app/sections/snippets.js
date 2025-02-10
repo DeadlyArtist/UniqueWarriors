@@ -92,12 +92,13 @@ class Snippets {
             new Snippet("level", "rules/Stats/Scaling Stats/Level"),
             new Snippet("rank", "rules/Stats/Scaling Stats/Rank"),
             new Snippet("tier", "rules/Stats/Scaling Stats/Tier"),
-            new Snippet("max runes", "rules/Stats/Scaling Stats/Max Runes"),
             new Snippet("max energy", "rules/Stats/Scaling Stats/Max Energy"),
             new Snippet("max health", "rules/Stats/Attribute Stats/Max Health"),
             new Snippet("base shield", "rules/Stats/Attribute Stats/Base Shield"),
             new Snippet("power", "rules/Stats/Attribute Stats/Power"),
             new Snippet("speed", "rules/Stats/Attribute Stats/Speed"),
+            new Snippet("max attunements", "rules/Items/Attunements"),
+            new Snippet("attunement", "rules/Items/Attunements"),
             new Snippet("skill", "rules/Skills*noChildren"),
             new Snippet("skill branch", "rules/Skills/Skill Branches And Fields"),
             new Snippet("skill branches", "rules/Skills/Skill Branches And Fields"),
@@ -106,6 +107,7 @@ class Snippets {
             new Snippet("skill check modifier", "rules/Skills/Skill Checks/Skill Check Modifier"),
             new Snippet("skill level", "rules/Skills/Skill Level"),
             new Snippet("skill increase", "rules/Skills/Skill Level/Skill Increases"),
+            new Snippet("skill maximum", "rules/Skills/Skill Level/Skill Increases"),
 
 
             // Tag only

@@ -1,8 +1,8 @@
 class CharacterHelpers {
     static defaultName = "New Character";
-    static scalingStatNames = new Set(["Level", "Rank", "Tier", "Attribute Increases", "Attribute Maximum", "Attribute Boosts", "Skill Increases", "Skill Maximum", "Max Runes", "Max Energy"]);
+    static scalingStatNames = new Set(["Level", "Rank", "Tier", "Attribute Increases", "Attribute Maximum", "Attribute Boosts", "Skill Increases", "Skill Maximum", "Max Energy"]);
     static attributeStatNames = new Set(["Max Health", "Base Shield", "Regeneration", "Speed", "Power", "Evasion", "Accuracy", "Consistency", "Agility", "Potential", "Luck", "Reflex", "Initiative", "Genius", "Multitasking", "Range"]);
-    static staticStatNames = new Set(["Graze Range", "Crit Range", "Reach", "Size", "Actions", "Move Actions", "Quick Actions"]);
+    static staticStatNames = new Set(["Graze Range", "Crit Range", "Reach", "Size", "Actions", "Move Actions", "Quick Actions", "Max Attunements"]);
     static allStatNames = new Set();
 
     static setup() {
@@ -40,6 +40,7 @@ class CharacterHelpers {
             actions: 2,
             moveActions: 1,
             quickActions: 1,
+            maxAttunements: 3,
         };
     }
 

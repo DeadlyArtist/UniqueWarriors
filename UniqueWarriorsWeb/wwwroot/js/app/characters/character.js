@@ -70,9 +70,8 @@ class Character {
         let attributeIncreases = this.getMaxAttributeIncreases();
         let attributeMaximum = 2 + rank - tier;
         let attributeBoosts = this.getMaxAttributeBoosts();
-        let skillIncreases = 10 + Math.floor(level / 2);
+        let skillIncreases = 10 + level;
         let skillMaximum = 1 + tier;
-        let maxRunes = tier;
         let maxEnergy = Math.floor(rank / 2);
         if (level >= 3) maxEnergy += 2;
 
@@ -85,7 +84,6 @@ class Character {
             attributeBoosts,
             skillIncreases,
             skillMaximum,
-            maxRunes,
             maxEnergy,
         };
     }
@@ -140,6 +138,7 @@ class Character {
             actions: this.statOverrides.actions ?? baseStats.actions,
             moveActions: this.statOverrides.moveActions ?? baseStats.moveActions,
             quickActions: this.statOverrides.quickActions ?? baseStats.quickActions,
+            maxAttunements: this.statOverrides.maxAttunements ?? baseStats.maxAttunements,
         };
     }
 

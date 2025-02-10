@@ -232,7 +232,7 @@ def rawsectiontosection(rawsection: RawSection) -> Section:
 
 def recursivejsonobjectcleanup(jsonobject):
     if isinstance(jsonobject, list):
-        jsonobject[:] = [e for e in jsonobject if e]
+        jsonobject[:] = [e for e in jsonobject if e is not None]
         for i, e in enumerate(jsonobject):
             jsonobject[i] = recursivejsonobjectcleanup(e)
     if isinstance(jsonobject, dict):
