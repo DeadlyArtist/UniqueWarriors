@@ -41,11 +41,11 @@ class Pages {
             this.rules,
             this.neontris,
             this.skills,
-            this.defaultAbilities,
             this.techniques,
             this.masteries,
             this.summons,
             this.conditions,
+            this.defaultAbilities,
             this.characters,
         ];
 
