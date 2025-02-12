@@ -48,7 +48,7 @@ class Registry {
 
         this.unregister(entry);
         if (settings.replace) {
-            let id = this.getId(settings.replace);
+            let id = settings.replace === true ? entry.id : this.getId(settings.replace);
             if (id == this.first?.id) settings.insertFirst = true;
             else settings.insertAfter = this.getEntryBefore(id);
             this.unregister(id);

@@ -22,7 +22,7 @@ class CharacterCreatorPageManager extends PageManager {
             return;
         }
 
-        this.character = Registries.characters.get(this.characterId);
+        this.character = CharacterHelpers.current = Registries.characters.get(this.characterId);
         if (!this.character) {
             Pages.loadError(`Character not found or invalid: ${this.characterId}`);
             return;

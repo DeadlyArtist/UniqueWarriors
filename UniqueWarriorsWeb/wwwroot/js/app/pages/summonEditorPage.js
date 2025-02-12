@@ -30,12 +30,12 @@ class SummonEditorPageManager extends PageManager {
             return;
         }
 
-        this.character = Registries.characters.get(this.characterId);
+        this.character = CharacterHelpers.current = Registries.characters.get(this.characterId);
         if (!this.character) {
             Pages.loadError(`Character not found or invalid: ${this.characterId}`);
             return;
         }
-        this.summon = this.character.summons.get(this.summonId);
+        this.summon = SummonHelpers.current = this.character.summons.get(this.summonId);
         if (!this.character) {
             Pages.loadError(`Summon not found or invalid: ${this.summonId}`);
             return;

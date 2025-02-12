@@ -464,6 +464,8 @@ class CharacterHelpers {
             return length == 1 ? "y" : "ies";
         }
         let validationMessages = [];
+        let stats = character.getStats();
+
         let remainingTechniques = CharacterCreatorHelpers.getRemainingOtherTechniques(character);
         if (remainingTechniques < 0) validationMessages.push(`${-remainingTechniques} too many techniques`);
         let variantWithTooManyTechniques = character.summons.filter(s => AbilitySectionHelpers.isVariant(s) && CharacterCreatorHelpers.getTooManyThingsCountInVariant(character, s) > CharacterCreatorHelpers.getMaxThingsInVariant(character));
@@ -505,14 +507,20 @@ class CharacterHelpers {
         //    if (value > attributeMaximum) validationMessages.push(`Attribute "${toTextCase(key)}" is above the maximum of ${attributeMaximum}`);
         //}
 
+        let remainingSkills = CharacterCreatorHelpers.getRemainingMasteries(character);
+        if (remainingSkills < 0) validationMessages.push(`${-remainingSkills} too many skill increases used`);
+        let tooHighSkills = Object.entries(character.skills).filter(e => e[1] > stats.skillMaximum).map(e => e[0]);
+        if (tooHighSkills.length != 0) validationMessages.push(`${tooHighSkills.length} skills above the maximum (${tooHighSkills.join(", ")})`);
+
         return validationMessages;
     }
 
     static generateValidationHtml(character, settings) {
         let validationMessages = this.getValidationMessages(character);
+        let needsUpdate = CharacterUpdater.checkForAbilityUpdates(character).needsUpdate;
 
         let element = fromHTML(`<div class="character-validation-container listContainerHorizontal alignItemsStart gap-2">`);
-        if (validationMessages.length == 0) {
+        if (validationMessages.length == 0 && !needsUpdate) {
             element.classList.add('hide');
             return element;
         }
@@ -536,6 +544,17 @@ class CharacterHelpers {
         let expandedArea = fromHTML(`<div class="character-validation-messages divList hide">`);
         contentContainer.appendChild(expandedArea);
 
+        if (needsUpdate) {
+            let element = fromHTML(`<div class="listHorizontal">`);
+            element.appendChild(fromHTML(`<i>Outdated character. Update? (Warning: Some abilities may be deleted or replaced!)`));
+            let updateButton = fromHTML(`<button class="listHorizontal largeElement bordered hoverable gap-1">Update`);
+            element.appendChild(updateButton);
+            updateButton.addEventListener('click', () => {
+                CharacterUpdater.update(character);
+                window.location.reload();
+            });
+            expandedArea.appendChild(element);
+        }
         for (let message of validationMessages) {
             let element = fromHTML(`<i class="character-validation-message">`);
             expandedArea.appendChild(element);

@@ -264,6 +264,30 @@ class Section {
         }
     }
 
+    compareSurface(other) {
+        if (!other) return false;
+
+        if (this.title != other.title) return false;
+        if (JSON.stringify(this.attributes) != JSON.stringify(other.attributes)) return false;
+        if (this.content != other.content) return false;
+        if (JSON.stringify(this.table) != JSON.stringify(other.table)) return false;
+        if (this.tableHeaderLocation != other.tableHeaderLocation) return false;
+
+        return true;
+    }
+
+    compareRecursively(other) {
+        if (!other) return false;
+        if (!this.compareSurface(other)) return false;
+        if (this.subSections.length != other.subSections.length) return false;
+
+        for (let section of this.subSections) {
+            if (!section.compareRecursively(other.subSections.get(section.title))) return false;
+        }
+
+        return true;
+    }
+
     // Cloning
     clone() {
         let cloned = Section.fromJSON(clone(this));
