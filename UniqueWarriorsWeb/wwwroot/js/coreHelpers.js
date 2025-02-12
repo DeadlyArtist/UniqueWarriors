@@ -46,6 +46,7 @@ window.addEventListener('focus', () => {
 
 
 let lastMousePosition = null;
+let isMouseInputReal = false;
 onBodyCreated(() => {
     const dispatchFakeMousemove = () => {
         if (lastMousePosition) {
@@ -68,7 +69,25 @@ onBodyCreated(() => {
 
     dispatchFakeMousemove();
 });
-document.addEventListener('mousemove', e => lastMousePosition = {x: e.clientX, y: e.clientY}, true);
+document.addEventListener('mousemove', e => {
+    if (isMouseInputReal) lastMousePosition = { x: e.clientX, y: e.clientY };
+}, true);
+document.addEventListener('pointerdown', (e) => {
+    if (e.pointerType === "mouse") {
+        isMouseInputReal = true;
+    } else {
+        isMouseInputReal = false;
+        lastMousePosition = null;
+    }
+}, true);
+document.addEventListener('pointermove', (e) => {
+    if (e.pointerType === "mouse") {
+        isMouseInputReal = true;
+    } else {
+        isMouseInputReal = false;
+        lastMousePosition = null;
+    }
+}, true);
 
 async function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
