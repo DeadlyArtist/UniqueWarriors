@@ -869,7 +869,7 @@ class CharacterHelpers {
             fieldElement.appendChild(fieldNameElement);
             fieldNameElement.textContent = field;
 
-            let branchesContainer = fromHTML(`<div class="skillsOverview-branches-container divList gap-4">`);
+            let branchesContainer = fromHTML(`<div class="skillsOverview-branches-container divList gap-4">`); // listHorizontal gap-6 alignItemsStart :vs: divList gap-4
             skillFieldContainer.appendChild(branchesContainer);
 
             for (let branch of branches) {
