@@ -27,15 +27,6 @@ window.addEventListener('hashchange', _tryRemoveEmptyHash);
 window.addEventListener('load-silently', _tryRemoveEmptyHash);
 _tryRemoveEmptyHash();
 
-// Safari fix
-if (!Iterator.prototype.forEach) {
-    Iterator.prototype.forEach = function (callback, thisArg) {
-        for (const value of this) {
-            callback.call(thisArg, value);
-        }
-    };
-}
-
 
 
 pressedKeys = {};

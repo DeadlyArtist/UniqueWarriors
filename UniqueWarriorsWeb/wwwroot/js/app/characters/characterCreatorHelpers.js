@@ -1668,7 +1668,7 @@ class CharacterCreatorHelpers {
         environment ??= {};
         let remainingFreeMutations = environment.remainingFreeMutations ??= this.getRemainingFreeMutations(character, environment);
         let freeMutated = 0;
-        remainingFreeMutations.values().forEach(amount => freeMutated += 1 - amount);
+        [...remainingFreeMutations.values()].forEach(amount => freeMutated += 1 - amount);
         return freeMutated;
     }
 
@@ -1676,7 +1676,7 @@ class CharacterCreatorHelpers {
         environment ??= {};
         let remainingFreeMutations = environment.remainingFreeMutations ??= this.getRemainingFreeMutationsInVariant(character, summon, environment);
         let freeMutated = 0;
-        remainingFreeMutations.values().forEach(amount => freeMutated += 1 - amount);
+        [...remainingFreeMutations.values()].forEach(amount => freeMutated += 1 - amount);
         return freeMutated;
     }
 
