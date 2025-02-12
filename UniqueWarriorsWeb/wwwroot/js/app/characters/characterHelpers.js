@@ -740,9 +740,11 @@ class CharacterHelpers {
     }
 
     static generateSkillsSubPageHtml(character, settings) {
+        settings ??= {};
+
         let element = fromHTML(`<div class="character-subPage-skills" placeholder="No skills unlocked.">`);
 
-        let skillFieldsContainer = fromHTML(`<div class="characterCreator-skillFields divList gap-6 markTooltips">`);
+        let skillFieldsContainer = fromHTML(`<div class="character-skillFields divList gap-6 markTooltips">`);
 
         let hasSkillAbove0 = false;
         let fields = CharacterHelpers.getSkillFieldNames();
@@ -750,20 +752,19 @@ class CharacterHelpers {
             let branches = CharacterHelpers.getSkillBranchNamesByField(field);
             let baseFieldLevel = character.getBaseSkillFieldLevel(field);
 
-
-            let skillFieldContainer = fromHTML(`<div class="characterCreator-skillField-container divList gap-0">`);
+            let skillFieldContainer = fromHTML(`<div class="character-skillField-container divList gap-0">`);
             skillFieldContainer._skillField = field;
 
-            let fieldElement = fromHTML(`<div class="characterCreator-skillField listHorizontal gap-4">`);
+            let fieldElement = fromHTML(`<div class="character-skillField listHorizontal gap-4">`);
             skillFieldContainer.appendChild(fieldElement);
-            let fieldNameElement = fromHTML(`<h1 class="characterCreator-skillField-name">`);
+            let fieldNameElement = fromHTML(`<h1 class="character-skillField-name">`);
             fieldElement.appendChild(fieldNameElement);
             fieldNameElement.textContent = field;
-            let fieldValueElement = fromHTML(`<div class="characterCreator-skillField-value">`);
+            let fieldValueElement = fromHTML(`<div class="character-skillField-value">`);
             fieldElement.appendChild(fieldValueElement);
             fieldValueElement.textContent = baseFieldLevel;
 
-            let branchesContainer = fromHTML(`<div class="characterCreator-branches-container divList gap-4">`);
+            let branchesContainer = fromHTML(`<div class="character-branches-container divList gap-4">`);
             skillFieldContainer.appendChild(branchesContainer);
 
             let fieldHasSkillAbove0 = false;
@@ -771,19 +772,19 @@ class CharacterHelpers {
                 let skills = CharacterHelpers.getSkillNamesByBranch(branch);
                 let branchLevel = character.getSkillBranchLevel(branch);
 
-                let skillBranchContainer = fromHTML(`<div class="characterCreator-skillBranch-container divList gap-0">`);
+                let skillBranchContainer = fromHTML(`<div class="character-skillBranch-container divList gap-0">`);
                 skillBranchContainer._skillBranch = branch;
 
-                let branchElement = fromHTML(`<div class="characterCreator-skillBranch listHorizontal gap-4">`);
+                let branchElement = fromHTML(`<div class="character-skillBranch listHorizontal gap-4">`);
                 skillBranchContainer.appendChild(branchElement);
-                let branchNameElement = fromHTML(`<h2 class="characterCreator-skillBranch-name">`);
+                let branchNameElement = fromHTML(`<h2 class="character-skillBranch-name">`);
                 branchElement.appendChild(branchNameElement);
                 branchNameElement.textContent = branch;
-                let branchValueElement = fromHTML(`<div class="characterCreator-skillBranch-value">`);
+                let branchValueElement = fromHTML(`<div class="character-skillBranch-value">`);
                 branchElement.appendChild(branchValueElement);
                 branchValueElement.textContent = branchLevel;
 
-                let skillsContainer = fromHTML(`<div class="characterCreator-skills-container divList">`);
+                let skillsContainer = fromHTML(`<div class="character-skills-container divList">`);
                 skillBranchContainer.appendChild(skillsContainer);
 
                 let branchHasSkillAbove0 = false;
@@ -793,13 +794,13 @@ class CharacterHelpers {
                     branchHasSkillAbove0 = true;
                     let description = Registries.skills.get(skill).content;
 
-                    let skillElement = fromHTML(`<div class="characterCreator-skill listHorizontal gap-4">`);
+                    let skillElement = fromHTML(`<div class="character-skill listHorizontal gap-4">`);
                     skillsContainer.appendChild(skillElement);
-                    let skillNameElement = fromHTML(`<div class="characterCreator-skill-name">`);
+                    let skillNameElement = fromHTML(`<div class="character-skill-name">`);
                     skillElement.appendChild(skillNameElement);
                     skillNameElement.textContent = skill;
                     skillNameElement.setAttribute('tooltip', description);
-                    let skillValueElement = fromHTML(`<div class="characterCreator-skill-value">`);
+                    let skillValueElement = fromHTML(`<div class="character-skill-value">`);
                     skillElement.appendChild(skillValueElement);
                     skillValueElement.textContent = skillLevel;
                 }
@@ -842,6 +843,63 @@ class CharacterHelpers {
         let backstoryElement = fromHTML(`<div class="character-details-backstory">`);
         backstoryContainer.appendChild(backstoryElement);
         backstoryElement.textContent = character.details.backstory ?? "No backstory written yet...";
+
+        return element;
+    }
+
+    static generateSkillsOverviewHtml(settings) {
+        settings ??= {};
+
+        let element = fromHTML(`<div class="skillsOverview" placeholder="No skills found.">`);
+
+        let skillFieldsContainer = fromHTML(`<div class="skillsOverview-skillFields divList gap-6 markTooltips">`);
+        element.appendChild(skillFieldsContainer);
+
+        let fields = CharacterHelpers.getSkillFieldNames();
+        for (let field of fields) {
+            let branches = CharacterHelpers.getSkillBranchNamesByField(field);
+
+            let skillFieldContainer = fromHTML(`<div class="skillsOverview-skillField-container divList gap-0">`);
+            skillFieldsContainer.appendChild(skillFieldContainer);
+            skillFieldContainer._skillField = field;
+
+            let fieldElement = fromHTML(`<div class="skillsOverview-skillField listHorizontal gap-4">`);
+            skillFieldContainer.appendChild(fieldElement);
+            let fieldNameElement = fromHTML(`<h1 class="skillsOverview-skillField-name">`);
+            fieldElement.appendChild(fieldNameElement);
+            fieldNameElement.textContent = field;
+
+            let branchesContainer = fromHTML(`<div class="skillsOverview-branches-container divList gap-4">`);
+            skillFieldContainer.appendChild(branchesContainer);
+
+            for (let branch of branches) {
+                let skills = CharacterHelpers.getSkillNamesByBranch(branch);
+
+                let skillBranchContainer = fromHTML(`<div class="skillsOverview-skillBranch-container divList gap-0">`);
+                branchesContainer.appendChild(skillBranchContainer);
+                skillBranchContainer._skillBranch = branch;
+
+                let branchElement = fromHTML(`<div class="skillsOverview-skillBranch listHorizontal gap-4">`);
+                skillBranchContainer.appendChild(branchElement);
+                let branchNameElement = fromHTML(`<h2 class="skillsOverview-skillBranch-name">`);
+                branchElement.appendChild(branchNameElement);
+                branchNameElement.textContent = branch;
+
+                let skillsContainer = fromHTML(`<div class="skillsOverview-skills-container divList">`);
+                skillBranchContainer.appendChild(skillsContainer);
+
+                for (let skill of skills) {
+                    let description = Registries.skills.get(skill).content;
+
+                    let skillElement = fromHTML(`<div class="skillsOverview-skill listHorizontal gap-4">`);
+                    skillsContainer.appendChild(skillElement);
+                    let skillNameElement = fromHTML(`<div class="skillsOverview-skill-name">`);
+                    skillElement.appendChild(skillNameElement);
+                    skillNameElement.textContent = skill;
+                    skillNameElement.setAttribute('tooltip', description);
+                }
+            }
+        }
 
         return element;
     }
