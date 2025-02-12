@@ -5,11 +5,13 @@ html {
   line-height: 1.5;
   word-break: break-word;
   overflow: hidden;
+  position: fixed;
 }
 
 body {
-    height: 100vh;
-    margin: 0;
+  height: 100vh;
+  margin: 0;
+  position: fixed;
 }
 
 .navBarBreak {
