@@ -75,6 +75,12 @@ class SectionHelpers {
             sections.forEach(section => this.setupAbility(section));
         }
 
+        if (settings.severity) {
+            sections.forEach(section => {
+                if (section.headValues.has("Severity")) section.updateHeadValue("Severity", settings.severity);
+            });
+        }
+
         return sections;
     }
 

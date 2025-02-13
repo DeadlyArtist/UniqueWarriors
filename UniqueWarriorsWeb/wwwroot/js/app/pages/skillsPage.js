@@ -83,7 +83,7 @@ class SkillsPageManager extends PageManager {
     }
 
     generateGridHtml() {
-        return SectionHelpers.generateStructuredHtmlForSectionOverview(Registries.skills.getAll(), SectionHelpers.MasonryType, { addSearch: true }).container;
+        return SectionHelpers.generateStructuredHtmlForSectionOverview(Registries.skills.getAll(), SectionHelpers.MasonryType, { addSearch: true, tooltips: "tagsOnly" }).container;
     }
 
     generateTreeHtml() {

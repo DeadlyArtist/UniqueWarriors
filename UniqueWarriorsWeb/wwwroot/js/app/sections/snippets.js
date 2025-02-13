@@ -171,11 +171,11 @@ class Snippets {
             Registries.snippets.register(new Snippet(type, `rules/Attacks/Damage/Damage Types`));
         }
 
-        Registries.conditions.stream(event => {
-            let condition = event.obj;
-            if (event.registered) Snippets.registerSnippet(new Snippet(condition.id, `conditions/${condition.id}`));
-            else Snippets.unregisterSnippet(condition.id);
-        });
+        //Registries.conditions.stream(event => {
+        //    let condition = event.obj;
+        //    if (event.registered) Snippets.registerSnippet(new Snippet(condition.id, `conditions/${condition.id}`));
+        //    else Snippets.unregisterSnippet(condition.id);
+        //});
     }
 }
 Snippets.setup();

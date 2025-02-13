@@ -49,6 +49,12 @@ class SectionReferenceHelpers {
 
     static addTooltipsToStructuredSection(structuredSection) {
         if (structuredSection.settings.noTooltips) return;
+
+        if (structuredSection.settings.tooltips == "tagsOnly") {
+            this.addSnippets(null, [...structuredSection.attributesElement.querySelectorAll(Snippets.tagQuery)]);
+            return;
+        }
+
         SectionReferenceHelpers.addTooltips(structuredSection.attributesElement, structuredSection.settings.variables);
         SectionReferenceHelpers.addTooltips(structuredSection.contentElement, structuredSection.settings.variables);
         SectionReferenceHelpers.addTooltips(structuredSection.tableElement, structuredSection.settings.variables);
@@ -308,6 +314,27 @@ class SectionReferenceHelpers {
             if (element.matches(Snippets.snippetQuery)) snippetElements.push(element);
         }
         if (snippetElements.length == 0) return;
+
+        let conditionsRegex = new RegExp("\\b(" + Registries.conditions.map(k => escapeRegex(escapeHTML(k.id))).join("|") + ")(s?)(\\s?)(\\d*)\\b", "gi");
+        const nodes = getTextNodesFromArray(snippetElements);
+        let lowerCasedConditions = new Map(Registries.conditions.map(c => [c.id.toLowerCase(), c]));
+        for (let node of nodes) {
+            const oldHtml = escapeHTML(node.textContent);
+
+            const newHtml = oldHtml.replace(conditionsRegex, function (matched, matchedTarget, maybeS, maybeSpace, severity) {
+                let targetPath = lowerCasedConditions.get(matchedTarget.toLowerCase()).getPath();
+                let section = HtmlHelpers.getClosestProperty(node, '_section');
+                let sectionPath = section?.getPath();
+                if (sectionPath && sectionPath.split('*')[0] == SectionReferenceHelpers.pathEncoder.encode(targetPath.split('*')[0])) return matched;
+                let severityPart = severity ? `*severity=${severity}` : '';
+                return `<span class="snippetTarget" tooltip-path="${escapeHTML(targetPath)}${severityPart}">${matchedTarget + maybeS + maybeSpace + severity}</span>`;
+            });
+
+            if (oldHtml !== newHtml) {
+                replaceTextNodeWithHTML(node, newHtml);
+            }
+        }
+
         // Group snippets by whitelist and blacklist to optimize performance
         const snippets = Registries.snippets.getAll().sort((a, b) => b.target.length - a.target.length);
         const groupedSnippets = new Map();
@@ -331,6 +358,7 @@ class SectionReferenceHelpers {
         // Add the `snippetTarget` class to the blacklist to avoid re-snippeting
         for (const group of groupedSnippets.values()) {
             if (group.blacklist) group.blacklist = group.blacklist + ', .snippetTarget';
+            else group.blacklist = '.snippetTarget';
         }
 
         let groups = [...groupedSnippets.values()].sort((a, b) => ((b.whitelist ?? '').length + (b.blacklist ?? '').length) - ((a.whitelist ?? '').length + (a.blacklist ?? '').length));
