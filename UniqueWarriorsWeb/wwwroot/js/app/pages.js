@@ -161,6 +161,10 @@ class Pages {
         this.load(this.error);
     }
 
+    static reload() {
+        this.load(this.currentPage);
+    }
+
     static onHashChange() {
         this.currentPage?.onHashChange();
     }

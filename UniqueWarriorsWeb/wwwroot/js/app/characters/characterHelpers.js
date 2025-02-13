@@ -551,7 +551,7 @@ class CharacterHelpers {
             element.appendChild(updateButton);
             updateButton.addEventListener('click', () => {
                 CharacterUpdater.update(character);
-                window.location.reload();
+                Pages.reload();
             });
             expandedArea.appendChild(element);
         }

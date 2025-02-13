@@ -69,6 +69,7 @@ class SummonEditorHelpers {
         function chooseWeapon(weapon) {
             if (chosenWeapons.has(weapon)) return;
             chosenWeapons.register(weapon);
+            SummonHelpers.updateWeaponsHeadValue(summon);
             CharacterHelpers.saveCharacter(character);
             updateWeapons();
         }
@@ -76,6 +77,7 @@ class SummonEditorHelpers {
         function unchooseWeapon(weapon) {
             if (!chosenWeapons.has(weapon)) return;
             chosenWeapons.unregister(weapon);
+            SummonHelpers.updateWeaponsHeadValue(summon);
             CharacterHelpers.saveCharacter(character);
             updateWeapons();
         }

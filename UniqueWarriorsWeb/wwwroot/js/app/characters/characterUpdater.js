@@ -87,13 +87,94 @@ class CharacterUpdater {
             if (isOutdated) outdatedMasteries.push(mastery);
         }
 
-        // more stuff missing like summons
+        let unknownSummons = [];
+        let outdatedSummons = [];
+        for (let summon of character.summons) {
+            // Somehow need to check the abilities within and compare npc between summon and source, with special rules for variants
+            let original = AbilitySectionHelpers.getVariantOriginal(summon);
+            if (original) {
+                let oldOriginal = character.summons.get(original);
+                if (!oldOriginal) continue;
+                original = Registries.summons.get(original);
+                if (!original) continue;
+                let isOutdated = false;
+                for (let technique of summon.npc.techniques) {
+                    if (oldOriginal.npc.techniques.has(technique)) {
+                        if (!technique.compareRecursively(original.npc.techniques.get(technique))) {
+                            isOutdated = true;
+                            continue;
+                        }
+                    } else {
+                        let newTechnique = Registries.techniques.get(technique);
+                        if (!newTechnique || !technique.compareRecursively(newTechnique)) {
+                            isOutdated = true;
+                            continue;
+                        }
+                    }
+                }
+                for (let subSummon of summon.npc.summons) {
+                    if (oldOriginal.npc.summons.has(subSummon)) {
+                        if (!subSummon.compareRecursively(original.npc.summons.get(subSummon))) {
+                            isOutdated = true;
+                            continue;
+                        }
+                    } else {
+                        let newSummon = Registries.summons.get(subSummon);
+                        if (!newSummon || !subSummon.compareRecursively(newSummon)) {
+                            isOutdated = true;
+                            continue;
+                        }
+                    }
+                }
+                for (let mastery of summon.npc.masteries) {
+                    if (oldOriginal.npc.masteries.has(mastery)) {
+                        if (!mastery.compareRecursively(original.npc.masteries.get(mastery))) {
+                            isOutdated = true;
+                            continue;
+                        }
+                    }
+                }
+
+                if (isOutdated) {
+                    outdatedSummons.push(summon);
+                    continue;
+                }
+            }
+
+            if (AbilitySectionHelpers.isVariant(summon)) continue;
+
+            let source = Registries.summons.get(summon);
+            if (!source) {
+                unknownSummons.push(summon);
+                continue;
+            }
+
+            if (!source.compareRecursively(summon)) {
+                outdatedSummons.push(summon);
+                continue;
+            }
+        }
+
+        let unknownSummonNames = new Set(unknownSummons.map(t => t.title));
+        let outdatedSummonNames = new Set(outdatedSummons.map(t => t.title));
+        for (let summon of character.summons) {
+            let original = AbilitySectionHelpers.getVariantOriginal(summon);
+            if (original) {
+                if (unknownSummonNames.has(original)) {
+                    unknownSummons.push(summon);
+                } else if (outdatedSummonNames.has(original)) {
+                    if (!outdatedSummonNames.has(summon.title)) outdatedSummons.push(summon);
+                }
+            }
+        }
 
         let lists = {
             unknownTechniques,
             outdatedTechniques,
             unknownMasteries,
             outdatedMasteries,
+            unknownSummons,
+            outdatedSummons,
         }
         needsUpdate ||= Object.values(lists).filter(l => l.length != 0).length != 0;
 
@@ -134,8 +215,44 @@ class CharacterUpdater {
         character.masteries.clear();
         masteries.forEach(t => character.masteries.register(t));
 
-        // more stuff missing like summons
+        let summons = new Registry();
+        for (let summon of character.summons) {
+            let original = AbilitySectionHelpers.getVariantOriginal(summon);
+            if (original) {
+                let oldOriginal = character.summons.get(original);
+                if (!oldOriginal) continue;
+                original = Registries.summons.get(original);
+                if (!original) continue;
+                let variant = SectionHelpers.getVariant(original, summon.title);
+                for (let technique of summon.npc.techniques) {
+                    if (!oldOriginal.npc.techniques.has(technique)) {
+                        let newTechnique = Registries.techniques.get(technique);
+                        if (newTechnique) variant.npc.techniques.register(newTechnique);
+                    }
+                }
+                for (let subSummon of summon.npc.summons) {
+                    if (!oldOriginal.npc.summons.has(subSummon)) {
+                        let newSummon = Registries.summons.get(subSummon);
+                        if (newSummon) variant.npc.summons.register(subSummon);
+                    }
+                }
+                for (let weapon of summon.npc.weapons) {
+                    if (!oldOriginal.npc.weapons.has(weapon)) {
+                        variant.npc.weapons.register(weapon);
+                    }
+                }
+                SummonHelpers.updateWeaponsHeadValue(variant);
+                summons.register(variant);
+                continue;
+            }
 
-        CharacterHelpers.saveCharacter(character);
+            let source = Registries.summons.get(summon);
+            if (!source) continue;
+            summons.register(source.clone());
+        }
+        character.summons.clear();
+        summons.forEach(t => character.summons.register(t));
+
+        if (character instanceof Character) CharacterHelpers.saveCharacter(character);
     }
 }

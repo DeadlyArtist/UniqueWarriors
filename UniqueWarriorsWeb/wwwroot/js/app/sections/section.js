@@ -113,6 +113,9 @@ class Section {
             }
         }
     }
+    updateHeadValue(name, value) {
+        this.addHeadValue(name, value, { update: true });
+    }
 
     addTag(tag, settings = null) {
         settings ??= null;
@@ -284,6 +287,9 @@ class Section {
         for (let section of this.subSections) {
             if (!section.compareRecursively(other.subSections.get(section.title))) return false;
         }
+
+        if (!this.npc != !other.npc) return false;
+        if (this.npc && !this.npc.compareRecursively(other.npc)) return false;
 
         return true;
     }

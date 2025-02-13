@@ -39,4 +39,8 @@ class SummonHelpers {
         npc ??= summon.npc;
         return npc.settings.copyStatsFromSummoner ? SummonHelpers.copyVariablesFromSummoner(summon, variables, npc) : npc.getVariables();
     }
+
+    static updateWeaponsHeadValue(summon) {
+        summon.updateHeadValue("Weapons", summon.npc.weapons.join(', ') + '.');
+    }
 }

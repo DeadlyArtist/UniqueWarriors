@@ -356,6 +356,7 @@ class SectionHelpers {
     static setupVariant(section, variationTitle = null) {
         section.removeHeadValue("Connections");
         section.addHeadValue("Variant", `<${section.title}>`, { lineIndex: 0 });
+        section.id = generateUniqueId();
         section.title = variationTitle ?? `Variant ${section.title}`;
     }
 

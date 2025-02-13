@@ -181,6 +181,46 @@ class NPC {
         return variables;
     }
 
+    compareSurface(other) {
+        if (!other) return false;
+
+        if (this.imageUrl != other.imageUrl) return false;
+        if (this.name != other.name) return false;
+        if (JSON.stringify(this.stats) != JSON.stringify(other.stats)) return false;
+        if (JSON.stringify(this.baseStatOverrides) != JSON.stringify(other.baseStatOverrides)) return false;
+        if (JSON.stringify(this.statOverrides) != JSON.stringify(other.statOverrides)) return false;
+        if (JSON.stringify(this.boons) != JSON.stringify(other.boons)) return false;
+        if (JSON.stringify(this.details) != JSON.stringify(other.details)) return false;
+        if (JSON.stringify(this.settings) != JSON.stringify(other.settings)) return false;
+        if (JSON.stringify(this.weapons) != JSON.stringify(other.weapons)) return false;
+        if (JSON.stringify(this.paths) != JSON.stringify(other.paths)) return false;
+        if (JSON.stringify(this.characteristics) != JSON.stringify(other.characteristics)) return false;
+        if (JSON.stringify(this.passions) != JSON.stringify(other.passions)) return false;
+        if (this.ancestry != other.ancestry) return false;
+
+        return true;
+    }
+
+    compareRecursively(other) {
+        if (!other) return false;
+        if (!this.compareSurface(other)) return false;
+        if (this.techniques.length != other.techniques.length) return false;
+        if (this.summons.length != other.summons.length) return false;
+        if (this.masteries.length != other.masteries.length) return false;
+
+        for (let section of this.techniques) {
+            if (!section.compareRecursively(other.techniques.get(section.title))) return false;
+        }
+        for (let section of this.summons) {
+            if (!section.compareRecursively(other.summons.get(section.title))) return false;
+        }
+        for (let section of this.masteries) {
+            if (!section.compareRecursively(other.masteries.get(section.title))) return false;
+        }
+
+        return true;
+    }
+
     // Serialization
     clone() {
         return NPC.fromJSON(clone(this));
