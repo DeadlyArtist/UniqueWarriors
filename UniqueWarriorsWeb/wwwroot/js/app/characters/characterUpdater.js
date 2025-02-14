@@ -168,6 +168,9 @@ class CharacterUpdater {
             }
         }
 
+        let unknownWeapons = character.weapons.filter(w => !Registries.weapons.has(w));
+        let unknownPaths = character.paths.filter(w => !Registries.paths.has(w));
+
         let lists = {
             unknownTechniques,
             outdatedTechniques,
@@ -175,6 +178,8 @@ class CharacterUpdater {
             outdatedMasteries,
             unknownSummons,
             outdatedSummons,
+            unknownWeapons,
+            unknownPaths,
         }
         needsUpdate ||= Object.values(lists).filter(l => l.length != 0).length != 0;
 
@@ -252,6 +257,14 @@ class CharacterUpdater {
         }
         character.summons.clear();
         summons.forEach(t => character.summons.register(t));
+
+        let weapons = character.weapons.filter(w => Registries.weapons.has(w));
+        character.weapons.clear();
+        weapons.forEach(t => character.weapons.register(t));
+
+        let paths = character.paths.filter(w => Registries.paths.has(w));
+        character.paths.clear();
+        paths.forEach(t => character.paths.register(t));
 
         if (character instanceof Character) CharacterHelpers.saveCharacter(character);
     }
