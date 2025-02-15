@@ -108,6 +108,7 @@ class SectionReferenceHelpers {
         }
     }
 
+    static allSpecialLetters = ['L', 'R', 'T', 'M', 'S', 'X'];
     static getSpecialLetters(variables) {
         let specialLetters = {};
         if (variables.has('Level')) specialLetters['L'] = 'Level';
@@ -115,32 +116,8 @@ class SectionReferenceHelpers {
         if (variables.has('Tier')) specialLetters['T'] = 'Tier';
         if (variables.has('Importance')) specialLetters['M'] = 'Importance';
         if (variables.has('Severity')) specialLetters['S'] = 'Severity';
+        if (variables.has('X')) specialLetters['X'] = 'X';
         return specialLetters;
-    }
-
-    static allSpecialLetters = ['L', 'R', 'T', 'M', 'S'];
-    static getSpecialLetterRegex(specialLetters) {
-        if (!specialLetters || Object.keys(specialLetters).length == 0) return null;
-        return new RegExp("\\b([" + this.allSpecialLetters.map(k => escapeRegex(k)).join("") + "]+)(\\d+)", "g"); // Boundary doesn't appear in matched
-    }
-
-    static replaceSpecialLettersWithFormulas(html, variables, specialLetters, specialLetterRegex) {
-        if (Object.keys(specialLetters).length == 0) return html;
-        html = html.replace(specialLetterRegex, (formula, fullLetters, number) => {
-            const validLetters = Array.from(fullLetters).filter(letter => specialLetters.hasOwnProperty(letter)).join('');
-            const invalidLetters = Array.from(fullLetters).filter(letter => !specialLetters.hasOwnProperty(letter)).join('');
-
-            if (validLetters.length != 0) {
-                const parsedFormula = `${validLetters}${number}`;
-                const result = this.parseFormula(parsedFormula, variables, specialLetters, specialLetterRegex);
-                if (result != null) {
-                    return `${invalidLetters}<span class="section-formula" tooltip="[${escapeHTML(parsedFormula)}]">${escapeHTML(result)}</span>`;
-                }
-            }
-
-            return formula;
-        });
-        return html;
     }
 
     static replaceSpecialLettersInFormula(formula, specialLetters, specialLetterRegex) {
@@ -158,6 +135,34 @@ class SectionReferenceHelpers {
             return matched;
         });
         return formula;
+    }
+
+    static getSpecialLetterRegex(specialLetters) {
+        if (!specialLetters || Object.keys(specialLetters).length == 0) return null;
+        return new RegExp("\\b([" + this.allSpecialLetters.map(k => escapeRegex(k)).join("") + "]+)(\\d+)", "g"); // Boundary doesn't appear in matched
+    }
+
+    static replaceSpecialLettersWithFormulas(html, variables, specialLetters, specialLetterRegex, replaceInText = false) {
+        if (Object.keys(specialLetters).length == 0) return html;
+        html = html.replace(specialLetterRegex, (formula, fullLetters, number) => {
+            const validLetters = Array.from(fullLetters).filter(letter => specialLetters.hasOwnProperty(letter)).join('');
+            const invalidLetters = Array.from(fullLetters).filter(letter => !specialLetters.hasOwnProperty(letter)).join('');
+
+            if (validLetters.length != 0) {
+                const parsedFormula = `${validLetters}${number}`;
+                const result = this.parseFormula(parsedFormula, variables, specialLetters, specialLetterRegex);
+                if (result != null) {
+                    if (replaceInText) {
+                        return `${invalidLetters}${result}`;
+                    } else {
+                        return `${invalidLetters}<span class="section-formula" tooltip="[${escapeHTML(parsedFormula)}]">${escapeHTML(result)}</span>`;
+                    }
+                }
+            }
+
+            return formula;
+        });
+        return html;
     }
 
     static getFormulaTooltip(formula, variables, specialLetters, specialLetterRegex) {
@@ -196,6 +201,40 @@ class SectionReferenceHelpers {
 
             if (html !== value) replaceTextNodeWithHTML(node, html);
         }
+    }
+
+    static tryParseFormula(formula, variables, specialLetters, specialLetterRegex) {
+        let text;
+        const result = this.parseFormula(formula, variables, specialLetters, specialLetterRegex);
+        if (result != null) text = result;
+        else text = `[${this.replaceSpecialLettersWithFormulas(escapeHTML(formula), variables, specialLetters, specialLetterRegex, true)}]`;
+        return text;
+    }
+
+    static replaceVariablesWithinText(text, variables) {
+        const specialLetters = this.getSpecialLetters(variables);
+        const specialLetterRegex = this.getSpecialLetterRegex(specialLetters);
+
+        let newText = "";
+        let start = -1, end = -1;
+
+        for (let i = 0; i < text.length; i++) {
+            if (text[i] === '[') {
+                if (i > start + 1) {
+                    newText += this.replaceSpecialLettersWithFormulas(text.substring(end + 1, i), variables, specialLetters, specialLetterRegex, true);
+                }
+                start = i;
+            } else if (text[i] === ']') {
+                end = i;
+                const formula = text.substring(start + 1, end);
+                newText += this.tryParseFormula(formula, variables, specialLetters, specialLetterRegex);
+            }
+        }
+        if (end < text.length - 1) {
+            newText += this.replaceSpecialLettersWithFormulas(text.substring(end + 1), variables, specialLetters, specialLetterRegex, true);
+        }
+
+        return newText;
     }
 
     static addSectionReferenceTooltip(element) {

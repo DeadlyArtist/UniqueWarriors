@@ -30,6 +30,7 @@ class Resources {
     static skills_social = this.register(new Resource("/data/skills_social.json", true));
     static skills_book = this.register(new Resource("/data/skills_book.json", true));
     static summons_a = this.register(new Resource("/data/summons_a.json", true));
+    static shop = this.register(new Resource("/data/shop.json", true));
     static techniques_element_a = this.register(new Resource("/data/techniques_element_a.json", true));
     static techniques_element_m = this.register(new Resource("/data/techniques_element_m.json", true));
     static techniques_special_a = this.register(new Resource("/data/techniques_special_a.json", true));

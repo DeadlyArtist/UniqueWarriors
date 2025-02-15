@@ -11,6 +11,9 @@ class Loader {
         new Collection(Registries.conditions, [
             new Collection.SectionResourceWrapper(Resources.conditions)
         ]),
+        new Collection(Registries.items, [
+            new Collection.SectionResourceWrapper(Resources.shop)
+        ], { categories: true }),
         new Collection(Registries.masteries, [
             new Collection.SectionResourceWrapper(Resources.masteries_a),
             new Collection.SectionResourceWrapper(Resources.masteries_m),

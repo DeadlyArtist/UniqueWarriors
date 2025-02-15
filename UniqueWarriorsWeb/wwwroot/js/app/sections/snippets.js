@@ -1,3 +1,4 @@
+/// <reference path="../loader.js" />
 class Snippets {
     static snippetQuery = ".applySnippets";
     static tagQuery = ".section-tag, .section-headValue-name, .character-stat-name";
@@ -46,8 +47,6 @@ class Snippets {
             new Snippet("Mutation", "rules/Techniques/Mutations"),
             new Snippet("learn summon", "rules/Techniques/Summons"),
             new Snippet("learned summon", "rules/Techniques/Summons"),
-            new Snippet("Weapon Item", "rules/Items/Weapon Items*noChildren"),
-            new Snippet("Rune", "rules/Items/Weapon Items/Runes*noChildren"),
             new Snippet("Stats", "rules/Stats*noChildren"),
             new Snippet("Scaling Stats", "rules/Stats/Scaling Stats"),
             new Snippet("Attribute Stats", "rules/Stats/Attribute Stats"),
@@ -147,6 +146,9 @@ class Snippets {
             new Snippet("size", "rules/Stats/Static Stats/Size", { whitelist: "tags" }),
             new Snippet("energy", "rules/Masteries/Energy And Passive Slots", { whitelist: "tags" }),
             new Snippet("passive slots", "rules/Masteries/Energy And Passive Slots", { whitelist: "tags" }),
+            new Snippet("rune", "rules/Items/Runes", { whitelist: "tags" }),
+            new Snippet("armor", "rules/Items/Armor", { whitelist: "tags" }),
+            new Snippet("consumable", "rules/Items/Consumables", { whitelist: "tags" }),
         ]
     }
 

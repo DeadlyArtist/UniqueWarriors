@@ -21,6 +21,7 @@ class Registries {
     static skills = this.register(new Registry("skills"));
     static skillBranches = this.register(new Registry("skillBranches"));
     static skillFields = this.register(new Registry("skillFields"));
+    static items = this.register(new Registry("items"));
     static rules = this.register(new Registry("rules"));
     static ancestries = this.register(new Registry("ancestries"));
     static characters = this.register(new Registry("characters"));

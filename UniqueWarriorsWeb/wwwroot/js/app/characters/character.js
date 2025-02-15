@@ -12,11 +12,15 @@ class Character {
         this.statOverrides = settings.statOverrides ?? {};
         this.attributes = { ...CharacterHelpers.getEmptyAttributes(), ...(settings.attributes ?? {}) };
         this.skills = settings.skills ?? {};
+        this.money = settings.money ?? 500;
         this.settings = settings.settings ?? {};
         this.settings.validate ??= true;
         this.details = settings.details ?? {};
 
         this.items = new Registry();
+        this.itemCounts = settings.itemCounts ?? {};
+        this.attunedItems = new Registry();
+        this.attunedItemCounts = settings.attunedItemCounts ?? {};
         this.techniques = new Registry();
         this.summons = new Registry();
         this.masteryManager = new MasteryManager({ masteries: settings.masteries });
@@ -27,6 +31,7 @@ class Character {
         this.passions = new Registry();
 
         settings.items?.forEach(e => this.items.register(e.clone()));
+        settings.attunedItems?.forEach(e => this.attunedItems.register(e.clone()));
         settings.techniques?.forEach(e => this.techniques.register(e.clone()));
         settings.summons?.forEach(e => this.summons.register(e.clone()));
         settings.weapons?.forEach(e => this.weapons.register(e));
@@ -188,6 +193,106 @@ class Character {
         return skillLevel;
     }
 
+    getTotalItemAmount() {
+        let amount = 0;
+        Object.values(this.itemCounts).forEach(count => amount += count);
+        return amount;
+    }
+
+    getItemAmount(item) {
+        return this.itemCounts[item?.id ?? item] ?? 0;
+    }
+
+    hasItem(item) {
+        return this.items.has(item);
+    }
+
+    addItem(item, amount = 1) {
+        if (!this.itemCounts[item.id]) {
+            this.items.register(item);
+            if (!item.headValues.has("Amount")) item.addHeadValue("Amount", amount, { lineIndex: 0 });
+            item.removeTag("Attuned");
+        }
+
+        this.itemCounts[item.id] ??= 0;
+        this.itemCounts[item.id] += amount;
+        item.updateHeadValue("Amount", this.itemCounts[item.id]);
+        this.items.get(item).updateHeadValue("Amount", this.itemCounts[item.id]);
+
+        return item;
+    }
+
+    removeItem(item, amount = 1) {
+        if (this.itemCounts[item.id] == 0) return;
+
+        this.items.register(item);
+        this.itemCounts[item.id] ??= 0;
+        this.itemCounts[item.id] -= amount;
+        if (this.itemCounts[item.id] == 0) {
+            this.items.unregister(item);
+            delete this.itemCounts[item.id];
+            item.removeHeadValue("Amount", this.itemCounts[item.id]);
+        } else {
+            item.updateHeadValue("Amount", this.itemCounts[item.id]);
+            this.items.get(item).updateHeadValue("Amount", this.itemCounts[item.id]);
+        }
+
+        return item;
+    }
+
+    getTotalAttunedItemAmount() {
+        let amount = 0;
+        Object.values(this.attunedItemCounts).forEach(count => amount += count);
+        return amount;
+    }
+
+    getRemainingAttunementSlots() {
+        let remaining = this.getStaticStats().maxAttunements - this.getTotalAttunedItemAmount();
+        return remaining;
+    }
+
+    getAttunedItemAmount(item) {
+        return this.attunedItemCounts[item?.id ?? item] ?? 0;
+    }
+
+    attuneItem(item, amount = 1) {
+        this.removeItem(item);
+        item = item.clone();
+
+        if (!this.attunedItemCounts[item.id]) {
+            this.attunedItems.register(item);
+            if (!item.headValues.has("Amount")) item.addHeadValue("Amount", amount, { lineIndex: 0 });
+            if (!item.tags.has("Attuned")) item.addTag("Attuned", { lineIndex: 0 });
+        }
+
+        this.attunedItemCounts[item.id] ??= 0;
+        this.attunedItemCounts[item.id] += amount;
+        item.updateHeadValue("Amount", this.attunedItemCounts[item.id]);
+        this.attunedItems.get(item).updateHeadValue("Amount", this.attunedItemCounts[item.id]);
+
+        return item;
+    }
+
+    unattuneItem(item, amount = 1) {
+        this.addItem(item);
+        item = item.clone();
+
+        if (this.attunedItemCounts[item.id] == 0) return;
+
+        this.attunedItems.register(item);
+        this.attunedItemCounts[item.id] ??= 0;
+        this.attunedItemCounts[item.id] -= amount;
+        if (this.attunedItemCounts[item.id] == 0) {
+            this.attunedItems.unregister(item);
+            delete this.attunedItemCounts[item.id];
+        } else {
+            item.updateHeadValue("Amount", this.attunedItemCounts[item.id]);
+            this.attunedItems.get(item).updateHeadValue("Amount", this.attunedItemCounts[item.id]);
+        }
+
+        return item;
+    }
+
     getVariables() {
         let stats = this.getStats();
         let variables = new Map();
@@ -345,9 +450,13 @@ class Character {
             statOverrides: this.statOverrides,
             attributes: this.attributes,
             skills: this.skills,
+            money: this.money,
             settings: this.settings,
             details: this.details,
             items: this.items.getAll(),
+            itemCounts: this.itemCounts,
+            attunedItems: this.attunedItems.getAll(),
+            attunedItemCounts: this.attunedItemCounts,
             techniques: this.techniques.getAll(),
             summons: this.summons.getAll(),
             masteries: this.masteries.getAll(),
@@ -361,6 +470,7 @@ class Character {
 
     static fromJSON(json) {
         json.items = SectionHelpers.initSections(json.items ?? []);
+        json.attunedItems = SectionHelpers.initSections(json.attunedItems ?? []);
         json.techniques = SectionHelpers.initSections(json.techniques ?? []);
         json.summons = SectionHelpers.initSections(json.summons ?? []);
         json.masteries = SectionHelpers.initSections(json.masteries ?? []);

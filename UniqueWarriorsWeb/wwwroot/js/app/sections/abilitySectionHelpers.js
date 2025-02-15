@@ -107,6 +107,28 @@ class AbilitySectionHelpers {
         return section.getHeadValueValue("Variant")?.replace(/<(.*)>/g, "$1");
     }
 
+    static isScalingItem(section) {
+        return section.headValues.has("X");
+    }
+
+    static getScaling(section) {
+        return section.headValues.get("X");
+    }
+
+    static getCost(section) {
+        return section.headValues.get("Cost");
+    }
+
+    static getParsedCost(section) {
+        let cost = parseInt(this.getCost(section).replace('\u25EC', '').trim());
+        if (cost == null || isNaN(cost)) cost = 0;
+        return cost;
+    }
+
+    static isConsumable(section) {
+        return section.tags.has("Consumable");
+    }
+
     static isTrigger(section) {
         return section.headValues.has("Trigger");
     }

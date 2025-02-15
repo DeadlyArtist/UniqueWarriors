@@ -366,6 +366,45 @@ class SectionHelpers {
         section.title = variationTitle ?? `Variant ${section.title}`;
     }
 
+    static getScaled(section, scaling, variationTitle = null) {
+        section = section.clone();
+        this.setupScaled(section, scaling, variationTitle);
+        return section;
+    }
+
+    static setupScaled(section, scaling, variationTitle = null) {
+        section.removeHeadValue("Connections");
+        if (!section.headValues.has("Source")) section.addHeadValue("Source", `</items/${section.title}>`, { lineIndex: 0 });
+        section.title = variationTitle ?? section.title.replace(/ X$/, " " + scaling);
+        if (variationTitle) section.id = generateUniqueId();
+        if (!section.headValues.has("X")) return section;
+        section.removeHeadValue("X");
+
+        let variables = new Map([["X", scaling]]);
+        if (section.attributes) {
+            for (let line of section.attributes) {
+                for (let attribute of line) {
+                    if (attribute instanceof HeadValue) {
+                        attribute.value = SectionReferenceHelpers.replaceVariablesWithinText(attribute.value, variables);
+                        section.headValues.set(attribute.name, attribute.value);
+                    }
+                }
+            }
+
+        }
+        if (section.content) section.content = SectionReferenceHelpers.replaceVariablesWithinText(section.content, variables);
+
+        if (section.table) {
+            for (let row of section.table) {
+                for (let i = 0; i < row.length; i++) {
+                    row[i] = SectionReferenceHelpers.replaceVariablesWithinText(row[i], variables);
+                }
+            }
+        }
+
+        return section;
+    }
+
     static generateStructuredHtmlForSection(section, settings = null) {
         settings ??= {};
         settings = { ...settings };
@@ -440,7 +479,8 @@ class SectionHelpers {
                         if (isActionTag) attributeElement.classList.add('section-actionTypes');
                     } else if (SectionAttributesHelpers.isHeadValue(attr)) {
                         attributeElement = fromHTML(`<span class="section-attribute section-headValue"><span class="section-headValue-name">${escapeHTML(attr.name)}</span>: </span>`);
-                        if (attr.name == "Severity") {
+                        let inputAttributes = new Set(["Severity", "X"]);
+                        if (inputAttributes.has(attr.name)) {
                             let value = settings.variables.get(attr.name);
                             if (value == null) {
                                 value = attr.value;
@@ -559,6 +599,9 @@ class SectionHelpers {
         }
 
         SectionReferenceHelpers.addTooltipsToStructuredSection(structuredSection);
+
+        if (settings.onRegenerated) settings.onRegenerated(structuredSection);
+
         if (!firstRun) HtmlHelpers.getClosestProperty(sectionElement, "_masonry")?.resize();
     }
 
@@ -696,8 +739,11 @@ class StructuredSectionOverviewHtml {
         insertSettings ??= {};
         const structuredSection = SectionHelpers.wrapSectionForOverview(section, this.type, this.settings);
 
+        let oldIndex = this.sections.getIndex(structuredSection);
         this.sections.register(structuredSection, { ...insertSettings, id: structuredSection.section.id });
-        HtmlHelpers.insertAt(this.listElement, this.sections.getIndex(structuredSection), structuredSection.wrapperElement);
+        let index = this.sections.getIndex(structuredSection);
+        if (insertSettings.replace == true && oldIndex != -1) this.listElement.children[oldIndex].replaceWith(structuredSection.wrapperElement);
+        else HtmlHelpers.insertAt(this.listElement, index, structuredSection.wrapperElement);
 
         this.updateSearchDisplay();
         if (this.settings.hideIfEmpty && this.sections.size != 0) this.container.classList.remove("hide");

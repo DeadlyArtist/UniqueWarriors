@@ -333,6 +333,7 @@ class CharacterHelpers {
 
             let pages = [
                 { name: "Abilities", provider: page => this.generateAbilitiesSubPageHtml(character, settings), },
+                { name: "Items", provider: page => this.generateItemsSubPageHtml(character, settings), },
                 { name: "Skills", provider: page => this.generateSkillsSubPageHtml(character, settings), },
                 { name: "Flavor", provider: page => this.generateFlavorSubPageHtml(character, settings), },
             ];
@@ -608,6 +609,7 @@ class CharacterHelpers {
                 return true;
             }));
             let masteries = character.masteries.getAll();
+            let attuned = character.attunedItems.getAll();
             let triggeredAbilities = [];
             let moveActionAbilities = [];
             let actionAbilities = [];
@@ -632,6 +634,7 @@ class CharacterHelpers {
             }
 
             let masteriesList;
+            let attunedList;
             let triggeredAbilityList;
             let moveActionAbilityList;
             let actionAbilityList;
@@ -641,6 +644,7 @@ class CharacterHelpers {
 
             if (settings.masonry) {
                 masteriesList = SectionHelpers.generateStructuredHtmlForSectionOverview(masteries, SectionHelpers.MasonryType, { ...settings, title: "Masteries", variables, hideIfEmpty: true, });
+                attunedList = SectionHelpers.generateStructuredHtmlForSectionOverview(attuned, SectionHelpers.MasonryType, { ...settings, title: "Attuned", variables, hideIfEmpty: true, });
                 triggeredAbilityList = SectionHelpers.generateStructuredHtmlForSectionOverview(triggeredAbilities, SectionHelpers.MasonryType, { ...settings, title: "Triggered", variables, hideIfEmpty: true, });
                 moveActionAbilityList = SectionHelpers.generateStructuredHtmlForSectionOverview(moveActionAbilities, SectionHelpers.MasonryType, { ...settings, title: "Move Actions", variables, hideIfEmpty: true, });
                 actionAbilityList = SectionHelpers.generateStructuredHtmlForSectionOverview(actionAbilities, SectionHelpers.MasonryType, { ...settings, title: "Actions", variables, hideIfEmpty: true, });
@@ -651,6 +655,7 @@ class CharacterHelpers {
                 if (!settings.simple) for (let list of [masteriesList, triggeredAbilityList, moveActionAbilityList, actionAbilityList, quickActionAbilityList, otherAbilityList, summonsList]) list.listElement.setAttribute('placeholder', "No matching abilities found...");
             } else {
                 masteriesList = this.generateAbilityListHtml(character, masteries, { ...settings, title: "Masteries", variables, hideIfEmpty: true, });
+                attunedList = this.generateAbilityListHtml(character, attuned, { ...settings, title: "Attuned", variables, hideIfEmpty: true, });
                 triggeredAbilityList = this.generateAbilityListHtml(character, triggeredAbilities, { ...settings, title: "Triggered", variables, hideIfEmpty: true, });
                 moveActionAbilityList = this.generateAbilityListHtml(character, moveActionAbilities, { ...settings, title: "Move Actions", variables, hideIfEmpty: true, });
                 actionAbilityList = this.generateAbilityListHtml(character, actionAbilities, { ...settings, title: "Actions", variables, hideIfEmpty: true, });
@@ -660,6 +665,7 @@ class CharacterHelpers {
             }
 
             abilitiesContainer.appendChild(masteriesList.container);
+            abilitiesContainer.appendChild(attunedList.container);
             abilitiesContainer.appendChild(triggeredAbilityList.container);
             abilitiesContainer.appendChild(moveActionAbilityList.container);
             abilitiesContainer.appendChild(actionAbilityList.container);
@@ -667,7 +673,40 @@ class CharacterHelpers {
             abilitiesContainer.appendChild(otherAbilityList.container);
             abilitiesContainer.appendChild(summonsList.container);
 
-            if (!settings.noSearch) new SectionSearch(searchContainer, [masteriesList, triggeredAbilityList, moveActionAbilityList, actionAbilityList, quickActionAbilityList, otherAbilityList, summonsList], { filterKey: character.id });
+
+            function consumeItem(item) {
+                character.unattuneItem(item);
+                character.removeItem(item);
+                CharacterHelpers.saveCharacter(character);
+
+                if (character.getAttunedItemAmount(item) == 0) attunedList.removeSection(item);
+                else {
+                    SectionHelpers.regenerateHtmlForStructuredSection(attunedList.sections.get(item));
+                }
+            }
+
+            for (let structuredSection of attunedList.sections) {
+                addConsumeButton(structuredSection);
+                structuredSection.settings.onRegenerated = () => addConsumeButton(structuredSection);
+            }
+
+            function addConsumeButton(structuredSection) {
+                let item = structuredSection.section;
+                if (!AbilitySectionHelpers.isConsumable(item)) return;
+
+                let container = structuredSection.consumeButtonContainer = fromHTML(`<div>`);
+                container.appendChild(hb(2));
+                let wrapper = fromHTML(`<div class="listHorizontal centerContentHorizontally">`);
+                container.appendChild(wrapper);
+                let button = structuredSection.consumeButton = fromHTML(`<button class="listHorizontal gap-2 largeElement bordered brand-border-color hoverable centerContentHorizontally w-100">Consume`);
+                button.setAttribute('tooltip-path', 'rules/Items/Consumables');
+                wrapper.appendChild(button);
+
+                button.addEventListener('click', () => consumeItem(item));
+                structuredSection.element.appendChild(container);
+            }
+
+            if (!settings.noSearch) new SectionSearch(searchContainer, [masteriesList, attunedList, triggeredAbilityList, moveActionAbilityList, actionAbilityList, quickActionAbilityList, otherAbilityList, summonsList], { filterKey: character.id });
         }
 
         return element;
@@ -756,6 +795,110 @@ class CharacterHelpers {
         expandedArea.appendChild(hb(4));
 
         return structuredSection;
+    }
+
+    static generateItemsSubPageHtml(character, settings = null) {
+        settings ??= {};
+
+        let element = fromHTML(`<div class="character-subPage-items divList">`);
+        let searchContainer = fromHTML(`<div class="sticky">`);
+        element.appendChild(searchContainer);
+        let abilitiesContainer = fromHTML(`<div class="divList gap-2">`);
+        element.appendChild(abilitiesContainer);
+
+        let variables = null;
+        if (!settings.noVariables) variables = settings.variables ??= character.getVariables();
+
+        let attuned = SectionHelpers.generateStructuredHtmlForSectionOverview(character.attunedItems.getAll(), SectionHelpers.MasonryType, { ...settings, title: "Attuned", variables, hideIfEmpty: true, });
+        let overview = SectionHelpers.generateStructuredHtmlForSectionOverview(character.items.getAll(), SectionHelpers.MasonryType, { ...settings, title: "All", variables, hideIfEmpty: true, });
+        abilitiesContainer.appendChild(attuned.container);
+        abilitiesContainer.appendChild(overview.container);
+
+        function attuneItem(item) {
+            character.attuneItem(item);
+            CharacterHelpers.saveCharacter(character);
+
+            if (character.getItemAmount(item) == 0) overview.removeSection(item);
+            else SectionHelpers.regenerateHtmlForStructuredSection(overview.sections.get(item));
+
+            if (attuned.sections.has(item)) SectionHelpers.regenerateHtmlForStructuredSection(attuned.sections.get(item));
+            else {
+                let structuredSection = attuned.addSection(character.attunedItems.get(item));
+                addUnattuneButton(structuredSection);
+                structuredSection.settings.onRegenerated = () => addUnattuneButton(structuredSection);
+            }
+ 
+            updateAll();
+        }
+
+        function unattuneItem(item) {
+            character.unattuneItem(item);
+            CharacterHelpers.saveCharacter(character);
+
+            if (character.getAttunedItemAmount(item) == 0) attuned.removeSection(item);
+            else SectionHelpers.regenerateHtmlForStructuredSection(attuned.sections.get(item));
+
+            if (overview.sections.has(item)) SectionHelpers.regenerateHtmlForStructuredSection(overview.sections.get(item));
+            else {
+                let structuredSection = overview.addSection(character.items.get(item));
+                addAttuneButton(structuredSection);
+                structuredSection.settings.onRegenerated = () => addAttuneButton(structuredSection);
+            }
+
+            updateAll();
+        }
+
+        for (let structuredSection of attuned.sections) {
+            addUnattuneButton(structuredSection);
+            structuredSection.settings.onRegenerated = () => addUnattuneButton(structuredSection);
+        }
+        for (let structuredSection of overview.sections) {
+            addAttuneButton(structuredSection);
+            structuredSection.settings.onRegenerated = () => addAttuneButton(structuredSection);
+        }
+
+        function updateAll() {
+            for (let structuredSection of overview.sections) {
+                if (character.getRemainingAttunementSlots() <= 0) structuredSection.attuneButton.setAttribute('disabled', '');
+                else structuredSection.attuneButton.removeAttribute('disabled');
+            }
+        }
+        updateAll();
+
+        function addAttuneButton(structuredSection) {
+            let item = structuredSection.section;
+
+            let container = structuredSection.attuneButtonContainer = fromHTML(`<div>`);
+            container.appendChild(hb(2));
+            let wrapper = fromHTML(`<div class="listHorizontal centerContentHorizontally">`);
+            container.appendChild(wrapper);
+            let button = structuredSection.attuneButton = fromHTML(`<button class="listHorizontal gap-2 largeElement bordered brand-border-color hoverable centerContentHorizontally w-100">Attune`);
+            button.setAttribute('tooltip-path', 'rules/Items/Attunements');
+            wrapper.appendChild(button);
+
+            button.addEventListener('click', () => attuneItem(item));
+            structuredSection.element.appendChild(container);
+        }
+
+        function addUnattuneButton(structuredSection) {
+            let item = structuredSection.section;
+
+            let container = structuredSection.unattuneButtonContainer = fromHTML(`<div>`);
+            container.appendChild(hb(2));
+            let wrapper = fromHTML(`<div class="listHorizontal centerContentHorizontally">`);
+            container.appendChild(wrapper);
+            let button = structuredSection.unattuneButton = fromHTML(`<button class="listHorizontal gap-2 largeElement bordered brand-border-color hoverable centerContentHorizontally w-100">Unattune`);
+            button.setAttribute('tooltip-path', 'rules/Items/Attunements');
+            wrapper.appendChild(button);
+
+            button.addEventListener('click', () => unattuneItem(item));
+            structuredSection.element.appendChild(container);
+        }
+
+
+        if (!settings.noSearch) new SectionSearch(searchContainer, [attuned, overview], { filterKey: "___ITEMS___" + character.id });
+
+        return element;
     }
 
     static generateSkillsSubPageHtml(character, settings) {

@@ -22,6 +22,7 @@ class Pages {
     static masteries = this.register(new Page(null, "masteries", new SectionsPageManager(SectionHelpers.MasonryType, { registry: Registries.masteries })));
     static summons = this.register(new Page(null, "summons", new SectionsPageManager(SectionHelpers.MasonryType, { registry: Registries.summons })));
     static skills = this.register(new Page(null, "skills", new SkillsPageManager()));
+    static shop = this.register(new Page(null, "shop", new SectionsPageManager(SectionHelpers.MasonryType, { registry: Registries.items })));
     static conditions = this.register(new Page(null, "conditions", new SectionsPageManager(SectionHelpers.MasonryType, { registry: Registries.conditions })));
     static characters = this.register(new Page(null, "characters", new CharactersPageManager({ registry: Registries.characters })));
     static character = this.register(new Page(null, "character", new CharacterPageManager()));
@@ -44,6 +45,7 @@ class Pages {
             this.techniques,
             this.masteries,
             this.summons,
+            this.shop,
             this.conditions,
             this.defaultAbilities,
             this.characters,

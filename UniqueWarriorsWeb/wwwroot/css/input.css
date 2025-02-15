@@ -46,6 +46,10 @@ input[type="number"].smallNumberInput {
   width: 50px;
 }
 
+input[type="number"].largeNumberInput {
+  max-width: 200px;
+}
+
 input[type="password"] {
     max-width: 200px;
     padding: 6px 16px;

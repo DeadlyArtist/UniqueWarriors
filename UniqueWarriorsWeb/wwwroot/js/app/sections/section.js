@@ -218,7 +218,10 @@ class Section {
 
         let classified = ObjectHelpers.lowerFirstCharOfKeys(section, false);
         if (classified.subSections) classified.subSections = SectionHelpers.classify(classified.subSections);
-        if (classified.attributes) classified.attributes = SectionAttributesHelpers.classify(classified.attributes);
+        if (classified.attributes) {
+            classified.attributes = SectionAttributesHelpers.classify(classified.attributes);
+            if (classified.title.endsWith(" X") && classified.attributes.length != 0) classified.attributes[0].push(new HeadValue("X", 1));
+        }
         if (classified.npc) classified.npc = NPC.fromJSON(classified.npc);
         section = new Section(classified);
 

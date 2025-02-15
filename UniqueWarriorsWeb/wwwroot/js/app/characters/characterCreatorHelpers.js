@@ -22,6 +22,7 @@ class CharacterCreatorHelpers {
             { name: "Masteries", provider: page => this.generateMasteriesPageHtml(character, page, structuredCharacterCreator), },
             { name: "Attributes", provider: page => this.generateAttributesPageHtml(character, page, structuredCharacterCreator), },
             { name: "Skills", provider: page => this.generateSkillsPageHtml(character, page, structuredCharacterCreator), },
+            { name: "Shop", provider: page => this.generateShopPageHtml(character, page, structuredCharacterCreator), },
             { name: "Flavor", provider: page => this.generateFlavorPageHtml(character, page, structuredCharacterCreator), },
         ];
         for (let page of pages) {
@@ -1253,6 +1254,354 @@ class CharacterCreatorHelpers {
             updateFunctions.forEach(f => f());
             updateDescription();
         }
+
+        return element;
+    }
+
+    static generateShopPageHtml(character, page, structuredCharacterCreator) {
+        let variables = character.getVariables();
+        let element = fromHTML(`<div class="characterCreator-page divList">`);
+
+        let chosenItems = character.items;
+
+        element.appendChild(fromHTML(`<h1>Buy Items`));
+        let descriptionElement = fromHTML(`<div>`);
+        element.appendChild(descriptionElement);
+
+        let moneyInputContainer = fromHTML(`<div class="listHorizontal gap-4">`);
+        element.appendChild(moneyInputContainer);
+        moneyInputContainer.appendChild(fromHTML(`<div>Remaining money (consult GM before changing):`));
+        let moneyInput = fromHTML(`<input type="number" class="largeElement rounded largeNumberInput">`);
+        moneyInputContainer.appendChild(moneyInput);
+        moneyInputContainer.appendChild(fromHTML(`<div>\u25EC`));
+
+        moneyInput.value = character.money;
+        moneyInput.addEventListener('input', () => {
+            if (moneyInput.value == '') return;
+            let newValue = InputHelpers.fixNumberInput(moneyInput);
+            if (character.settings.validate) newValue = InputHelpers.constrainInput(moneyInput, value => Math.max(value, 0));
+            if (character.money == newValue) return;
+            character.money = newValue;
+            CharacterHelpers.saveCharacter(character);
+        });
+        moneyInput.addEventListener('focusout', () => {
+            if (moneyInput.value == '') moneyInput.value = character.money;
+        });
+        function updateDescription() {
+            moneyInput.value = character.money;
+        }
+
+        let itemDialog = DialogHelpers.create(dialog => {
+            let dialogElement = fromHTML(`<div class="divList">`);
+            let dialogTitleElement = dialog.dialogTitleElement = fromHTML(`<h1>`);
+            dialogElement.appendChild(dialogTitleElement);
+
+            //dialogElement.appendChild(hb(2));
+            //let dialogNameContainer = fromHTML(`<div class="listHorizontal">`);
+            //dialogElement.appendChild(dialogNameContainer);
+            //dialogNameContainer.appendChild(fromHTML(`<div>Name:`));
+            //let dialogNameInput = dialog.dialogNameInput = fromHTML(`<input type="text" class="largeElement" placeholder="Enter item name..." style="width: 400px;">`);
+            //dialogNameContainer.appendChild(dialogNameInput);
+
+            dialogElement.appendChild(hb(2));
+            let dialogScalingInputContainer = dialog.dialogScalingInputContainer = fromHTML(`<div class="listHorizontal">`);
+            dialogElement.appendChild(dialogScalingInputContainer);
+            dialogScalingInputContainer.appendChild(fromHTML(`<div>Scaling:`));
+            let dialogScalingInput = dialog.dialogScalingInput = fromHTML(`<input type="number" class="smallNumberInput">`);
+            dialogScalingInputContainer.appendChild(dialogScalingInput);
+
+            dialogElement.appendChild(hb(2));
+            let dialogAmountInputContainer = fromHTML(`<div class="listHorizontal">`);
+            dialogElement.appendChild(dialogAmountInputContainer);
+            dialogAmountInputContainer.appendChild(fromHTML(`<div>Amount:`));
+            let dialogAmountInput = dialog.dialogAmountInput = fromHTML(`<input type="number" class="smallNumberInput">`);
+            dialogAmountInputContainer.appendChild(dialogAmountInput);
+
+            dialogElement.appendChild(hb(2));
+            let dialogTotalCostContainer = fromHTML(`<div class="listHorizontal">`);
+            dialogElement.appendChild(dialogTotalCostContainer);
+            let dialogTotalCostLabel = dialog.dialogTotalCostLabel = fromHTML(`<div>Total Cost:`);
+            dialogTotalCostContainer.appendChild(dialogTotalCostLabel);
+            let dialogTotalCost = dialog.dialogTotalCost = fromHTML(`<div>`);
+            dialogTotalCostContainer.appendChild(dialogTotalCost);
+
+            dialogElement.appendChild(hb(4));
+            let dialogItemPreviewContainer = dialog.dialogItemPreviewContainer = fromHTML(`<div class="w-100">`);
+            dialogElement.appendChild(dialogItemPreviewContainer);
+
+            dialogElement.appendChild(hb(6));
+            let dialogButtonList = fromHTML(`<div class="listHorizontal">`);
+            dialogElement.appendChild(dialogButtonList);
+            let dialogCancelButton = fromHTML(`<button class="largeElement bordered hoverable flexFill w-100">Cancel`);
+            dialogButtonList.appendChild(dialogCancelButton);
+            dialog.addCloseButton(dialogCancelButton);
+            let dialogConfirmButton = dialog.dialogConfirmButton = fromHTML(`<button class="largeElement bordered hoverable flexFill w-100">`);
+            dialogButtonList.appendChild(dialogConfirmButton);
+
+            dialog.onCostChange = () => {
+                let cost = AbilitySectionHelpers.getParsedCost(dialog._section);
+
+                let amount = InputHelpers.fixNumberInput(dialogAmountInput);
+                if (dialog._type != "Buy") amount = InputHelpers.constrainInput(dialogAmountInput, value => Math.min(value, character.getItemAmount(dialog._originalSection)));
+                amount = dialog._amount = InputHelpers.constrainInput(dialogAmountInput, value => Math.max(value, 1));
+
+                let maxBuyableAmount = Math.floor(character.money / cost);
+                if (character.settings.validate && dialog._type == "Buy" && maxBuyableAmount < amount) {
+                    dialogConfirmButton.setAttribute('disabled', '');
+                } else {
+                    dialogConfirmButton.removeAttribute('disabled');
+                }
+
+                if (dialog._type == "Throw Away") cost = 0;
+                else if (dialog._type == "Sell") cost = Math.floor(cost / 2) * amount;
+                else cost *= amount;
+                dialogTotalCost.textContent = cost;
+            }
+            dialog.onSectionChange = () => {
+                let scaling = InputHelpers.fixNumberInput(dialogScalingInput);
+                scaling = dialog._scaling = InputHelpers.constrainInput(dialogScalingInput, value => Math.max(value, 1));
+
+                dialogItemPreviewContainer.innerHTML = '';
+                let section = dialog._section = SectionHelpers.getScaled(dialog._originalSection, scaling);
+
+                let structuredSection = dialog._structuredSection = SectionHelpers.generateStructuredHtmlForSection(section, { variables });
+                dialogItemPreviewContainer.innerHTML = "";
+                dialogItemPreviewContainer.appendChild(structuredSection.wrapperElement);
+
+                dialog.onCostChange();
+            }
+            dialogAmountInput.addEventListener('change', () => {
+                if (dialogAmountInput.value == '') return;
+                dialog.onCostChange();
+            });
+            dialogAmountInput.addEventListener('focusout', () => {
+                if (dialogAmountInput.value == '') dialogAmountInput.value = dialog._amount;
+            });
+            dialogScalingInput.addEventListener('change', () => {
+                if (dialogScalingInput.value == '') return;
+                dialog.onSectionChange();
+            });
+            dialogScalingInput.addEventListener('focusout', () => {
+                if (dialogScalingInput.value == '') dialogScalingInput.value = dialog._scaling;
+            });
+            //dialogNameInput.addEventListener('input', () => {
+            //    let value = dialogNameInput.value;
+            //    if (!value) value = dialog._structuredSection.section.title;
+            //    dialog._structuredSection.titleElement.textContent = value;
+            //});
+            dialogConfirmButton.addEventListener('click', () => {
+                /*dialog._structuredSection.section.title = dialogNameInput.value;*/
+                let type = dialog._type;
+                let target = completeBuyItem;
+                if (type == "Sell") target = completeSellItem;
+                else if (type == "Throw Away") target = completeThrowAwayItem;
+                else if (type == "Return") target = completeReturnItem;
+                target(dialog._section, dialog._amount);
+                dialog.close();
+            });
+
+            return dialogElement;
+        });
+        element.addEventListener('removed', () => itemDialog.container.remove());
+
+        function openDialog(item, type) {
+            itemDialog.dialogTitleElement.textContent = `${type} Item: ${item.title}`;
+            itemDialog.dialogAmountInput.value = itemDialog._amount = 1;
+            itemDialog.dialogScalingInput.value = itemDialog._scaling = availableOverview.sections.get(item)?.settings.variables.get("X") ?? 1;
+            itemDialog._type = type;
+            itemDialog.dialogConfirmButton.textContent = type;
+
+            if (AbilitySectionHelpers.isScalingItem(item)) {
+                itemDialog.dialogScalingInputContainer.classList.remove('hide');
+            } else {
+                itemDialog.dialogScalingInputContainer.classList.add('hide');
+            }
+
+            if (type != "Buy") itemDialog.dialogTotalCostLabel.textContent = "Total Payment:";
+
+            itemDialog._originalSection = item;
+
+            itemDialog.onSectionChange();
+            itemDialog.open();
+        }
+
+        // sell, throw away, return
+        element.appendChild(hb(4));
+        element.appendChild(fromHTML(`<h1>Owned Items`));
+        let chosenOverview = SectionHelpers.generateStructuredHtmlForSectionOverview(chosenItems.getAll(), SectionHelpers.MasonryType, { addSearch: true, filterKey: this.getSearchFilterKey('owned_items'), variables });
+        element.appendChild(chosenOverview.container);
+        chosenOverview.listElement.setAttribute('placeholder', 'No items owned yet...');
+        function updateChosenOverview() {
+            for (let structuredSection of chosenOverview.sections) {
+                let element = structuredSection.wrapperElement;
+                let item = structuredSection.section;
+            }
+
+            chosenOverview.listElement._masonry?.resize();
+        }
+
+        element.appendChild(hb(4));
+        element.appendChild(fromHTML(`<h1>Available Items`));
+        let availableOverview = SectionHelpers.generateStructuredHtmlForSectionOverview(Registries.items.getAll(), SectionHelpers.MasonryType, { addSearch: true, filterKey: this.getSearchFilterKey('available_items'), variables });
+        element.appendChild(availableOverview.container);
+        let noItemsElement = fromHTML(`<div class="hide" placeholder="No more items available...">`);
+        element.appendChild(noItemsElement);
+        function updateAvailableOverview() {
+            for (let structuredSection of availableOverview.sections) {
+                let element = structuredSection.wrapperElement;
+                let item = structuredSection.section;
+                let isAvailable = true;
+                let cost = AbilitySectionHelpers.getParsedCost(item);
+                if (character.money - cost < 0) isAvailable = false;
+                if (isAvailable || !character.settings.validate) {
+                    structuredSection.buyButton?.removeAttribute('disabled');
+                }
+                else structuredSection.buyButton?.setAttribute('disabled', '');
+            }
+
+            availableOverview.listElement._masonry?.resize();
+        }
+
+        function buyItem(item) {
+            openDialog(item, "Buy");
+        }
+
+        function completeBuyItem(item, amount) {
+            character.addItem(item, amount);
+            character.money -= AbilitySectionHelpers.getParsedCost(item) * amount;
+
+            if (chosenOverview.sections.has(item)) SectionHelpers.regenerateHtmlForStructuredSection(chosenOverview.sections.get(item));
+            else {
+                let structuredSection = chosenOverview.addSection(character.items.get(item), { replace: true });
+                addRemoveButtons(structuredSection);
+                structuredSection.settings.onRegenerated = () => addRemoveButtons(structuredSection);
+            }
+
+            CharacterHelpers.saveCharacter(character);
+            updateAll();
+        }
+
+        function sellItem(item) {
+            openDialog(item, "Sell");
+        }
+        function completeSellItem(item, amount) {
+            character.removeItem(item, amount);
+            character.money += Math.floor(AbilitySectionHelpers.getParsedCost(item) / 2) * amount;
+            if (character.getItemAmount(item) == 0) chosenOverview.removeSection(item);
+            else {
+                SectionHelpers.regenerateHtmlForStructuredSection(chosenOverview.sections.get(item));
+            }
+
+            CharacterHelpers.saveCharacter(character);
+            updateAll();
+        }
+        function throwAwayItem(item) {
+            openDialog(item, "Throw Away");
+        }
+        function completeThrowAwayItem(item, amount) {
+            character.removeItem(item, amount);
+            if (character.getItemAmount(item) == 0) chosenOverview.removeSection(item);
+            else {
+                SectionHelpers.regenerateHtmlForStructuredSection(chosenOverview.sections.get(item));
+            }
+
+            CharacterHelpers.saveCharacter(character);
+            updateAll();
+        }
+        function returnItem(item) {
+            openDialog(item, "Return");
+        }
+        function completeReturnItem(item, amount) {
+            character.removeItem(item, amount);
+            character.money += AbilitySectionHelpers.getParsedCost(item) * amount;
+            if (character.getItemAmount(item) == 0) chosenOverview.removeSection(item);
+            else {
+                SectionHelpers.regenerateHtmlForStructuredSection(chosenOverview.sections.get(item));
+            }
+
+            CharacterHelpers.saveCharacter(character);
+            updateAll();
+        }
+
+        for (let structuredSection of chosenOverview.sections) {
+            addRemoveButtons(structuredSection);
+            structuredSection.settings.onRegenerated = () => addRemoveButtons(structuredSection);
+        }
+
+        for (let structuredSection of availableOverview.sections) {
+            addBuyButton(structuredSection);
+            structuredSection.settings.onRegenerated = () => addBuyButton(structuredSection);
+        }
+
+        function addRemoveButtons(structuredSection) {
+            addSellButton(structuredSection);
+            addThrowAwayButton(structuredSection);
+            addReturnButton(structuredSection);
+            if (AbilitySectionHelpers.getParsedCost(structuredSection.section) != 0) addBuyButton(structuredSection);
+        }
+
+        function addSellButton(structuredSection) {
+            let item = structuredSection.section;
+
+            let container = structuredSection.sellButtonContainer = fromHTML(`<div>`);
+            container.appendChild(hb(2));
+            let wrapper = fromHTML(`<div class="listHorizontal centerContentHorizontally">`);
+            container.appendChild(wrapper);
+            let button = structuredSection.sellButton = fromHTML(`<button class="listHorizontal gap-2 largeElement bordered brand-border-color hoverable centerContentHorizontally w-100" tooltip="Use this to sell old or previously bought items. You regain half the price.">Sell`);
+            wrapper.appendChild(button);
+
+            button.addEventListener('click', () => sellItem(item));
+            structuredSection.element.appendChild(container);
+        }
+
+        function addThrowAwayButton(structuredSection) {
+            let item = structuredSection.section;
+
+            let container = structuredSection.throwAwayButtonContainer = fromHTML(`<div>`);
+            container.appendChild(hb(2));
+            let wrapper = fromHTML(`<div class="listHorizontal centerContentHorizontally">`);
+            container.appendChild(wrapper);
+            let button = structuredSection.throwAwayButton = fromHTML(`<button class="listHorizontal gap-2 largeElement bordered brand-border-color hoverable centerContentHorizontally w-100" tooltip="Throw away the item without any payment.">Throw Away`);
+            wrapper.appendChild(button);
+
+            button.addEventListener('click', () => throwAwayItem(item));
+            structuredSection.element.appendChild(container);
+        }
+
+        function addReturnButton(structuredSection) {
+            let item = structuredSection.section;
+
+            let container = structuredSection.returnButtonContainer = fromHTML(`<div>`);
+            container.appendChild(hb(2));
+            let wrapper = fromHTML(`<div class="listHorizontal centerContentHorizontally">`);
+            container.appendChild(wrapper);
+            let button = structuredSection.returnButton = fromHTML(`<button class="listHorizontal gap-2 largeElement bordered brand-border-color hoverable centerContentHorizontally w-100" tooltip="While buying, you can return mistakenly bought items at their full price.">Return`);
+            wrapper.appendChild(button);
+
+            button.addEventListener('click', () => returnItem(item));
+            structuredSection.element.appendChild(container);
+        }
+
+        function addBuyButton(structuredSection) {
+            let item = structuredSection.section;
+
+            let container = structuredSection.buyButtonContainer = fromHTML(`<div>`);
+            container.appendChild(hb(2));
+            let wrapper = fromHTML(`<div class="listHorizontal centerContentHorizontally">`);
+            container.appendChild(wrapper);
+            let button = structuredSection.buyButton = fromHTML(`<button class="listHorizontal gap-2 largeElement bordered brand-border-color hoverable centerContentHorizontally w-100">Buy`);
+            wrapper.appendChild(button);
+
+            button.addEventListener('click', () => buyItem(item));
+            structuredSection.element.appendChild(container);
+        }
+
+        function updateAll() {
+            updateDescription();
+            updateChosenOverview();
+            updateAvailableOverview();
+        }
+        updateAll();
 
         return element;
     }
