@@ -385,6 +385,44 @@ class SummonEditorHelpers {
             availableOverview.listElement._masonry?.resize();
         }
 
+        element.appendChild(hb(4));
+        element.appendChild(fromHTML(`<h1>Unavailable Techniques`));
+        let unavailableOverview = SectionHelpers.generateStructuredHtmlForSectionOverview(availableTechniques, SectionHelpers.MasonryType, { addSearch: true, filterKey: this.getSearchFilterKey('unavailable_techniques'), summonVariables });
+        element.appendChild(unavailableOverview.container);
+        let noRemainingTechniquesElement = fromHTML(`<div class="hide" placeholder="No more techniques remaining...">`);
+        element.appendChild(noRemainingTechniquesElement);
+        function updateUnavailableOverview() {
+            let somethingAvailable = false;
+            for (let structuredSection of unavailableOverview.sections) {
+                let element = structuredSection.wrapperElement;
+                let technique = structuredSection.section;
+                let isAvailable = true;
+                if (character.settings.validate) {
+                    if (remainingOtherTechniques <= 0) isAvailable = false;
+                    else if (!character.canHaveFreeMutation() && AbilitySectionHelpers.isMutation(technique)) isAvailable = false;
+                    else if (!CharacterCreatorHelpers.canConnectToAbility(chosenTechniques, technique, chosenTechniques)) isAvailable = false;
+                }
+                let isUnavailable = !isAvailable && !chosenTechniques.has(technique);
+
+                if (isUnavailable) {
+                    somethingAvailable = true;
+                    element.classList.remove('hide');
+                }
+                else element.classList.add('hide');
+            }
+
+            if (somethingAvailable) {
+                noRemainingTechniquesElement.classList.add('hide');
+                unavailableOverview.searchContainer.classList.remove('hide');
+            }
+            else {
+                noRemainingTechniquesElement.classList.remove('hide');
+                unavailableOverview.searchContainer.classList.add('hide');
+            }
+
+            unavailableOverview.listElement._masonry?.resize();
+        }
+
 
         let summonsContainer = fromHTML(`<div class="w-100">`);
         element.appendChild(summonsContainer);
@@ -587,6 +625,7 @@ class SummonEditorHelpers {
             updateDescription();
             updateChosenOverview();
             updateAvailableOverview();
+            updateUnavailableOverview();
             if (maxSummonUnlocks.size != 0) {
                 summonsContainer.classList.remove('hide');
                 updateChosenSummonsOverview();

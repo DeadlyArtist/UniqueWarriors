@@ -407,8 +407,9 @@ class CharacterCreatorHelpers {
                 if (isAvailable) {
                     somethingAvailable = true;
                     element.classList.remove('hide');
+                } else {
+                    element.classList.add('hide');
                 }
-                else element.classList.add('hide');
             }
 
             if (somethingAvailable) {
@@ -421,6 +422,47 @@ class CharacterCreatorHelpers {
             }
 
             availableOverview.listElement._masonry?.resize();
+        }
+
+        element.appendChild(hb(4));
+        element.appendChild(fromHTML(`<h1>Unavailable Techniques`));
+        let unavailableOverview = SectionHelpers.generateStructuredHtmlForSectionOverview(availableTechniques, SectionHelpers.MasonryType, { addSearch: true, filterKey: this.getSearchFilterKey('unavailable_techniques'), variables });
+        element.appendChild(unavailableOverview.container);
+        let noRemainingTechniquesElement = fromHTML(`<div class="hide" placeholder="No more techniques remaining...">`);
+        element.appendChild(noRemainingTechniquesElement);
+        function updateUnavailableOverview() {
+            let somethingAvailable = false;
+            for (let structuredSection of unavailableOverview.sections) {
+                let element = structuredSection.wrapperElement;
+                let technique = structuredSection.section;
+                let isAvailable = true;
+                if (character.settings.validate) {
+                    if (remainingOtherTechniques <= 0 &&
+                        (hasWeaponCore || !AbilitySectionHelpers.isWeaponCore(technique)) &&
+                        (hasMutation || !AbilitySectionHelpers.isMutation(technique))) isAvailable = false;
+                    else if (!character.canHaveFreeMutation() && AbilitySectionHelpers.isMutation(technique)) isAvailable = false;
+                    else if (!CharacterCreatorHelpers.canConnectToAbility(chosenTechniques, technique, chosenTechniques)) isAvailable = false;
+                }
+                let isUnavailable = !isAvailable && !chosenTechniques.has(technique);
+
+                if (isUnavailable) {
+                    somethingAvailable = true;
+                    element.classList.remove('hide');
+                } else {
+                    element.classList.add('hide');
+                }
+            }
+
+            if (somethingAvailable) {
+                noRemainingTechniquesElement.classList.add('hide');
+                unavailableOverview.searchContainer.classList.remove('hide');
+            }
+            else {
+                noRemainingTechniquesElement.classList.remove('hide');
+                unavailableOverview.searchContainer.classList.add('hide');
+            }
+
+            unavailableOverview.listElement._masonry?.resize();
         }
 
 
@@ -687,6 +729,7 @@ class CharacterCreatorHelpers {
             updateDescription();
             updateChosenOverview();
             updateAvailableOverview();
+            updateUnavailableOverview();
             if (maxSummonUnlocks.size != 0) {
                 summonsContainer.classList.remove('hide');
                 updateChosenSummonsOverview();
@@ -905,6 +948,46 @@ class CharacterCreatorHelpers {
             availableOverview.listElement._masonry?.resize();
         }
 
+
+        element.appendChild(hb(4));
+        element.appendChild(fromHTML(`<h1>Unavailable Masteries`));
+        let unavailableOverview = SectionHelpers.generateStructuredHtmlForSectionOverview(availableMasteries, SectionHelpers.MasonryType, { addSearch: true, filterKey: this.getSearchFilterKey('unavailable_masteries'), variables });
+        element.appendChild(unavailableOverview.container);
+        let noRemainingMasteriesElement = fromHTML(`<div class="hide" placeholder="No more masteries remaining...">`);
+        element.appendChild(noRemainingMasteriesElement);
+        function updateUnavailableOverview() {
+            let somethingAvailable = false;
+            for (let structuredSection of unavailableOverview.sections) {
+                let element = structuredSection.wrapperElement;
+                let mastery = structuredSection.section;
+                let isAvailable = true;
+                if (character.settings.validate) {
+                    if (hasPathCore && remainingMasteries <= 0) isAvailable = false;
+                    else if (hasPathCore && AbilitySectionHelpers.isPathCore(mastery) && remainingMasteries < 2) isAvailable = false;
+                    else if (!hasPathCore && !AbilitySectionHelpers.isPathCore(mastery)) isAvailable = false;
+                    else if (!CharacterCreatorHelpers.canConnectToAbility(chosenMasteries, mastery)) isAvailable = false;
+                }
+                let isUnavailable = !isAvailable && !chosenMasteries.has(mastery);
+
+                if (isUnavailable) {
+                    somethingAvailable = true;
+                    element.classList.remove('hide');
+                }
+                else element.classList.add('hide');
+            }
+
+            if (somethingAvailable) {
+                noRemainingMasteriesElement.classList.add('hide');
+                unavailableOverview.searchContainer.classList.remove('hide');
+            }
+            else {
+                noRemainingMasteriesElement.classList.remove('hide');
+                unavailableOverview.searchContainer.classList.add('hide');
+            }
+
+            unavailableOverview.listElement._masonry?.resize();
+        }
+
         function learnMasteryLike(masteryLike, update = true) {
             if (AbilitySectionHelpers.isTopMastery(masteryLike)) learnTopMastery(masteryLike, update);
             else learnSubMastery(masteryLike, update);
@@ -1027,6 +1110,7 @@ class CharacterCreatorHelpers {
             updateDescription();
             updateChosenOverview();
             updateAvailableOverview();
+            updateUnavailableOverview();
         }
         updateAll(false);
 
