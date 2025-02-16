@@ -336,6 +336,7 @@ class CharacterHelpers {
                 { name: "Items", provider: page => this.generateItemsSubPageHtml(character, settings), },
                 { name: "Skills", provider: page => this.generateSkillsSubPageHtml(character, settings), },
                 { name: "Flavor", provider: page => this.generateFlavorSubPageHtml(character, settings), },
+                { name: "Misc", provider: page => this.generateMiscSubPageHtml(character, settings), },
             ];
             let currentPage = null;
             function updatePages() {
@@ -1005,6 +1006,61 @@ class CharacterHelpers {
         let backstoryElement = fromHTML(`<div class="character-details-backstory">`);
         backstoryContainer.appendChild(backstoryElement);
         backstoryElement.textContent = character.details.backstory ?? "No backstory written yet...";
+
+        return element;
+    }
+
+    static generateMiscSubPageHtml(character, settings) {
+        let element = fromHTML(`<div class="character-subPage-misc">`);
+
+        element.appendChild(fromHTML(`<h1>Money`));
+        let moneyInputContainer = fromHTML(`<div class="listHorizontal gap-4">`);
+        element.appendChild(moneyInputContainer);
+        moneyInputContainer.appendChild(fromHTML(`<div>Remaining money (consult GM before changing):`));
+        let moneyInput = fromHTML(`<input type="number" class="largeElement rounded largeNumberInput">`);
+        moneyInputContainer.appendChild(moneyInput);
+        moneyInputContainer.appendChild(fromHTML(`<div>\u25EC`));
+        moneyInput.value = character.money;
+        moneyInput.addEventListener('input', () => {
+            if (moneyInput.value == '') return;
+            let newValue = InputHelpers.fixNumberInput(moneyInput);
+            if (character.settings.validate) newValue = InputHelpers.constrainInput(moneyInput, value => Math.max(value, 0));
+            if (character.money == newValue) return;
+            character.money = newValue;
+            CharacterHelpers.saveCharacter(character);
+        });
+        moneyInput.addEventListener('focusout', () => {
+            if (moneyInput.value == '') moneyInput.value = character.money;
+        });
+
+        element.appendChild(hb(4));
+        element.appendChild(fromHTML(`<h1>Belongings`));
+        let belongingsInputContainer = fromHTML(`<div class="contenteditableContainer">`);
+        element.appendChild(belongingsInputContainer);
+        const belongingsInput = fromHTML(`<div contenteditable-type="plainTextOnly" contenteditable="true" class="w-100 fixText maxHeight-6">`);
+        belongingsInputContainer.appendChild(belongingsInput);
+        belongingsInput.textContent = character.details.belongings;
+        belongingsInput.addEventListener('input', e => {
+            let text = belongingsInput.innerText;
+            if (ContentEditableHelpers.textNeedsFixing(text)) belongingsInput.textContent = text = ContentEditableHelpers.fixText(text);
+            character.details.belongings = text;
+            CharacterHelpers.saveCharacter(character);
+        });
+
+        element.appendChild(hb(4));
+        element.appendChild(fromHTML(`<h1>Notes`));
+        let notesInputContainer = fromHTML(`<div class="contenteditableContainer">`);
+        element.appendChild(notesInputContainer);
+        const notesInput = fromHTML(`<div contenteditable-type="plainTextOnly" contenteditable="true" class="w-100 fixText maxHeight-6">`);
+        notesInputContainer.appendChild(notesInput);
+        notesInput.textContent = character.details.notes;
+        notesInput.addEventListener('input', e => {
+            let text = notesInput.innerText;
+            if (ContentEditableHelpers.textNeedsFixing(text)) notesInput.textContent = text = ContentEditableHelpers.fixText(text);
+            character.details.notes = text;
+            CharacterHelpers.saveCharacter(character);
+        });
+
 
         return element;
     }

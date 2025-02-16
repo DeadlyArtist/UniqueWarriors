@@ -1925,7 +1925,7 @@ class CharacterCreatorHelpers {
         appearanceInput.textContent = character.details.appearance;
         appearanceInput.addEventListener('input', e => {
             let text = appearanceInput.innerText;
-            if (ContentEditableHelpers.textNeedsFixing(text)) element.textContent = text = ContentEditableHelpers.fixText(text);
+            if (ContentEditableHelpers.textNeedsFixing(text)) appearanceInput.textContent = text = ContentEditableHelpers.fixText(text);
             character.details.appearance = text;
             CharacterHelpers.saveCharacter(character);
         });
@@ -1940,7 +1940,7 @@ class CharacterCreatorHelpers {
         whyInput.textContent = character.details.why;
         whyInput.addEventListener('input', e => {
             let text = whyInput.innerText;
-            if (ContentEditableHelpers.textNeedsFixing(text)) element.textContent = text = ContentEditableHelpers.fixText(text);
+            if (ContentEditableHelpers.textNeedsFixing(text)) whyInput.textContent = text = ContentEditableHelpers.fixText(text);
             character.details.why = text;
             CharacterHelpers.saveCharacter(character);
         });
@@ -1955,7 +1955,7 @@ class CharacterCreatorHelpers {
         backstoryInput.textContent = character.details.backstory;
         backstoryInput.addEventListener('input', e => {
             let text = backstoryInput.innerText;
-            if (ContentEditableHelpers.textNeedsFixing(text)) element.textContent = text = ContentEditableHelpers.fixText(text);
+            if (ContentEditableHelpers.textNeedsFixing(text)) backstoryInput.textContent = text = ContentEditableHelpers.fixText(text);
             character.details.backstory = text;
             CharacterHelpers.saveCharacter(character);
         });
