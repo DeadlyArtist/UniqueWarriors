@@ -1427,7 +1427,7 @@ class CharacterCreatorHelpers {
 
                 let amount = InputHelpers.fixNumberInput(dialogAmountInput);
                 if (dialog._type != "Buy") amount = InputHelpers.constrainInput(dialogAmountInput, value => Math.min(value, character.getItemAmount(dialog._originalSection)));
-                amount = dialog._amount = InputHelpers.constrainInput(dialogAmountInput, value => Math.max(value, 1));
+                amount = dialog._amount = InputHelpers.constrainInput(dialogAmountInput, value => clamp(value, 1, 10000));
 
                 let maxBuyableAmount = Math.floor(character.money / cost);
                 if (character.settings.validate && dialog._type == "Buy" && maxBuyableAmount < amount) {
@@ -1443,7 +1443,7 @@ class CharacterCreatorHelpers {
             }
             dialog.onSectionChange = () => {
                 let scaling = InputHelpers.fixNumberInput(dialogScalingInput);
-                scaling = dialog._scaling = InputHelpers.constrainInput(dialogScalingInput, value => Math.max(value, 1));
+                scaling = dialog._scaling = InputHelpers.constrainInput(dialogScalingInput, value => clamp(value, 1, 10));
 
                 dialogItemPreviewContainer.innerHTML = '';
                 let section = dialog._section = SectionHelpers.getScaled(dialog._originalSection, scaling);
