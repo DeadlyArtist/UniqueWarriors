@@ -75,7 +75,7 @@ class Character {
         let attributeIncreases = this.getMaxAttributeIncreases();
         let attributeMaximum = 2 + rank - tier;
         let attributeBoosts = this.getMaxAttributeBoosts();
-        let skillIncreases = 10 + level;
+        let skillIncreases = 10 + level * 2;
         let skillMaximum = 1 + tier;
         let maxEnergy = Math.floor(rank / 2);
         if (level >= 3) maxEnergy += 2;
@@ -96,8 +96,8 @@ class Character {
     getAttributeStats() {
         let baseStats = { ...CharacterHelpers.getBaseStats(), ...(this.baseStatOverrides ?? {}) };
         let { level, tier, rank } = this.getScalingStats();
-        let maxHealth = baseStats.maxHealth + level * 2 + this.attributes.maxHealth * rank * 5;
-        let baseShield = baseStats.baseShield + level * 2 + this.attributes.baseShield * rank * 4;
+        let maxHealth = baseStats.maxHealth + level * 4 + this.attributes.maxHealth * rank * 10;
+        let baseShield = baseStats.baseShield + level * 4 + this.attributes.baseShield * rank * 8;
         let regeneration = baseStats.regeneration + this.attributes.regeneration * tier * 1;
         let power = baseStats.power * tier + this.attributes.power * tier * 1;
         let speed = baseStats.speed + this.attributes.speed * 2;
@@ -165,17 +165,19 @@ class Character {
     getBaseSkillBranchLevel(branch) {
         let skillNames = CharacterHelpers.getSkillNamesByBranch(branch);
         let skillLevels = skillNames.map(skill => this.getBaseSkillLevel(skill));
-        let topThree = skillLevels.sort(function (a, b) { return b - a; }).slice(0, 3);
-        let average = Math.floor(topThree.reduce((sum, level) => sum + level, 0) / topThree.length);
-        return average;
+        //let topThree = skillLevels.sort(function (a, b) { return b - a; }).slice(0, 3);
+        //let average = Math.floor(topThree.reduce((sum, level) => sum + level, 0) / topThree.length);
+        let hasLevel = skillLevels.filter(l => l > 0).length >= 3;
+        return hasLevel ? 1 : 0;
     }
 
     getBaseSkillFieldLevel(field) {
         let skillBranchNames = CharacterHelpers.getSkillBranchNamesByField(field);
         let skillBranchLevels = skillBranchNames.map(branch => this.getBaseSkillBranchLevel(branch));
-        let topThree = skillBranchLevels.sort(function (a, b) { return b - a; }).slice(0, 3);
-        let average = Math.floor(topThree.reduce((sum, level) => sum + level, 0) / topThree.length);
-        return average;
+        //let topThree = skillBranchLevels.sort(function (a, b) { return b - a; }).slice(0, 3);
+        //let average = Math.floor(topThree.reduce((sum, level) => sum + level, 0) / topThree.length);
+        let hasLevel = skillBranchLevels.filter(l => l > 0).length >= 3;
+        return hasLevel ? 1 : 0;
     }
 
     getSkillBranchLevel(branch) {

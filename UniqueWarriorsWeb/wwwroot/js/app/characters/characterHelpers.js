@@ -17,8 +17,8 @@ class CharacterHelpers {
 
     static getBaseStats() {
         return {
-            maxHealth: 10,
-            baseShield: 8,
+            maxHealth: 20,
+            baseShield: 16,
             regeneration: 0,
             power: 1,
             speed: 8,
