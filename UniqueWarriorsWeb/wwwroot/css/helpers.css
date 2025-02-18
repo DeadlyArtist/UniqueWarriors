@@ -273,3 +273,7 @@ b {
   line-height: 1;
   padding-bottom: 0.25em;
 }
+
+.centeredText {
+  text-align: center;
+}
