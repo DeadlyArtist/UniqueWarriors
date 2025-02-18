@@ -1,5 +1,5 @@
 # Cyberfantasy: Unique Warriors
-A Cyberfantasy TTRPG created for epic combats in a mix of magical High Fantasy and interdimensional SciFi.
+A Cyberfantasy TTRPG created for epic combats in a mix of dystopian Cyberpunk, magical High Fantasy, and interdimensional SciFi.
 
 ## About
 A Cyberfantasy flavored TTRPG about tactical combat where you juggle a lot of options, as the best action highly depends on the current situation. During character creation and as you level up, you can choose your options with a very high degree of customizability. Level 1-4 are tutorial levels ideal for newcomers, whilst experienced players usually start at level 5. With 30 levels in total, more than enough progression is provided to support long campaigns.
