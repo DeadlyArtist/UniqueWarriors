@@ -10,21 +10,14 @@ class SectionDamageHelpers {
         if (!attributeValue) return null;
 
         // Regex to match the dice and modifiers
-        const diceRegex = /^([+-]{2})?\s*T?(\d+)d(\d*)/; // Handles both formats with modifiers before or after
+        const diceRegex = /^([+-]{2})?\s*T?(\d*)d(\d*)/; // Handles both formats with modifiers before or after
         const typesRegex = /\((.*?)\)/; // Example: (slashing, sonic)
 
         const diceMatch = attributeValue.match(diceRegex);
         const typesMatch = attributeValue.match(typesRegex);
 
-        let isMutation = false;
-        if (diceMatch && !diceMatch[3]) {
-            isMutation = true;
-            diceMatch[3] = diceMatch[2];
-            diceMatch[2] = "";
-        }
         const modifier = diceMatch ? diceMatch[1] || "" : "";
         let size = diceMatch ? parseInt(diceMatch[3]) : 0;
-        if (isMutation) size *= 2;
         return {
             dice: diceMatch
                 ? {
@@ -52,7 +45,7 @@ class SectionDamageHelpers {
 
         // Handle dice size overflow rules
         if (result.size > 12) {
-            result.size = 6;
+            result.size = 8;
             result.count *= 2;
         } else if (result.size < 4) {
             result.size = 3;
