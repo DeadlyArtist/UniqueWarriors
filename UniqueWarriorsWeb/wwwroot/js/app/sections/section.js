@@ -261,7 +261,7 @@ class Section {
                 section.attributes = section.attributes.map(attributeLine => attributeLine.map(attribute => {
                     if (SectionAttributesHelpers.isTag(attribute)) return parseMixed(attribute);
                     return attribute;
-                }).filter(a => a));
+                }).filter(a => a)).filter(l => l.length != 0);
             }
             section = new Section(section);
             section.npc = NPCSectionHelpers.parseNPC(section, { mixed });
