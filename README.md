@@ -18,7 +18,7 @@ Official Settings: Neontris
 Satisfying progression over the course of 30 levels.
 
 ### Customizability
-You can choose from dozens of weapons, hundreds of weapon abilities (techniques), 9 paths, dozens of path abilities (masteries) each with multiple upgrades, more than a dozen attributes, as well as additional customizability at higher levels via mutations, custom summons, path evolutions, and path ascendancies. Beyond that, lots of customizability in terms of flavor, such as a plethora of ancestries, hundreds of skills, characteristics and passions, as well as money dependent customizability via items and runes is available.
+You can choose from dozens of weapons, hundreds of weapon abilities (techniques), 9 paths, dozens of path abilities (masteries) each with multiple upgrades, more than a dozen attributes, as well as additional customizability at higher levels via mutations, custom summons, path evolutions, and path ascendancies. Beyond that, lots of customizability in terms of flavor, such as a plethora of ancestries, hundreds of skills, characteristics and passions, as well as money dependent customizability via dozens of items, such as gadgets, drugs, armor, and runes is available.
 
 ### Homebrew
 Straightforward, modular design makes this game super simple to create homebrew for. Homebrew is split into simple homebrew (campaign level, personal homebrew) and advanced homebrew (replace or add entire new systems).
