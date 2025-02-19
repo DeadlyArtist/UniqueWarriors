@@ -209,13 +209,13 @@ class NPC {
         if (this.masteries.length != other.masteries.length) return false;
 
         for (let section of this.techniques) {
-            if (!section.compareRecursively(other.techniques.get(section.title))) return false;
+            if (!section.compareRecursively(other.techniques.get(section))) return false;
         }
         for (let section of this.summons) {
-            if (!section.compareRecursively(other.summons.get(section.title))) return false;
+            if (!section.compareRecursively(other.summons.get(section))) return false;
         }
         for (let section of this.masteries) {
-            if (!section.compareRecursively(other.masteries.get(section.title))) return false;
+            if (!section.compareRecursively(other.masteries.get(section))) return false;
         }
 
         return true;

@@ -810,8 +810,8 @@ class CharacterHelpers {
         let variables = null;
         if (!settings.noVariables) variables = settings.variables ??= character.getVariables();
 
-        let attuned = SectionHelpers.generateStructuredHtmlForSectionOverview(character.attunedItems.getAll(), SectionHelpers.MasonryType, { ...settings, title: "Attuned", variables, hideIfEmpty: true, });
-        let overview = SectionHelpers.generateStructuredHtmlForSectionOverview(character.items.getAll(), SectionHelpers.MasonryType, { ...settings, title: "All", variables, hideIfEmpty: true, });
+        let attuned = SectionHelpers.generateStructuredHtmlForSectionOverview(character.attunedItems.getAll(), SectionHelpers.MasonryType, { ...settings, title: "Attuned", placeholder: "No items attuned...", variables, });
+        let overview = SectionHelpers.generateStructuredHtmlForSectionOverview(character.items.getAll(), SectionHelpers.MasonryType, { ...settings, title: "Other", placeholder: "No other items found...", variables, });
         abilitiesContainer.appendChild(attuned.container);
         abilitiesContainer.appendChild(overview.container);
 

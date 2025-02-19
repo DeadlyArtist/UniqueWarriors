@@ -98,6 +98,17 @@ class CharacterUpdater {
                 original = Registries.summons.get(original);
                 if (!original) continue;
                 let isOutdated = false;
+                let comparableHeadValues = ["Summon", "Min Importance", "Size", "Boons", "Max Health", "Stats"];
+                for (let name of comparableHeadValues) {
+                    if (summon.headValues.get(name) != original.headValues.get(name)) {
+                        isOutdated = true;
+                        continue;
+                    }
+                }
+                if (!jsonEquals(summon.tags.values(), original.tags.values())) {
+                    isOutdated = true;
+                    continue;
+                }
                 for (let technique of summon.npc.techniques) {
                     if (oldOriginal.npc.techniques.has(technique)) {
                         if (!technique.compareRecursively(original.npc.techniques.get(technique))) {
@@ -137,11 +148,9 @@ class CharacterUpdater {
 
                 if (isOutdated) {
                     outdatedSummons.push(summon);
-                    continue;
                 }
+                continue;
             }
-
-            if (AbilitySectionHelpers.isVariant(summon)) continue;
 
             let source = Registries.summons.get(summon);
             if (!source) {
@@ -171,6 +180,25 @@ class CharacterUpdater {
         let unknownWeapons = character.weapons.filter(w => !Registries.weapons.has(w));
         let unknownPaths = character.paths.filter(w => !Registries.paths.has(w));
 
+        let unknownItems = [];
+        let outdatedItems = [];
+        for (let location of [character.items, character.attunedItems]) {
+            for (let item of location) {
+                let source = Registries.items.get(AbilitySectionHelpers.getSource(item));
+                if (!source) {
+                    unknownItems.push(item);
+                    continue;
+                }
+
+                let scaled = AbilitySectionHelpers.getScaled(item);
+                scaled = SectionHelpers.getScaled(source, scaled);
+                if (!scaled.compareRecursively(item)) {
+                    outdatedItems.push(item);
+                    continue;
+                }
+            }
+        }
+
         let lists = {
             unknownTechniques,
             outdatedTechniques,
@@ -180,6 +208,8 @@ class CharacterUpdater {
             outdatedSummons,
             unknownWeapons,
             unknownPaths,
+            unknownItems,
+            outdatedItems,
         }
         needsUpdate ||= Object.values(lists).filter(l => l.length != 0).length != 0;
 
@@ -265,6 +295,36 @@ class CharacterUpdater {
         let paths = character.paths.filter(w => Registries.paths.has(w));
         character.paths.clear();
         paths.forEach(t => character.paths.register(t));
+
+        let items = new Registry();
+        for (let item of character.items) {
+            let source = Registries.items.get(AbilitySectionHelpers.getSource(item));
+            if (!source) {
+                delete character.itemCounts[item.title];
+                continue;
+            }
+
+            let scaled = AbilitySectionHelpers.getScaled(item);
+            let newItem = SectionHelpers.getScaled(source, scaled ?? 1);
+            items.register(newItem);
+        }
+        character.items.clear();
+        items.forEach(t => character.items.register(t));
+
+        let attunedItems = new Registry();
+        for (let item of character.attunedItems) {
+            let source = Registries.items.get(AbilitySectionHelpers.getSource(item));
+            if (!source) {
+                delete character.itemCounts[item.title];
+                continue;
+            }
+
+            let scaled = AbilitySectionHelpers.getScaled(item);
+            let newItem = SectionHelpers.getScaled(source, scaled ?? 1);
+            attunedItems.register(newItem);
+        }
+        character.attunedItems.clear();
+        attunedItems.forEach(t => character.attunedItems.register(t));
 
         if (character instanceof Character) CharacterHelpers.saveCharacter(character);
     }

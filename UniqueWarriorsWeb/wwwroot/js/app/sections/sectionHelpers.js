@@ -164,6 +164,7 @@ class SectionHelpers {
     }
 
     static resolvePath(path, encoded = false) {
+        path = path.replace(/^\//, '');
         if (!encoded) path = SectionReferenceHelpers.pathEncoder.encode(path);
         let parts = path.split('/').map(part => SectionReferenceHelpers.pathEncoder.unescape(part));
         if (parts.length < 2) return null;
@@ -362,8 +363,9 @@ class SectionHelpers {
     static setupVariant(section, variationTitle = null) {
         section.removeHeadValue("Connections");
         section.addHeadValue("Variant", `<${section.title}>`, { lineIndex: 0 });
-        section.id = generateUniqueId();
+        let oldTitle = section.title;
         section.title = variationTitle ?? `Variant ${section.title}`;
+        section.id = `${oldTitle}___Variant___${section.title}`;
     }
 
     static getScaled(section, scaling, variationTitle = null) {
@@ -375,22 +377,21 @@ class SectionHelpers {
     static setupScaled(section, scaling, variationTitle = null) {
         section.removeHeadValue("Connections");
         if (!section.headValues.has("Source")) section.addHeadValue("Source", `</items/${section.title}>`, { lineIndex: 0 });
+        let oldTitle = section.title;
         section.title = variationTitle ?? section.title.replace(/ X$/, " " + scaling);
-        if (variationTitle) section.id = generateUniqueId();
+        if (variationTitle) section.id = `${oldTitle}___Scaled_${scaling}___${section.title}`;
         if (!section.headValues.has("X")) return section;
         section.removeHeadValue("X");
+        section.addHeadValue("Scaled", scaling, { lineIndex: 0, });
 
         let variables = new Map([["X", scaling]]);
-        if (section.attributes) {
-            for (let line of section.attributes) {
-                for (let attribute of line) {
-                    if (attribute instanceof HeadValue) {
-                        attribute.value = SectionReferenceHelpers.replaceVariablesWithinText(attribute.value, variables);
-                        section.headValues.set(attribute.name, attribute.value);
-                    }
+        for (let line of section.attributes) {
+            for (let attribute of line) {
+                if (attribute instanceof HeadValue) {
+                    attribute.value = SectionReferenceHelpers.replaceVariablesWithinText(attribute.value, variables);
+                    section.headValues.set(attribute.name, attribute.value);
                 }
             }
-
         }
         if (section.content) section.content = SectionReferenceHelpers.replaceVariablesWithinText(section.content, variables);
 
@@ -479,7 +480,7 @@ class SectionHelpers {
                         if (isActionTag) attributeElement.classList.add('section-actionTypes');
                     } else if (SectionAttributesHelpers.isHeadValue(attr)) {
                         attributeElement = fromHTML(`<span class="section-attribute section-headValue"><span class="section-headValue-name">${escapeHTML(attr.name)}</span>: </span>`);
-                        let inputAttributes = new Set(["Severity", "X"]);
+                        let inputAttributes = new Map([["Severity", [0, 10]], ["X", [1, 10]]]);
                         if (inputAttributes.has(attr.name)) {
                             let value = settings.variables.get(attr.name);
                             if (value == null) {
@@ -492,7 +493,8 @@ class SectionHelpers {
                             severityInput.addEventListener('input', () => {
                                 if (severityInput.value == '') return;
                                 let newValue = InputHelpers.fixNumberInput(severityInput);
-                                newValue = InputHelpers.constrainInput(severityInput, value => clamp(value, 0, 10));
+                                let [min, max] = inputAttributes.get(attr.name);
+                                newValue = InputHelpers.constrainInput(severityInput, value => clamp(value, min, max));
                                 if (value == newValue) return;
                                 value = newValue;
                                 settings.variables.set(attr.name, value);
@@ -628,7 +630,7 @@ class SectionHelpers {
         } else if (type === this.MasonryType) {
             listElement = fromHTML(`<div class="masonryGrid" gap-x="20" gap-y="20" min-width="400">`);
         }
-        listElement.setAttribute('placeholder', "Loading...");
+        listElement.setAttribute('placeholder', settings.placeholder ?? "Loading...");
         container.appendChild(listElement);
 
         const overview = new StructuredSectionOverviewHtml(type, container, listElement, searchContainer, settings);

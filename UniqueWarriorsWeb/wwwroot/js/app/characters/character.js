@@ -210,13 +210,14 @@ class Character {
     }
 
     addItem(item, amount = 1) {
-        if (!this.itemCounts[item.id]) {
+        if (!this.itemCounts[item.id] || !this.items.has(item)) {
             this.items.register(item);
+            this.itemCounts[item.id] = 0;
+
             if (!item.headValues.has("Amount")) item.addHeadValue("Amount", amount, { lineIndex: 0 });
             item.removeTag("Attuned");
         }
 
-        this.itemCounts[item.id] ??= 0;
         this.itemCounts[item.id] += amount;
         item.updateHeadValue("Amount", this.itemCounts[item.id]);
         this.items.get(item).updateHeadValue("Amount", this.itemCounts[item.id]);
@@ -261,13 +262,14 @@ class Character {
         this.removeItem(item);
         item = item.clone();
 
-        if (!this.attunedItemCounts[item.id]) {
+        if (!this.attunedItemCounts[item.id] || !this.attunedItems.has(item)) {
             this.attunedItems.register(item);
+            this.attunedItemCounts[item.id] = 0;
+
             if (!item.headValues.has("Amount")) item.addHeadValue("Amount", amount, { lineIndex: 0 });
             if (!item.tags.has("Attuned")) item.addTag("Attuned", { lineIndex: 0 });
         }
 
-        this.attunedItemCounts[item.id] ??= 0;
         this.attunedItemCounts[item.id] += amount;
         item.updateHeadValue("Amount", this.attunedItemCounts[item.id]);
         this.attunedItems.get(item).updateHeadValue("Amount", this.attunedItemCounts[item.id]);
@@ -279,7 +281,7 @@ class Character {
         this.addItem(item);
         item = item.clone();
 
-        if (this.attunedItemCounts[item.id] == 0) return;
+        if (!this.attunedItemCounts[item.id]) return;
 
         this.attunedItems.register(item);
         this.attunedItemCounts[item.id] ??= 0;

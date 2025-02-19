@@ -115,6 +115,15 @@ class AbilitySectionHelpers {
         return section.headValues.get("X");
     }
 
+    static getScaled(section) {
+        return section.headValues.get("Scaled");
+    }
+
+    static getSource(section) {
+        let path = section.getHeadValueValue("Source")?.replace(/<(.*)>/g, "$1");
+        return SectionHelpers.resolvePath(path);
+    }
+
     static getCost(section) {
         return section.headValues.get("Cost");
     }
