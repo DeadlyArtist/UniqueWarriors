@@ -15,6 +15,7 @@ class NPC {
         this.boons = settings.boons ?? {};
         this.details = settings.details ?? {};
         this.linkedSection = settings.linkedSection ?? {};
+        this.linkedCharacter = settings.linkedCharacter;
 
         this.items = new Registry();
         this.techniques = new Registry();
@@ -87,7 +88,7 @@ class NPC {
     }
 
     getScalingStats() {
-        let level = this.stats.level;
+        let level = this.linkedCharacter?.stats.level ?? this.stats.level;
         let importance = this.stats.importance;
         let rank = 1 + Math.floor(level / 5);
         let tier = 1 + Math.floor(level / 10);

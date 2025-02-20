@@ -1,4 +1,8 @@
 class SummonEditorHelpers {
+    static getSearchFilterKey(field) {
+        return getPath() + "?characterId=" + getQueryVariable("characterId") + "&summonId=" + getQueryVariable("summonId") + "#" + field;
+    }
+
     static generateStructuredHtmlForSummonEditor(character, summon, settings = null) {
         settings ??= {};
         let original = SummonHelpers.getVariantOriginal(character, summon);
@@ -37,7 +41,7 @@ class SummonEditorHelpers {
     }
 
     static generateSettingsPageHtml(character, summon, original, page, structuredSummonEditor) {
-        let summonVariables = summon.npc.getVariables();
+        let variables = summon.npc.getVariables();
         let element = fromHTML(`<div class="characterCreator-page divList children-w-fit">`);
 
         element.appendChild(fromHTML(`<h1>Name`));
@@ -54,7 +58,7 @@ class SummonEditorHelpers {
         });
 
         element.appendChild(hb(4));
-        element.appendChild(SectionHelpers.generateStructuredHtmlForSection(SectionHelpers.resolveSectionExpression('rules/Character Creation/Choose Weapons*noChildren'), { variables: summonVariables }).element);
+        element.appendChild(SectionHelpers.generateStructuredHtmlForSection(SectionHelpers.resolveSectionExpression('rules/Character Creation/Choose Weapons*noChildren'), { variables, }).element);
 
         element.appendChild(hb(4));
         let chosenWeaponsBar = fromHTML(`<div class="listHorizontal gap-2">`);
@@ -133,7 +137,7 @@ class SummonEditorHelpers {
     }
 
     static generateTechniquesPageHtml(character, summon, original, page, structuredSummonEditor) {
-        let summonVariables = summon.npc.getVariables();
+        let variables = summon.npc.getVariables();
         let element = fromHTML(`<div class="characterCreator-page divList">`);
 
         let chosenWeapons = summon.npc.weapons;
@@ -207,7 +211,7 @@ class SummonEditorHelpers {
             dialog.onMutationChange = () => {
                 let mutation = dialogMutationInput.value;
                 let section = SectionHelpers.getMutated(dialog._originalSection, mutation);
-                let structuredSection = dialog._structuredSection = SectionHelpers.generateStructuredHtmlForSection(section, { summonVariables });
+                let structuredSection = dialog._structuredSection = SectionHelpers.generateStructuredHtmlForSection(section, { variables });
                 dialogNameInput.value = section.title;
                 dialogMutationPreviewContainer.innerHTML = "";
                 dialogMutationPreviewContainer.appendChild(structuredSection.wrapperElement);
@@ -322,7 +326,7 @@ class SummonEditorHelpers {
 
         element.appendChild(hb(4));
         element.appendChild(fromHTML(`<h1>Learned Techniques`));
-        let chosenOverview = SectionHelpers.generateStructuredHtmlForSectionOverview(chosenTechniques.getAll(), SectionHelpers.MasonryType, { addSearch: true, filterKey: this.getSearchFilterKey('learned_techniques'), summonVariables });
+        let chosenOverview = SectionHelpers.generateStructuredHtmlForSectionOverview(chosenTechniques.getAll(), SectionHelpers.MasonryType, { addSearch: true, filterKey: this.getSearchFilterKey('learned_techniques'), variables });
         element.appendChild(chosenOverview.container);
         chosenOverview.listElement.setAttribute('placeholder', 'No techniques learned yet...');
 
@@ -349,7 +353,7 @@ class SummonEditorHelpers {
         element.appendChild(hb(4));
         element.appendChild(fromHTML(`<h1>Available Techniques`));
         let availableTechniques = Registries.techniques.filter(t => chosenWeapons.has(AbilitySectionHelpers.getMainCategory(t)));
-        let availableOverview = SectionHelpers.generateStructuredHtmlForSectionOverview(availableTechniques, SectionHelpers.MasonryType, { addSearch: true, filterKey: this.getSearchFilterKey('available_techniques'), summonVariables });
+        let availableOverview = SectionHelpers.generateStructuredHtmlForSectionOverview(availableTechniques, SectionHelpers.MasonryType, { addSearch: true, filterKey: this.getSearchFilterKey('available_techniques'), variables });
         element.appendChild(availableOverview.container);
         let noTechniquesElement = fromHTML(`<div class="hide" placeholder="No more techniques available...">`);
         element.appendChild(noTechniquesElement);
@@ -387,7 +391,7 @@ class SummonEditorHelpers {
 
         element.appendChild(hb(4));
         element.appendChild(fromHTML(`<h1>Unavailable Techniques`));
-        let unavailableOverview = SectionHelpers.generateStructuredHtmlForSectionOverview(availableTechniques, SectionHelpers.MasonryType, { addSearch: true, filterKey: this.getSearchFilterKey('unavailable_techniques'), summonVariables });
+        let unavailableOverview = SectionHelpers.generateStructuredHtmlForSectionOverview(availableTechniques, SectionHelpers.MasonryType, { addSearch: true, filterKey: this.getSearchFilterKey('unavailable_techniques'), variables });
         element.appendChild(unavailableOverview.container);
         let noRemainingTechniquesElement = fromHTML(`<div class="hide" placeholder="No more techniques remaining...">`);
         element.appendChild(noRemainingTechniquesElement);
@@ -428,7 +432,7 @@ class SummonEditorHelpers {
         element.appendChild(summonsContainer);
         summonsContainer.appendChild(hb(4));
         summonsContainer.appendChild(fromHTML(`<h1>Learned Summons`));
-        let chosenSummonsOverview = SectionHelpers.generateStructuredHtmlForSectionOverview(chosenSummons.getAll(), SectionHelpers.MasonryType, { addSearch: true, filterKey: this.getSearchFilterKey('learned_summons'), summonVariables });
+        let chosenSummonsOverview = SectionHelpers.generateStructuredHtmlForSectionOverview(chosenSummons.getAll(), SectionHelpers.MasonryType, { addSearch: true, filterKey: this.getSearchFilterKey('learned_summons'), variables });
         summonsContainer.appendChild(chosenSummonsOverview.container);
         chosenSummonsOverview.listElement.setAttribute('placeholder', 'No summons learned yet...');
 
@@ -438,7 +442,7 @@ class SummonEditorHelpers {
 
         summonsContainer.appendChild(hb(4));
         summonsContainer.appendChild(fromHTML(`<h1>Available Summons`));
-        let availableSummonsOverview = SectionHelpers.generateStructuredHtmlForSectionOverview(availableSummons, SectionHelpers.MasonryType, { addSearch: true, filterKey: this.getSearchFilterKey('available_summons'), summonVariables });
+        let availableSummonsOverview = SectionHelpers.generateStructuredHtmlForSectionOverview(availableSummons, SectionHelpers.MasonryType, { addSearch: true, filterKey: this.getSearchFilterKey('available_summons'), variables });
         summonsContainer.appendChild(availableSummonsOverview.container);
         let noSummonsElement = fromHTML(`<div class="hide" placeholder="No more summons available...">`);
         summonsContainer.appendChild(noSummonsElement);
@@ -476,6 +480,50 @@ class SummonEditorHelpers {
             availableSummonsOverview.listElement._masonry?.resize();
         }
 
+        summonsContainer.appendChild(hb(4));
+        summonsContainer.appendChild(fromHTML(`<h1>Unavailable Summons`));
+        let unavailableSummonsOverview = SectionHelpers.generateStructuredHtmlForSectionOverview(availableSummons, SectionHelpers.MasonryType, { addSearch: true, filterKey: this.getSearchFilterKey('unavailable_summons'), variables });
+        summonsContainer.appendChild(unavailableSummonsOverview.container);
+        let noRemainingSummonsElement = fromHTML(`<div class="hide" placeholder="No more summons remaining...">`);
+        summonsContainer.appendChild(noRemainingSummonsElement);
+
+        function updateUnavailableSummonsOverview() {
+            let somethingAvailable = false;
+            for (let structuredSection of unavailableSummonsOverview.sections) {
+                let element = structuredSection.wrapperElement;
+                let summon = structuredSection.section;
+                let isAvailable = true;
+                if (character.settings.validate) {
+                    let category = AbilitySectionHelpers.getMainCategory(summon);
+                    if (!maxSummonUnlocks.has(category)) isAvailable = false;
+                    else if (remainingOtherTechniques <= 0 && remainingSummonUnlocks.get(category) <= 0) isAvailable = false;
+                    else if (!CharacterCreatorHelpers.canConnectToAbility(chosenSummons, summon, chosenTechniques)) isAvailable = false;
+                }
+                let isUnavailable = !isAvailable && !chosenSummons.has(summon);
+                if (character.settings.validate) {
+                    let category = AbilitySectionHelpers.getMainCategory(summon);
+                    if (!maxSummonUnlocks.has(category)) isUnavailable = false;
+                }
+
+                if (isUnavailable) {
+                    somethingAvailable = true;
+                    element.classList.remove('hide');
+                }
+                else element.classList.add('hide');
+            }
+
+            if (somethingAvailable) {
+                noRemainingSummonsElement.classList.add('hide');
+                unavailableSummonsOverview.searchContainer.classList.remove('hide');
+            }
+            else {
+                noRemainingSummonsElement.classList.remove('hide');
+                unavailableSummonsOverview.searchContainer.classList.add('hide');
+            }
+
+            unavailableSummonsOverview.listElement._masonry?.resize();
+        }
+
         function learn(techniqueLike, update = true) {
             let isSummon = NPCSectionHelpers.isSummon(techniqueLike);
             let chosen = chosenTechniques;
@@ -490,7 +538,7 @@ class SummonEditorHelpers {
             let structuredSection = overview.addSection(techniqueLike);
             addUnlearnButton(structuredSection);
 
-            if (AbilitySectionHelpers.isMutated(structuredSection.section)) addEditMutationButton(structuredSection);
+            if (AbilitySectionHelpers.isMutated(structuredSection.section)) addEditMutatedButton(structuredSection);
 
             if (update) {
                 updateAll();
@@ -591,7 +639,7 @@ class SummonEditorHelpers {
         for (let structuredSection of chosenOverview.sections) {
             if (!originalTechniques.has(structuredSection.section)) {
                 addUnlearnButton(structuredSection);
-                if (AbilitySectionHelpers.isMutated(structuredSection.section)) addEditMutationButton(structuredSection);
+                if (AbilitySectionHelpers.isMutated(structuredSection.section)) addEditMutatedButton(structuredSection);
             }
         }
 
@@ -630,6 +678,7 @@ class SummonEditorHelpers {
                 summonsContainer.classList.remove('hide');
                 updateChosenSummonsOverview();
                 updateAvailableSummonsOverview();
+                updateUnavailableSummonsOverview();
             } else {
                 summonsContainer.classList.add('hide');
             }

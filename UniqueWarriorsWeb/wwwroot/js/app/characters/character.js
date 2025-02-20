@@ -38,6 +38,8 @@ class Character {
         settings.paths?.forEach(e => this.paths.register(e));
         settings.characteristics?.forEach(e => this.characteristics.register(e));
         settings.passions?.forEach(e => this.passions.register(e));
+
+        this.summons.stream(info => info.obj.npc.linkedCharacter = this);
     }
 
     get masteries() {

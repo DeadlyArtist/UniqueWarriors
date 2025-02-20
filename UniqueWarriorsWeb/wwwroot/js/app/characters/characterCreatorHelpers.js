@@ -1,6 +1,6 @@
 class CharacterCreatorHelpers {
     static getSearchFilterKey(field) {
-        return getUrlWithoutHash() + "# #" + field;
+        return getPath() + "?id=" + getQueryVariable("id") + "#" + field;
     }
 
     static generateStructuredHtmlForCharacterCreator(character, settings = null) {
@@ -541,6 +541,50 @@ class CharacterCreatorHelpers {
             availableSummonsOverview.listElement._masonry?.resize();
         }
 
+        summonsContainer.appendChild(hb(4));
+        summonsContainer.appendChild(fromHTML(`<h1>Unavailable Summons`));
+        let unavailableSummonsOverview = SectionHelpers.generateStructuredHtmlForSectionOverview(availableSummons, SectionHelpers.MasonryType, { addSearch: true, filterKey: this.getSearchFilterKey('unavailable_summons'), variables });
+        summonsContainer.appendChild(unavailableSummonsOverview.container);
+        let noRemainingSummonsElement = fromHTML(`<div class="hide" placeholder="No more summons remaining...">`);
+        summonsContainer.appendChild(noRemainingSummonsElement);
+
+        function updateUnavailableSummonsOverview() {
+            let somethingAvailable = false;
+            for (let structuredSection of unavailableSummonsOverview.sections) {
+                let element = structuredSection.wrapperElement;
+                let summon = structuredSection.section;
+                let isAvailable = true;
+                if (character.settings.validate) {
+                    let category = AbilitySectionHelpers.getMainCategory(summon);
+                    if (!maxSummonUnlocks.has(category)) isAvailable = false;
+                    else if (remainingOtherTechniques <= 0 && remainingSummonUnlocks.get(category) <= 0) isAvailable = false;
+                    else if (!CharacterCreatorHelpers.canConnectToAbility(chosenSummons, summon, chosenTechniques)) isAvailable = false;
+                }
+                let isUnavailable = !isAvailable && !chosenSummons.has(summon);
+                if (character.settings.validate) {
+                    let category = AbilitySectionHelpers.getMainCategory(summon);
+                    if (!maxSummonUnlocks.has(category)) isUnavailable = false;
+                }
+
+                if (isUnavailable) {
+                    somethingAvailable = true;
+                    element.classList.remove('hide');
+                }
+                else element.classList.add('hide');
+            }
+
+            if (somethingAvailable) {
+                noRemainingSummonsElement.classList.add('hide');
+                unavailableSummonsOverview.searchContainer.classList.remove('hide');
+            }
+            else {
+                noRemainingSummonsElement.classList.remove('hide');
+                unavailableSummonsOverview.searchContainer.classList.add('hide');
+            }
+
+            unavailableSummonsOverview.listElement._masonry?.resize();
+        }
+
         function learn(techniqueLike, update = true) {
             let isSummon = NPCSectionHelpers.isSummon(techniqueLike);
             let chosen = chosenTechniques;
@@ -557,7 +601,7 @@ class CharacterCreatorHelpers {
             if (isSummon) {
                 if (AbilitySectionHelpers.isVariant(structuredSection.section)) addEditVariantButton(structuredSection);
             } else {
-                if (AbilitySectionHelpers.isMutated(structuredSection.section)) addEditMutationButton(structuredSection);
+                if (AbilitySectionHelpers.isMutated(structuredSection.section)) addEditMutatedButton(structuredSection);
             }
 
             if (update) {
@@ -653,7 +697,7 @@ class CharacterCreatorHelpers {
             structuredSection.learnButtonContainer.before(container);
         }
 
-        function addEditMutationButton(structuredSection) {
+        function addEditMutatedButton(structuredSection) {
             let summon = structuredSection.section;
             let container = structuredSection.editButtonContainer = fromHTML(`<div>`);
             container.appendChild(hb(2));
@@ -691,7 +735,7 @@ class CharacterCreatorHelpers {
 
         for (let structuredSection of chosenOverview.sections) {
             addUnlearnButton(structuredSection);
-            if (AbilitySectionHelpers.isMutated(structuredSection.section)) addEditMutationButton(structuredSection);
+            if (AbilitySectionHelpers.isMutated(structuredSection.section)) addEditMutatedButton(structuredSection);
         }
 
         for (let structuredSection of chosenSummonsOverview.sections) {
@@ -734,6 +778,7 @@ class CharacterCreatorHelpers {
                 summonsContainer.classList.remove('hide');
                 updateChosenSummonsOverview();
                 updateAvailableSummonsOverview();
+                updateUnavailableSummonsOverview();
             } else {
                 summonsContainer.classList.add('hide');
             }
