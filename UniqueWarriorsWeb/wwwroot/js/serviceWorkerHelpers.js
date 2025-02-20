@@ -33,6 +33,8 @@ class ServiceWorkerHelpers {
                 });
             });
         }
+
+        this.debouncedTryPromptResourceUpdate = debounce(() => this.debouncedTryPromptResourceUpdate(false), second);
     }
 
     static resourceUpdateReceived(resource) {
@@ -57,7 +59,8 @@ class ServiceWorkerHelpers {
         });
     }
 
-    static tryPromptResourceUpdate() {
+    static tryPromptResourceUpdate(debounce = true) {
+        if (debounce) this.debouncedTryPromptResourceUpdate();
         if (this.updated.length == 0) return;
         if (this.askedForReload) return;
         this.askedForReload = true;
