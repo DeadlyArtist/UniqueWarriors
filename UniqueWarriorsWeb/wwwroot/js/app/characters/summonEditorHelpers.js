@@ -3,6 +3,14 @@ class SummonEditorHelpers {
         return getPath() + "?characterId=" + getQueryVariable("characterId") + "&summonId=" + getQueryVariable("summonId") + "#" + field;
     }
 
+    static getAfterdragForCharacterRegistry(character, registry) {
+        return (section, beforeSection) => {
+            registry.unregister(section);
+            registry.register(section, { insertBefore: beforeSection });
+            CharacterHelpers.saveCharacter(character);
+        }
+    }
+
     static generateStructuredHtmlForSummonEditor(character, summon, settings = null) {
         settings ??= {};
         let original = SummonHelpers.getVariantOriginal(character, summon);
@@ -326,7 +334,7 @@ class SummonEditorHelpers {
 
         element.appendChild(hb(4));
         element.appendChild(fromHTML(`<h1>Learned Techniques`));
-        let chosenOverview = SectionHelpers.generateStructuredHtmlForSectionOverview(chosenTechniques.getAll(), SectionHelpers.MasonryType, { addSearch: true, filterKey: this.getSearchFilterKey('learned_techniques'), variables });
+        let chosenOverview = SectionHelpers.generateStructuredHtmlForSectionOverview(chosenTechniques.getAll(), SectionHelpers.MasonryType, { addSearch: true, filterKey: this.getSearchFilterKey('learned_techniques'), variables, draggable: true, afterdrag: this.getAfterdragForCharacterRegistry(character, chosenTechniques) });
         element.appendChild(chosenOverview.container);
         chosenOverview.listElement.setAttribute('placeholder', 'No techniques learned yet...');
 
@@ -432,7 +440,7 @@ class SummonEditorHelpers {
         element.appendChild(summonsContainer);
         summonsContainer.appendChild(hb(4));
         summonsContainer.appendChild(fromHTML(`<h1>Learned Summons`));
-        let chosenSummonsOverview = SectionHelpers.generateStructuredHtmlForSectionOverview(chosenSummons.getAll(), SectionHelpers.MasonryType, { addSearch: true, filterKey: this.getSearchFilterKey('learned_summons'), variables });
+        let chosenSummonsOverview = SectionHelpers.generateStructuredHtmlForSectionOverview(chosenSummons.getAll(), SectionHelpers.MasonryType, { addSearch: true, filterKey: this.getSearchFilterKey('learned_summons'), variables, draggable: true, afterdrag: this.getAfterdragForCharacterRegistry(character, chosenSummons) });
         summonsContainer.appendChild(chosenSummonsOverview.container);
         chosenSummonsOverview.listElement.setAttribute('placeholder', 'No summons learned yet...');
 

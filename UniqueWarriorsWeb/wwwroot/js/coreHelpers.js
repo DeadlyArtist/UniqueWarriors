@@ -31,19 +31,25 @@ _tryRemoveEmptyHash();
 
 pressedKeys = {};
 
-function onKeyDown(event) {
-    pressedKeys[event.key] = true;
-}
+(function () {
+    function onKeyDown(event) {
+        pressedKeys[event.key] = true;
+    }
 
-function onKeyUp(event) {
-    delete pressedKeys[event.key];
-}
+    function onKeyUp(event) {
+        delete pressedKeys[event.key];
+    }
 
-document.addEventListener('keydown', onKeyDown);
-document.addEventListener('keyup', onKeyUp);
+    document.addEventListener('keydown', onKeyDown);
+    document.addEventListener('keyup', onKeyUp);
+})();
 window.addEventListener('focus', () => {
     Object.keys(pressedKeys).forEach(key => delete pressedKeys[key]); // Delete all keys upon gaining focus to prevent missing a keyup from outside the window
 });
+
+function isKeyPressed(key) {
+    return !!pressedKeys[key];
+}
 
 
 let lastMousePosition = null;
@@ -426,7 +432,7 @@ onBodyCreated(() => {
             for (const mutation of mutationsList) {
                 mutation.addedNodes.forEach((node) => {
                     if (node.nodeType === Node.ELEMENT_NODE) {
-                        const addedEvent = new CustomEvent('added');
+                        const addedEvent = new CustomEvent('added', { bubbles: false });
                         node.dispatchEvent(addedEvent);
                         node.querySelectorAll('*').forEach((child) => {
                             child.dispatchEvent(addedEvent);
@@ -435,7 +441,7 @@ onBodyCreated(() => {
                 });
                 mutation.removedNodes.forEach((node) => {
                     if (node.nodeType === Node.ELEMENT_NODE) {
-                        const removedEvent = new CustomEvent('removed');
+                        const removedEvent = new CustomEvent('removed', { bubbles: false });
                         node.dispatchEvent(removedEvent);
                         node.querySelectorAll('*').forEach((child) => {
                             child.dispatchEvent(removedEvent);

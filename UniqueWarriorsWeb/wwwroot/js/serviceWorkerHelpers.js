@@ -3,6 +3,15 @@ class ServiceWorkerHelpers {
     static askedForReload = false;
 
     static setup() {
+        function _debounce(func, delay) {
+            let timeout;
+            return function (...args) {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(this, args), delay);
+            };
+        }
+        this.debouncedTryPromptResourceUpdate = _debounce(() => this.debouncedTryPromptResourceUpdate(false), 1000);
+
         if ("serviceWorker" in navigator) {
             navigator.serviceWorker.register("/serviceWorker.js", {
                 updateViaCache: "none", // disable caching, because it is now handled by the service worker
@@ -33,8 +42,6 @@ class ServiceWorkerHelpers {
                 });
             });
         }
-
-        this.debouncedTryPromptResourceUpdate = debounce(() => this.debouncedTryPromptResourceUpdate(false), second);
     }
 
     static resourceUpdateReceived(resource) {

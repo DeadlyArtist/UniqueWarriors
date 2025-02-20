@@ -454,12 +454,22 @@ class SectionHelpers {
 
         let titleElement = null;
         if (section.title) {
+            const titleContainer = section.titleContainer = fromHTML(`<div class="listContainerHorizontal">`);
+            sectionElement.appendChild(titleContainer);
+
             const maxHeaderLevel = 6;
             const headerLevel = Math.min(Math.max(1, section.height), maxHeaderLevel);
             const tag = section.height > maxHeaderLevel ? "div" : `h${headerLevel}`;
             titleElement = fromHTML(`<${tag} class="section-title">`);
             titleElement.textContent = section.title;
-            sectionElement.appendChild(titleElement);
+            titleContainer.appendChild(titleElement);
+
+            if (settings.draggable) {
+                const dragHandle = section.dragHandle = fromHTML(`<div class="element dragHandle">`);
+                titleContainer.appendChild(dragHandle);
+                const dragHandleIcon = icons.dragHandle();
+                dragHandle.appendChild(dragHandleIcon);
+            };
         }
 
         // Need to extract embedded (summon) variables before here.
@@ -642,18 +652,24 @@ class SectionHelpers {
 
     static wrapSectionForOverview(section, type, settings = null) {
         settings ??= {};
-        const structuredSection = this.generateStructuredHtmlForSection(section, settings);
-        if (type === this.TextType) {
-            structuredSection.wrapperElement = structuredSection.element;
-        } else if (type === this.MasonryType) {
+
+        let wrapperElement = null;
+        if (type === this.MasonryType) {
             let tag = settings.link ? "a" : "div";
-            structuredSection.wrapperElement = fromHTML(`<${tag} class="masonryGridItem largeElement raised">`);
-            structuredSection.wrapperElement.appendChild(structuredSection.element);
+            wrapperElement = fromHTML(`<${tag} class="masonryGridItem largeElement raised">`);
         }
+
+        const structuredSection = this.generateStructuredHtmlForSection(section, { ...settings, wrapperElement });
+
+        if (wrapperElement) {
+            wrapperElement.appendChild(structuredSection.element);
+        }
+
         if (settings.link) {
             structuredSection.wrapperElement.setAttribute('href', settings.link);
             structuredSection.wrapperElement.classList.add('hoverable');
         }
+
         return structuredSection;
     }
 }
@@ -676,6 +692,10 @@ class StructuredSectionHtml {
         wrapperElement._section = section;
         wrapperElement._structuredSection = this;
         element._variables = settings.variables;
+    }
+
+    get id() {
+        return this.section.id;
     }
 
     addSubSection(subSection, insertSettings = {}) {
@@ -715,12 +735,17 @@ class StructuredSectionOverviewHtml {
         this.settings = settings;
         this.sections = new Registry(); // Structured sections
         this.didSearchInit = false;
+        this.draggedSection = null;
+        this.dropped = false;
 
         container._sectionOverview = this;
         listElement._sectionOverview = this;
 
         this.updateSearchDisplay();
         if (this.settings.hideIfEmpty) this.container.classList.add("hide");
+        if (this.settings.draggable) {
+            this.enableDragAndDrop();
+        }
     }
 
     updateSearchDisplay() {
@@ -737,15 +762,155 @@ class StructuredSectionOverviewHtml {
         this.searchContainer._search = this.search;
     }
 
+    enableDragAndDrop() {
+        this.listElement.addEventListener("dragover", (event) => {
+            event.preventDefault(); // Necessary for dropping to work
+            if (!this.draggedSection) return;
+
+            const closestElement = document.elementFromPoint(event.clientX, event.clientY);
+            let target = this.findClosestValidTarget(closestElement);
+            if (target) {
+                this.insertElementAtCorrectPosition(this.draggedSection.wrapperElement, target);
+            } else {
+                this.insertAtEdge(event.clientY);
+            }
+
+            resizeClosestMasonryGrid(this.listElement);
+        });
+
+        this.listElement.addEventListener("drop", (event) => {
+            event.preventDefault();
+            if (!this.draggedSection) return;
+
+            const beforeElement = this.draggedSection.wrapperElement.nextElementSibling;
+            let beforeSection = beforeElement?._structuredSection;
+
+            if (this.draggedSection == beforeSection || this.draggedSection == this.sections.getBefore(beforeSection) || (!beforeSection && this.sections.last == this.draggedSection)) return;
+
+            // Handle the reordering
+            this.sections.unregister(this.draggedSection);
+            this.sections.register(this.draggedSection, { insertBefore: beforeSection });
+
+            if (this.settings.afterdrag) {
+                let afterdrag = this.settings.afterdrag;
+                afterdrag(this.draggedSection.section, beforeSection);
+            }
+
+            this.draggedSection = null;
+            this.dropped = true;
+        });
+    }
+
+    setupDraggable(structuredSection) {
+        let wrapper = structuredSection.wrapperElement;
+        let handle = structuredSection.section.dragHandle;
+        if (!handle) return;
+
+        wrapper.setAttribute("draggable", "false");
+        let originalPreviousSibling = null;
+
+        handle.addEventListener("mousedown", (event) => {
+            this.dropped = false;
+            this.draggedSection = structuredSection;
+            wrapper.setAttribute("draggable", "true"); // Enable dragging only when clicking the handle
+            originalPreviousSibling = wrapper.previousElementSibling;
+            setTimeout(() => wrapper.classList.add("dragging"), 0);
+        });
+
+        wrapper.addEventListener("dragstart", (event) => {
+            if (!this.draggedSection) {
+                event.preventDefault(); // Prevent drag if not initiated from handle
+            }
+        });
+
+        const onMouseUp = () => {
+            if (!this.draggedSection) return;
+
+            wrapper.classList.remove("dragging");
+            this.draggedSection = null;
+
+            // Remove the global listener after drag ends
+            document.removeEventListener("mouseup", onMouseUp);
+        };
+
+        wrapper.addEventListener("dragend", (event) => {
+            wrapper.setAttribute("draggable", "false");
+
+            if (!this.dropped) {
+                if (originalPreviousSibling) {
+                    originalPreviousSibling.after(wrapper);
+                } else {
+                    this.listElement.prepend(wrapper); // Handle case where it was the first item
+                }
+            }
+        });
+
+        wrapper.addEventListener("removed", () => {
+            document.removeEventListener("mouseup", onMouseUp);
+        });
+    }
+
+    updateDraggableState() {
+        this.sections.forEach((structuredSection) => {
+            const wrapper = structuredSection.wrapperElement;
+            wrapper.setAttribute("draggable", this.isDraggable ? "true" : "false");
+        });
+    }
+
+    findClosestValidTarget(element) {
+        while (element && element.parentElement !== this.listElement) {
+            element = element.parentElement;
+        }
+        return element;
+    }
+
+    insertElementAtCorrectPosition(draggedElement, targetElement) {
+        if (!draggedElement || !targetElement || draggedElement === targetElement) return;
+
+        let draggedIndex = Array.from(this.listElement.children).indexOf(draggedElement);
+        let targetIndex = Array.from(this.listElement.children).indexOf(targetElement);
+
+        // Determine whether to insert before or after based on relative position
+        if (draggedIndex < targetIndex) {
+            this.listElement.insertBefore(draggedElement, targetElement.nextSibling);
+        } else if (draggedIndex > targetIndex) {
+            this.listElement.insertBefore(draggedElement, targetElement);
+        }
+    }
+
+    insertAtEdge(clientY) {
+        if (!this.draggedSection) return;
+
+        const firstElement = this.listElement.firstElementChild;
+        const lastElement = this.listElement.lastElementChild;
+
+        if (!firstElement || !lastElement) return; // Empty list case
+
+        const firstBox = firstElement.getBoundingClientRect();
+        const lastBox = lastElement.getBoundingClientRect();
+
+        if (Math.abs(clientY - firstBox.top) < Math.abs(clientY - lastBox.bottom)) {
+            if (this.draggedSection.wrapperElement == firstElement) return;
+            this.listElement.insertBefore(this.draggedSection.wrapperElement, firstElement);
+        } else {
+            if (this.draggedSection.wrapperElement == lastElement) return;
+            this.listElement.appendChild(this.draggedSection.wrapperElement);
+        }
+    }
+
     addSection(section, insertSettings) {
         insertSettings ??= {};
         const structuredSection = SectionHelpers.wrapSectionForOverview(section, this.type, this.settings);
 
         let oldIndex = this.sections.getIndex(structuredSection);
-        this.sections.register(structuredSection, { ...insertSettings, id: structuredSection.section.id });
+        this.sections.register(structuredSection, { ...insertSettings });
         let index = this.sections.getIndex(structuredSection);
         if (insertSettings.replace == true && oldIndex != -1) this.listElement.children[oldIndex].replaceWith(structuredSection.wrapperElement);
         else HtmlHelpers.insertAt(this.listElement, index, structuredSection.wrapperElement);
+
+        if (this.settings.draggable) {
+            this.setupDraggable(structuredSection);
+        }
 
         this.updateSearchDisplay();
         if (this.settings.hideIfEmpty && this.sections.size != 0) this.container.classList.remove("hide");

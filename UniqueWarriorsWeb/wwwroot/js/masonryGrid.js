@@ -157,6 +157,10 @@ function resizeAllMasonryGrids() {
     document.querySelectorAll('.masonryGrid').forEach(grid => resizeMasonryGrid(grid));
 }
 
+function resizeClosestMasonryGrid(element) {
+    HtmlHelpers.getClosestProperty(element, "_masonry")?.resize();
+}
+
 onBodyCreated(() => {
     // Set up an observer to detect when new MasonryGrid elements are added to the DOM
     new MutationObserver(mutations => {

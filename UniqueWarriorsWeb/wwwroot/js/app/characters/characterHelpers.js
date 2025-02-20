@@ -600,7 +600,8 @@ class CharacterHelpers {
             abilitiesContainer.appendChild(combinedAbilityList.container);
         } else {
             let stats = character.getStats();
-            let abilities = character.techniques.getAll().concat(this.getDefaultAbilities().filter(ability => {
+            let abilities = character.techniques.getAll();
+            let defaultAbilities = this.getDefaultAbilities().filter(ability => {
                 if (ability.title == "Dodge" && stats.agility <= 0) return false;
                 if (ability.title == "Self Correction" && stats.consistency <= 0) return false;
                 if (ability.title == "Overexert" && stats.potential <= 0) return false;
@@ -608,15 +609,17 @@ class CharacterHelpers {
                 if (ability.title == "Subconscious Impulse" && stats.reflex <= 0) return false;
 
                 return true;
-            }));
+            });
             let masteries = character.masteries.getAll();
             let attuned = character.attunedItems.getAll();
+            let specialTriggeredAbilities = [];
             let triggeredAbilities = [];
             let moveActionAbilities = [];
             let actionAbilities = [];
             let quickActionAbilities = [];
             let otherAbilities = [];
             for (let ability of abilities) {
+                let title = ability.title;
                 if (AbilitySectionHelpers.isTrigger(ability)) {
                     triggeredAbilities.push(ability);
                     continue;
@@ -633,9 +636,34 @@ class CharacterHelpers {
                     otherAbilities.push(ability);
                 }
             }
+            for (let ability of defaultAbilities) {
+                let title = ability.title;
+                let isSpecial = false;
+                if (AbilitySectionHelpers.isTrigger(ability)) {
+                    isSpecial = true;
+                    if (title == "Revive") isSpecial = false;
+                }
+
+                if (isSpecial) {
+                    specialTriggeredAbilities.push(ability);
+                } else {
+                    let map = AbilitySectionHelpers.getActionCost(ability);
+                    if (map.has('Move Action')) {
+                        moveActionAbilities.push(ability);
+                    } else if (map.has('Action')) {
+                        actionAbilities.push(ability);
+                    } else if (map.has('Quick Action')) {
+                        quickActionAbilities.push(ability);
+                    } else {
+                        otherAbilities.push(ability);
+                    }
+                }
+            }
+
 
             let masteriesList;
             let attunedList;
+            let specialTriggeredAbilityList;
             let triggeredAbilityList;
             let moveActionAbilityList;
             let actionAbilityList;
@@ -644,29 +672,38 @@ class CharacterHelpers {
             let summonsList;
 
             if (settings.masonry) {
-                masteriesList = SectionHelpers.generateStructuredHtmlForSectionOverview(masteries, SectionHelpers.MasonryType, { ...settings, title: "Masteries", variables, hideIfEmpty: true, });
-                attunedList = SectionHelpers.generateStructuredHtmlForSectionOverview(attuned, SectionHelpers.MasonryType, { ...settings, title: "Attuned", variables, hideIfEmpty: true, });
-                triggeredAbilityList = SectionHelpers.generateStructuredHtmlForSectionOverview(triggeredAbilities, SectionHelpers.MasonryType, { ...settings, title: "Triggered", variables, hideIfEmpty: true, });
-                moveActionAbilityList = SectionHelpers.generateStructuredHtmlForSectionOverview(moveActionAbilities, SectionHelpers.MasonryType, { ...settings, title: "Move Actions", variables, hideIfEmpty: true, });
-                actionAbilityList = SectionHelpers.generateStructuredHtmlForSectionOverview(actionAbilities, SectionHelpers.MasonryType, { ...settings, title: "Actions", variables, hideIfEmpty: true, });
-                quickActionAbilityList = SectionHelpers.generateStructuredHtmlForSectionOverview(quickActionAbilities, SectionHelpers.MasonryType, { ...settings, title: "Quick Actions", variables, hideIfEmpty: true, });
-                otherAbilityList = SectionHelpers.generateStructuredHtmlForSectionOverview(otherAbilities, SectionHelpers.MasonryType, { ...settings, title: "Other", variables, hideIfEmpty: true, });
-                summonsList = SectionHelpers.generateStructuredHtmlForSectionOverview(summons, SectionHelpers.MasonryType, { ...settings, title: "Summons", variables, hideIfEmpty: true, });
+                let commonSettings = {
+                    variables, hideIfEmpty: true,
+                }
+                masteriesList = SectionHelpers.generateStructuredHtmlForSectionOverview(masteries, SectionHelpers.MasonryType, { ...settings, title: "Masteries", ...commonSettings, });
+                attunedList = SectionHelpers.generateStructuredHtmlForSectionOverview(attuned, SectionHelpers.MasonryType, { ...settings, title: "Attuned", ...commonSettings, });
+                specialTriggeredAbilityList = SectionHelpers.generateStructuredHtmlForSectionOverview(specialTriggeredAbilities, SectionHelpers.MasonryType, { ...settings, title: "Special Triggered", ...commonSettings, });
+                triggeredAbilityList = SectionHelpers.generateStructuredHtmlForSectionOverview(triggeredAbilities, SectionHelpers.MasonryType, { ...settings, title: "Triggered", ...commonSettings, });
+                moveActionAbilityList = SectionHelpers.generateStructuredHtmlForSectionOverview(moveActionAbilities, SectionHelpers.MasonryType, { ...settings, title: "Move Actions", ...commonSettings, });
+                actionAbilityList = SectionHelpers.generateStructuredHtmlForSectionOverview(actionAbilities, SectionHelpers.MasonryType, { ...settings, title: "Actions", ...commonSettings, });
+                quickActionAbilityList = SectionHelpers.generateStructuredHtmlForSectionOverview(quickActionAbilities, SectionHelpers.MasonryType, { ...settings, title: "Quick Actions", ...commonSettings, });
+                otherAbilityList = SectionHelpers.generateStructuredHtmlForSectionOverview(otherAbilities, SectionHelpers.MasonryType, { ...settings, title: "Other", ...commonSettings, });
+                summonsList = SectionHelpers.generateStructuredHtmlForSectionOverview(summons, SectionHelpers.MasonryType, { ...settings, title: "Summons", ...commonSettings, });
 
                 if (!settings.simple) for (let list of [masteriesList, triggeredAbilityList, moveActionAbilityList, actionAbilityList, quickActionAbilityList, otherAbilityList, summonsList]) list.listElement.setAttribute('placeholder', "No matching abilities found...");
             } else {
-                masteriesList = this.generateAbilityListHtml(character, masteries, { ...settings, title: "Masteries", variables, hideIfEmpty: true, });
-                attunedList = this.generateAbilityListHtml(character, attuned, { ...settings, title: "Attuned", variables, hideIfEmpty: true, });
-                triggeredAbilityList = this.generateAbilityListHtml(character, triggeredAbilities, { ...settings, title: "Triggered", variables, hideIfEmpty: true, });
-                moveActionAbilityList = this.generateAbilityListHtml(character, moveActionAbilities, { ...settings, title: "Move Actions", variables, hideIfEmpty: true, });
-                actionAbilityList = this.generateAbilityListHtml(character, actionAbilities, { ...settings, title: "Actions", variables, hideIfEmpty: true, });
-                quickActionAbilityList = this.generateAbilityListHtml(character, quickActionAbilities, { ...settings, title: "Quick Actions", variables, hideIfEmpty: true, });
-                otherAbilityList = this.generateAbilityListHtml(character, otherAbilities, { ...settings, title: "Other", variables, hideIfEmpty: true, });
-                summonsList = this.generateAbilityListHtml(character, summons, { ...settings, title: "Summons", variables, hideIfEmpty: true, });
+                let commonSettings = {
+                    variables, hideIfEmpty: true,
+                }
+                masteriesList = this.generateAbilityListHtml(character, masteries, { ...settings, title: "Masteries", ...commonSettings, });
+                attunedList = this.generateAbilityListHtml(character, attuned, { ...settings, title: "Attuned", ...commonSettings, });
+                specialTriggeredAbilityList = this.generateAbilityListHtml(character, specialTriggeredAbilities, { ...settings, title: "Special Triggered", ...commonSettings, });
+                triggeredAbilityList = this.generateAbilityListHtml(character, triggeredAbilities, { ...settings, title: "Triggered", ...commonSettings, });
+                moveActionAbilityList = this.generateAbilityListHtml(character, moveActionAbilities, { ...settings, title: "Move Actions", ...commonSettings, });
+                actionAbilityList = this.generateAbilityListHtml(character, actionAbilities, { ...settings, title: "Actions", ...commonSettings, });
+                quickActionAbilityList = this.generateAbilityListHtml(character, quickActionAbilities, { ...settings, title: "Quick Actions", ...commonSettings, });
+                otherAbilityList = this.generateAbilityListHtml(character, otherAbilities, { ...settings, title: "Other", ...commonSettings, });
+                summonsList = this.generateAbilityListHtml(character, summons, { ...settings, title: "Summons", ...commonSettings, });
             }
 
             abilitiesContainer.appendChild(masteriesList.container);
             abilitiesContainer.appendChild(attunedList.container);
+            abilitiesContainer.appendChild(specialTriggeredAbilityList.container);
             abilitiesContainer.appendChild(triggeredAbilityList.container);
             abilitiesContainer.appendChild(moveActionAbilityList.container);
             abilitiesContainer.appendChild(actionAbilityList.container);
@@ -707,7 +744,7 @@ class CharacterHelpers {
                 structuredSection.element.appendChild(container);
             }
 
-            if (!settings.noSearch) new SectionSearch(searchContainer, [masteriesList, attunedList, triggeredAbilityList, moveActionAbilityList, actionAbilityList, quickActionAbilityList, otherAbilityList, summonsList], { filterKey: character.id });
+            if (!settings.noSearch) new SectionSearch(searchContainer, [masteriesList, attunedList, specialTriggeredAbilityList, triggeredAbilityList, moveActionAbilityList, actionAbilityList, quickActionAbilityList, otherAbilityList, summonsList], { filterKey: character.id });
         }
 
         return element;
@@ -810,8 +847,8 @@ class CharacterHelpers {
         let variables = null;
         if (!settings.noVariables) variables = settings.variables ??= character.getVariables();
 
-        let attuned = SectionHelpers.generateStructuredHtmlForSectionOverview(character.attunedItems.getAll(), SectionHelpers.MasonryType, { ...settings, title: "Attuned", placeholder: "No items attuned...", variables, });
-        let overview = SectionHelpers.generateStructuredHtmlForSectionOverview(character.items.getAll(), SectionHelpers.MasonryType, { ...settings, title: "Other", placeholder: "No other items found...", variables, });
+        let attuned = SectionHelpers.generateStructuredHtmlForSectionOverview(character.attunedItems.getAll(), SectionHelpers.MasonryType, { ...settings, title: "Attuned", placeholder: "No items attuned...", variables, draggable: true, afterdrag: CharacterCreatorHelpers.getAfterdragForCharacterRegistry(character, character.attunedItems), });
+        let overview = SectionHelpers.generateStructuredHtmlForSectionOverview(character.items.getAll(), SectionHelpers.MasonryType, { ...settings, title: "Other", placeholder: "No other items found...", variables, draggable: true, afterdrag: CharacterCreatorHelpers.getAfterdragForCharacterRegistry(character, character.items), });
         abilitiesContainer.appendChild(attuned.container);
         abilitiesContainer.appendChild(overview.container);
 

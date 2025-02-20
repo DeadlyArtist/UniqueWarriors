@@ -3,6 +3,14 @@ class CharacterCreatorHelpers {
         return getPath() + "?id=" + getQueryVariable("id") + "#" + field;
     }
 
+    static getAfterdragForCharacterRegistry(character, registry) {
+        return (section, beforeSection) => {
+            registry.unregister(section);
+            registry.register(section, { insertBefore: beforeSection });
+            CharacterHelpers.saveCharacter(character);
+        }
+    }
+
     static generateStructuredHtmlForCharacterCreator(character, settings = null) {
         settings ??= {};
 
@@ -358,7 +366,7 @@ class CharacterCreatorHelpers {
 
         element.appendChild(hb(4));
         element.appendChild(fromHTML(`<h1>Learned Techniques`));
-        let chosenOverview = SectionHelpers.generateStructuredHtmlForSectionOverview(chosenTechniques.getAll(), SectionHelpers.MasonryType, { addSearch: true, filterKey: this.getSearchFilterKey('learned_techniques'), variables });
+        let chosenOverview = SectionHelpers.generateStructuredHtmlForSectionOverview(chosenTechniques.getAll(), SectionHelpers.MasonryType, { addSearch: true, filterKey: this.getSearchFilterKey('learned_techniques'), variables, draggable: true, afterdrag: this.getAfterdragForCharacterRegistry(character, chosenTechniques), });
         element.appendChild(chosenOverview.container);
         chosenOverview.listElement.setAttribute('placeholder', 'No techniques learned yet...');
 
@@ -470,7 +478,7 @@ class CharacterCreatorHelpers {
         element.appendChild(summonsContainer);
         summonsContainer.appendChild(hb(4));
         summonsContainer.appendChild(fromHTML(`<h1>Learned Summons`));
-        let chosenSummonsOverview = SectionHelpers.generateStructuredHtmlForSectionOverview(chosenSummons.getAll(), SectionHelpers.MasonryType, { addSearch: true, filterKey: this.getSearchFilterKey('learned_summons'), variables });
+        let chosenSummonsOverview = SectionHelpers.generateStructuredHtmlForSectionOverview(chosenSummons.getAll(), SectionHelpers.MasonryType, { addSearch: true, filterKey: this.getSearchFilterKey('learned_summons'), variables, draggable: true, afterdrag: this.getAfterdragForCharacterRegistry(character, chosenSummons) });
         summonsContainer.appendChild(chosenSummonsOverview.container);
         chosenSummonsOverview.listElement.setAttribute('placeholder', 'No summons learned yet...');
 
@@ -900,7 +908,7 @@ class CharacterCreatorHelpers {
 
         element.appendChild(hb(4));
         element.appendChild(fromHTML(`<h1>Learned Masteries`));
-        let chosenOverview = SectionHelpers.generateStructuredHtmlForSectionOverview(chosenMasteries.getAll().map(mastery => Registries.masteries.get(mastery) ?? mastery), SectionHelpers.MasonryType, { addSearch: true, filterKey: this.getSearchFilterKey('learned_masteries'), variables });
+        let chosenOverview = SectionHelpers.generateStructuredHtmlForSectionOverview(chosenMasteries.getAll().map(mastery => Registries.masteries.get(mastery) ?? mastery), SectionHelpers.MasonryType, { addSearch: true, filterKey: this.getSearchFilterKey('learned_masteries'), variables, draggable: true, afterdrag: this.getAfterdragForCharacterRegistry(character, chosenMasteries) });
         element.appendChild(chosenOverview.container);
         chosenOverview.listElement.setAttribute('placeholder', 'No masteries learned yet...');
         function updateChosenOverview() {
@@ -1557,7 +1565,7 @@ class CharacterCreatorHelpers {
         // sell, throw away, return
         element.appendChild(hb(4));
         element.appendChild(fromHTML(`<h1>Owned Items`));
-        let chosenOverview = SectionHelpers.generateStructuredHtmlForSectionOverview(chosenItems.getAll(), SectionHelpers.MasonryType, { addSearch: true, filterKey: this.getSearchFilterKey('owned_items'), variables });
+        let chosenOverview = SectionHelpers.generateStructuredHtmlForSectionOverview(chosenItems.getAll(), SectionHelpers.MasonryType, { addSearch: true, filterKey: this.getSearchFilterKey('owned_items'), variables, draggable: true, afterdrag: this.getAfterdragForCharacterRegistry(character, chosenItems) });
         element.appendChild(chosenOverview.container);
         chosenOverview.listElement.setAttribute('placeholder', 'No items owned yet...');
         function updateChosenOverview() {
