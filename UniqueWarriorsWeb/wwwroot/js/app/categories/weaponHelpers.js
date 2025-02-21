@@ -2,6 +2,7 @@
 class Weapons {
     static acid = "Acid";
     static alchemy = "Alchemy";
+    static ascetism = "Ascetism";
     static axe = "Axe";
     static blood = "Blood";
     static blowgun = "Blowgun";
@@ -19,7 +20,9 @@ class Weapons {
     static foot = "Foot";
     static hammer = "Hammer";
     static hand = "Hand";
+    static halberd = "Halberd";
     static ice = "Ice";
+    static illusions = "Illusions";
     static light = "Light";
     static lightning = "Lightning";
     static machinery = "Machinery";
@@ -42,6 +45,7 @@ class Weapons {
     static spear = "Spear";
     static spirits = "Spirits";
     static sword = "Sword";
+    static taoism = "Taoism";
     static water = "Water";
     static wind = "Wind";
     static words = "Words";
@@ -66,6 +70,7 @@ class WeaponHelpers {
         [Weapons.foot]: [DamageTypes.bludgeoning],
         [Weapons.hammer]: [DamageTypes.bludgeoning],
         [Weapons.hand]: [DamageTypes.bludgeoning],
+        [Weapons.halberd]: [DamageTypes.slashing],
         [Weapons.machineGun]: [DamageTypes.piercing],
         [Weapons.maw]: [DamageTypes.piercing],
         [Weapons.orb]: [DamageTypes.bludgeoning],
@@ -95,13 +100,16 @@ class WeaponHelpers {
 
         // Special
         [Weapons.alchemy]: [DamageTypes.cryo, DamageTypes.thermal, DamageTypes.shock],
+        [Weapons.ascetism]: [DamageTypes.holy],
         [Weapons.cosmology]: [DamageTypes.unholy],
         [Weapons.divinity]: [DamageTypes.holy],
+        [Weapons.illusions]: [DamageTypes.psychic],
         [Weapons.machinery]: [DamageTypes.bludgeoning, DamageTypes.piercing, DamageTypes.thermal],
         [Weapons.occultism]: [DamageTypes.unholy],
         [Weapons.psionics]: [DamageTypes.psychic],
         [Weapons.souls]: [DamageTypes.necrotic],
         [Weapons.spirits]: [DamageTypes.psychic],
+        [Weapons.taoism]: [DamageTypes.metabolism],
         [Weapons.words]: [DamageTypes.psychic],
     });
 
@@ -160,6 +168,11 @@ class WeaponHelpers {
         [Weapons.hand]: {
             dieSize: -2,
             grazeRange: 3,
+        },
+        [Weapons.halberd]: {
+            dieSize: 2,
+            accuracy: -2,
+            reach: 2,
         },
         [Weapons.machineGun]: {
             dieSize: -2,
@@ -264,9 +277,14 @@ class WeaponHelpers {
             dieSize: -2,
             critRange: 1,
         },
+
+        // Special
         [Weapons.alchemy]: {
             dieSize: -2,
             grazeRange: 3,
+        },
+        [Weapons.ascetism]: {
+
         },
         [Weapons.cosmology]: {
             grazeRange: 3,
@@ -275,6 +293,9 @@ class WeaponHelpers {
         [Weapons.divinity]: {
             critRange: 1,
             grazeRange: -3,
+        },
+        [Weapons.illusions]: {
+            grazeRange: 3,
         },
         [Weapons.machinery]: {
             dieSize: -2,
@@ -296,6 +317,9 @@ class WeaponHelpers {
         [Weapons.spirits]: {
 
         },
+        [Weapons.taoism]: {
+            grazeRange: -3,
+        },
         [Weapons.words]: {
             dieSize: -2,
             grazeRange: 3,
@@ -316,6 +340,7 @@ class WeaponHelpers {
         [Weapons.foot]: 'a',
         [Weapons.hammer]: 'a',
         [Weapons.hand]: 'a',
+        [Weapons.halberd]: 'a',
         [Weapons.machineGun]: 'a',
         [Weapons.maw]: 'a',
         [Weapons.orb]: 'an',
@@ -345,13 +370,16 @@ class WeaponHelpers {
 
         // Special
         [Weapons.alchemy]: 'an',
+        [Weapons.ascetism]: 'an',
         [Weapons.cosmology]: 'a',
         [Weapons.divinity]: 'a',
+        [Weapons.illusions]: 'an',
         [Weapons.machinery]: 'a',
         [Weapons.occultism]: 'an',
         [Weapons.psionics]: 'a',
         [Weapons.souls]: 'a',
         [Weapons.spirits]: 'a',
+        [Weapons.taoism]: 'a',
         [Weapons.words]: 'a',
     });
 
