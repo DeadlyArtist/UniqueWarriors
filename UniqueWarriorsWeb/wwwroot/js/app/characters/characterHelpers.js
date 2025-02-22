@@ -302,7 +302,7 @@ class CharacterHelpers {
         if (!settings.embedded || !settings.simple) {
             const section = CharacterHelpers.getCharacterSection(character);
             section.title = null;
-            const structuredSection = SectionHelpers.generateStructuredHtmlForSection(section, settings);
+            const structuredSection = SectionHelpers.generateStructuredHtmlForSection(section, { ...settings, tooltips: "tagsOnly" });
 
             element.appendChild(structuredSection.element);
             structuredSection.element.classList.add("character-summary");
@@ -1284,7 +1284,7 @@ class StructuredCharacterSectionOverviewHtml {
     addCharacter(character, insertSettings) {
         insertSettings ??= {};
         const section = CharacterHelpers.getCharacterSection(character);
-        const structuredSection = SectionHelpers.wrapSectionForOverview(section, this.type, { ...this.insertSettings, link: `/app/character?id=${character.id}` });
+        const structuredSection = SectionHelpers.wrapSectionForOverview(section, this.type, { ...this.insertSettings, link: `/app/character?id=${character.id}`, tooltips: "tagsOnly" });
         structuredSection.element._character = character;
 
         this.sections.register(structuredSection, { ...insertSettings, id: structuredSection.section.id });
