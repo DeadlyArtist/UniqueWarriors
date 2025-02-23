@@ -231,6 +231,10 @@ class AbilitySectionHelpers {
         return unlocks;
     }
 
+    static isAncestry(section) {
+        return section.tags.has("Ancestry");
+    }
+
     static isSkill(section) {
         return section.tags.has("Skill");
     }

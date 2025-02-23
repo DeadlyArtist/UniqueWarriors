@@ -15,6 +15,7 @@ class Resources {
     static index_html = this.register(new Resource("/", true));
 
     // Game
+    static ancestries = this.register(new Resource("/data/ancestries.json", true));
     static conditions = this.register(new Resource("/data/conditions.json", true));
     static masteries_a = this.register(new Resource("/data/masteries_a.json", true));
     static masteries_m = this.register(new Resource("/data/masteries_m.json", true));

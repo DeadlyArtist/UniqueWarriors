@@ -410,6 +410,8 @@ class SectionHelpers {
         settings ??= {};
         settings = { ...settings };
         settings.variables = settings.variables ? new Map(settings.variables) : new Map();
+        if (AbilitySectionHelpers.isAncestry(section) ||
+            AbilitySectionHelpers.isSkill(section)) settings.tooltips = "tagsOnly";
 
         const sectionElement = fromHTML(`<div class="section">`);
         const structuredSection = new StructuredSectionHtml(

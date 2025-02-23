@@ -8,6 +8,9 @@ class Loader {
 
     static collections = [
         // Game
+        new Collection(Registries.ancestries, [
+            new Collection.SectionResourceWrapper(Resources.ancestries)
+        ]),
         new Collection(Registries.conditions, [
             new Collection.SectionResourceWrapper(Resources.conditions)
         ]),

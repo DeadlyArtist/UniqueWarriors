@@ -1754,7 +1754,7 @@ class CharacterCreatorHelpers {
         element.appendChild(hb(4));
         let unchosenAncestriesBar = fromHTML(`<div class="listHorizontal gap-2">`);
         element.appendChild(unchosenAncestriesBar);
-        let ancestries = new Set(Registries.ancestries.getAll());
+        let ancestries = new Set(AncestryHelpers.getAncestryNames());
 
         function chooseAncestry(ancestry) {
             if (character.ancestry == ancestry) return;
@@ -1778,6 +1778,7 @@ class CharacterCreatorHelpers {
                 let element = fromHTML(`<button class="listHorizontal gap-2 largeElement bordered hoverable">`);
                 (hasAncestry ? chosenAncestriesBar : unchosenAncestriesBar).appendChild(element);
                 if (hasAncestry) element.classList.add('brand-border-color');
+                element.setAttribute('tooltip-path', 'ancestries/' + ancestry);
                 element.addEventListener('click', () => hasAncestry ? unchooseAncestry(ancestry) : chooseAncestry(ancestry));
                 let nameElement = fromHTML(`<div>`);
                 element.appendChild(nameElement);
