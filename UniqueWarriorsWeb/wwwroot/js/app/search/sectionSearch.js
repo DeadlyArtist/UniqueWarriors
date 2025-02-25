@@ -168,6 +168,8 @@ class SectionSearch {
         const { type, value, rawValue } = filter;
         let filterElement = fromHTML(`<div class="smallElement bordered listHorizontal">`);
         this.filterListElement.appendChild(filterElement);
+        filterElement._filter = filter;
+
         let filterLabel = fromHTML(`<div class="noLineHeight">`);
         filterElement.appendChild(filterLabel);
         filterLabel.textContent = type + ": " + rawValue;
@@ -205,9 +207,8 @@ class SectionSearch {
     }
 
     removeFilter(filterElement) {
-        const filterType = filterElement.textContent.split(":")[0].trim();
-        const searchTerm = filterElement.textContent.split(":")[1].trim();
-        this.filters = this.filters.filter(f => !(f.type === filterType && f.rawValue === searchTerm));
+        const filter = filterElement._filter;
+        this.filters = this.filters.filter(f => f != filter);
         filterElement.remove();
 
         if (this.filters.length == 0) this.beforeFilterBreak.classList.add('hide');
