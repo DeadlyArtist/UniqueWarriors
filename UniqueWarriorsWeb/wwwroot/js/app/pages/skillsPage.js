@@ -5,7 +5,6 @@ class SkillsPageManager extends PageManager {
     constructor(settings) {
         super();
         settings ??= {};
-        this.tabOverride = settings.path;
         this.settings = settings;
     }
 
@@ -13,6 +12,8 @@ class SkillsPageManager extends PageManager {
         settings ??= {};
         let self = this;
         let loadId = this.loadId;
+        this.tabOverride = settings.path;
+        this.noSearchBar = !!settings.noSearchBar;
         this.tab = this.tabOverride ?? window.localStorage.getItem('skill-overview-tab');
         setTimeout(() => {
             Loader.onCollectionsLoaded(() => {
@@ -23,7 +24,7 @@ class SkillsPageManager extends PageManager {
 
     delayedLoad() {
         let tabBar = fromHTML(`<div class="listHorizontal gap-2 centerContentHorizontally">`);
-        this.pageElement.appendChild(tabBar);
+        if (!this.tabOverride) this.pageElement.appendChild(tabBar);
 
         let tabs = this.tabs = [
             { name: "Grid", provider: tab => this.generateGridHtml(), },
@@ -47,6 +48,7 @@ class SkillsPageManager extends PageManager {
         this.pageElement.appendChild(tabElement);
 
         this.reloadTab();
+        this.sendOverviewEvent();
     }
 
     updateTabBar() {
@@ -77,17 +79,34 @@ class SkillsPageManager extends PageManager {
         if (!tab || tab == this.currentTab) return;
 
         this.currentTab = tab;
-        window.localStorage.setItem('skill-overview-tab', tab.name);
+        if (!this.tabOverride) window.localStorage.setItem('skill-overview-tab', tab.name);
 
         this.reloadTab();
     }
 
     generateGridHtml() {
-        return SectionHelpers.generateStructuredHtmlForSectionOverview(Registries.skills.getAll(), SectionHelpers.MasonryType, { addSearch: true, tooltips: "tagsOnly" }).container;
+        const overview = SectionHelpers.generateStructuredHtmlForSectionOverview(Registries.skills.getAll(), SectionHelpers.MasonryType, { ...(this.settings.settings ?? {}), addSearch: !this.noSearchBar, tooltips: "tagsOnly" });
+        this.overview = overview;
+        return overview.container;
     }
 
     generateTreeHtml() {
         return CharacterHelpers.generateSkillsOverviewHtml();
+    }
+
+    sendOverviewEvent() {
+        window.dispatchEvent(new CustomEvent(this.loadId + "__Overview"));
+    }
+
+    async onOverviewLoaded(callback = doNothing) {
+        return new Promise((resolve, reject) => {
+            let _callback = () => { callback(); resolve(); }
+            if (this.overview) {
+                _callback();
+            } else {
+                window.addEventListener(this.loadId + "__Overview", e => _callback());
+            }
+        });
     }
 
     unload() {

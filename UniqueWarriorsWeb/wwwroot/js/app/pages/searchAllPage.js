@@ -16,7 +16,7 @@ class SearchAllPageManager extends PageManager {
             header.textContent = page.name;
             let element = fromHTML(`<div class="children-w-100">`);
             pageContainer.appendChild(element);
-            page.load({ pageElement: element, noSearchBar: true});
+            page.load({ pageElement: element, noSearchBar: true, path: "Grid" });
             promises.push(page.pageManager.onOverviewLoaded());
         }
 
@@ -36,4 +36,4 @@ class SearchAllPageManager extends PageManager {
     }
 }
 
-App.onAppLoaded(() => SearchAllPageManager.pages = [Pages.rules, Pages.techniques, Pages.masteries, Pages.summons, Pages.conditions]);
+App.onAppLoaded(() => SearchAllPageManager.pages = [Pages.rules, Pages.neontris, Pages.ancestries, Pages.skills, Pages.techniques, Pages.masteries, Pages.summons, Pages.shop, Pages.conditions, Pages.defaultAbilities]);
