@@ -29,6 +29,7 @@ class Weapons {
     static machineGun = "Machine Gun";
     static maw = "Maw";
     static metal = "Metal";
+    static moon = "Moon";
     static occultism = "Occultism";
     static orb = "Orb";
     static plants = "Plants";
@@ -91,6 +92,7 @@ class WeaponHelpers {
         [Weapons.light]: [DamageTypes.holy, DamageTypes.thermal],
         [Weapons.lightning]: [DamageTypes.shock],
         [Weapons.metal]: [DamageTypes.piercing, DamageTypes.bludgeoning],
+        [Weapons.moon]: [DamageTypes.cryo, DamageTypes.unholy],
         [Weapons.plants]: [DamageTypes.slashing, DamageTypes.piercing],
         [Weapons.poison]: [DamageTypes.metabolism],
         [Weapons.shadow]: [DamageTypes.unholy],
@@ -254,6 +256,10 @@ class WeaponHelpers {
             critRange: 1,
             accuracy: -2,
         },
+        [Weapons.moon]: {
+            critRange: 1,
+            grazeRange: -3,
+        },
         [Weapons.plants]: {
             grazeRange: -3,
             reach: 2,
@@ -361,6 +367,7 @@ class WeaponHelpers {
         [Weapons.light]: 'a',
         [Weapons.lightning]: 'a',
         [Weapons.metal]: 'a',
+        [Weapons.moon]: 'a',
         [Weapons.plants]: 'a',
         [Weapons.poison]: 'a',
         [Weapons.shadow]: 'a',
