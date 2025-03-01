@@ -1420,6 +1420,7 @@ class CharacterCreatorHelpers {
             if (character.money == newValue) return;
             character.money = newValue;
             CharacterHelpers.saveCharacter(character);
+            updateAll();
         });
         moneyInput.addEventListener('focusout', () => {
             if (moneyInput.value == '') moneyInput.value = character.money;
