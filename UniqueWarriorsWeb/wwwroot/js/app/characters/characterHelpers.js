@@ -1083,6 +1083,9 @@ class CharacterHelpers {
             character.details.belongings = text;
             CharacterHelpers.saveCharacter(character);
         });
+        belongingsInput.addEventListener('keydown', e => {
+            ContentEditableHelpers.checkForTab(e);
+        });
 
         element.appendChild(hb(4));
         element.appendChild(fromHTML(`<h1>Notes`));
@@ -1096,6 +1099,9 @@ class CharacterHelpers {
             if (ContentEditableHelpers.textNeedsFixing(text)) notesInput.textContent = text = ContentEditableHelpers.fixText(text);
             character.details.notes = text;
             CharacterHelpers.saveCharacter(character);
+        });
+        notesInput.addEventListener('keydown', e => {
+            ContentEditableHelpers.checkForTab(e);
         });
 
 

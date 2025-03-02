@@ -1984,6 +1984,9 @@ class CharacterCreatorHelpers {
             character.details.appearance = text;
             CharacterHelpers.saveCharacter(character);
         });
+        appearanceInput.addEventListener('keydown', e => {
+            ContentEditableHelpers.checkForTab(e);
+        });
 
         element.appendChild(hb(4));
         element.appendChild(SectionHelpers.generateStructuredHtmlForSection(SectionHelpers.resolveSectionExpression('rules/Character Creation/Why?'), { variables }).element);
@@ -1999,6 +2002,9 @@ class CharacterCreatorHelpers {
             character.details.why = text;
             CharacterHelpers.saveCharacter(character);
         });
+        whyInput.addEventListener('keydown', e => {
+            ContentEditableHelpers.checkForTab(e);
+        });
 
         element.appendChild(hb(4));
         element.appendChild(SectionHelpers.generateStructuredHtmlForSection(SectionHelpers.resolveSectionExpression('rules/Character Creation/Write Backstory'), { variables }).element);
@@ -2013,6 +2019,9 @@ class CharacterCreatorHelpers {
             if (ContentEditableHelpers.textNeedsFixing(text)) backstoryInput.textContent = text = ContentEditableHelpers.fixText(text);
             character.details.backstory = text;
             CharacterHelpers.saveCharacter(character);
+        });
+        backstoryInput.addEventListener('keydown', e => {
+            ContentEditableHelpers.checkForTab(e);
         });
 
         return element;
