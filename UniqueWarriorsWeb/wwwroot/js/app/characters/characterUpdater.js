@@ -247,8 +247,8 @@ class CharacterUpdater {
             for (let section of source.subSections) if (!AbilitySectionHelpers.isSubMastery(section) || mastery.subSections.has(section)) newMastery.subSections.register(section);
             masteries.register(newMastery);
         }
-        character.masteries.clear();
-        masteries.forEach(t => character.masteries.register(t));
+        character.masteryManager.clear();
+        masteries.forEach(t => character.masteryManager.learnWithChildren(t));
 
         let summons = new Registry();
         for (let summon of character.summons) {

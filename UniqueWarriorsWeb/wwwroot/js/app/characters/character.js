@@ -496,6 +496,14 @@ class MasteryManager {
         this.ascendancies = data.ascendancies;
     }
 
+    clear() {
+        this.splitMasteries.clear();
+        this.masteries.clear();
+        this.upgrades.clear();
+        this.evolutions.clear();
+        this.ascendancies.clear();
+    }
+
     getSplitRegistry(splitMastery, subMastery) {
         if (AbilitySectionHelpers.isUpgrade(subMastery)) {
             return splitMastery.upgrades;
@@ -567,6 +575,7 @@ class MasteryManager {
 
     learnWithChildren(mastery) {
         let splitMastery = AbilitySectionHelpers.splitMastery(mastery);
+        this.masteries.register(splitMastery.mastery);
         this.splitMasteries.register(splitMastery);
         splitMastery.upgrades.forEach(m => this.upgrades.register(m, { id: m.getPath() }));
         splitMastery.evolutions.forEach(m => this.evolutions.register(m, { id: m.getPath() }));
