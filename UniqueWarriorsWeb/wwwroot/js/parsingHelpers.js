@@ -1,57 +1,129 @@
 class ParsingHelpers {
-    static extractCode(markdown, codeBlocksOnly = true, concatenate = true) {
+    static extractCodeInfo(markdown, codeBlocksOnly = true) {
         let amount = 0;
-        let isCodeBlock = false;
-        let isIndentedCode = false;
         let codes = [];
         let codeStart = 0;
         for (let i = 0; i < markdown.length; i++) {
             if (markdown[i] === "\`") {
+                if (amount == 0) codeStart = i;
                 amount++;
             } else {
                 if (amount === 3) {
-                    if (isCodeBlock) {
-                        codes.push(markdown.substring(codeStart, i - 2));
-                        isCodeBlock = false;
-                    } else if (isIndentedCode) {
+                    let contentStart = i;
+
+                    let before = codeStart - 1;
+                    let indentation = "";
+                    let invalid = false;
+                    while (before >= 0 && markdown[before] !== "\n") {
+                        if (markdown[before] === " " || markdown[before] === "\t") {
+                            indentation = markdown[before] + indentation;
+                        } else {
+                            invalid = true;
+                        }
+                        before--;
+                    }
+                    if (invalid) {
+                        amount = 0;
                         continue;
                     } else {
-                        let cutOff = false;
-                        while (markdown[i] !== "\n") {
-                            i++;
-                            if (i === markdown.length || i + 1 === markdown.length) {
-                                cutOff = true;
+                        codeStart = before + 1;
+                    }
+
+                    let j = i;
+                    let lineHappened = false;
+                    let language = null;
+                    let contentEnd = j - 1;
+                    while (j + 2 < markdown.length) {
+                        contentEnd = j - 1;
+                        if (markdown[j] == "\`" && markdown[j + 1] == "\`" && markdown[j + 2] == "\`") {
+                            if (!lineHappened) {
+                                j += 2;
                                 break;
                             }
+
+                            let beforeEnd = contentEnd;
+                            let endIndentation = "";
+                            while (markdown[beforeEnd] !== "\n") {
+                                endIndentation = markdown[beforeEnd] + endIndentation;
+                                beforeEnd--;
+                            }
+
+                            if (endIndentation !== indentation) {
+                                j += 2;
+                                continue;
+                            }
+
+                            contentEnd = beforeEnd;
+                            j += 2;
+                            break;
                         }
-                        if (cutOff) break;
-                        codeStart = i + 1;
-                        isCodeBlock = true;
+                        if (markdown[j] == "\n" && !lineHappened) {
+                            lineHappened = true;
+                            language = markdown.substring(contentStart, j).trim();
+                            if (!language) language = null;
+                            contentStart = j + 1;
+                        }
+                        j++;
                     }
+                    i = j;
+                    if (markdown[contentEnd] == "\n") contentEnd--;
+
+                    let rawContent = markdown.substring(contentStart, contentEnd + 1);
+                    let lines = rawContent.split('\n');
+                    // Remove indentation from all lines if it matches the detected indentation
+                    if (indentation) {
+                        let indentRegex = new RegExp('^' + escapeRegex(indentation));
+                        lines = lines.map(line => line.replace(indentRegex, ''));
+                    }
+                    let cleanedContent = lines.join('\n');
+
+                    codes.push({
+                        block: true,
+                        language,
+                        indentation,
+                        start: codeStart,
+                        end: i,
+                        contentStart: contentStart,
+                        contentEnd: contentEnd,
+                        content: cleanedContent,
+                        code: markdown.substring(codeStart, i + 1),
+                    });
                 } else if (amount === 1) {
-                    if (isIndentedCode) {
-                        if (!codeBlocksOnly) codes.push(markdown.substring(codeStart, i));
-                        isIndentedCode = false;
-                    } else if (isCodeBlock) {
-                        continue;
-                    } else {
-                        if (i + 1 === markdown.length) break;
-                        codeStart = i + 1;
-                        isIndentedCode = true;
+                    let contentStart = i;
+                    let j = i;
+                    let lineHappened = false;
+                    while (j < markdown.length) {
+                        if (markdown[j] == "\`") break;
+                        if (markdown[j] == "\n") {
+                            lineHappened = true;
+                            break;
+                        }
+                        j++;
                     }
+                    i = j;
+                    if (lineHappened) continue;
+                    let contentEnd = i - 1;
+                    if (!codeBlocksOnly) codes.push({
+                        block: false,
+                        start: codeStart,
+                        end: i,
+                        contentStart: contentStart,
+                        contentEnd: contentEnd,
+                        content: markdown.substring(contentStart, contentEnd + 1),
+                        code: markdown.substring(codeStart, i + 1),
+                    });
                 }
                 amount = 0;
             }
         }
 
-        if (isCodeBlock) {
-            codes.push(markdown.substring(codeStart, markdown.length - amount));
-        } else if (isIndentedCode) {
-            if (!codeBlocksOnly) codes.push(markdown.substring(codeStart, markdown.length - amount));
-        }
+        return codes;
+    }
+
+    static extractCode(markdown, codeBlocksOnly = true, concatenate = true) {
+        let codes = ParsingHelpers.extractCodeInfo(markdown, codeBlocksOnly).map(c => c.content);
 
         if (concatenate) codes = codes.join('\n');
-
         return codes;
     }
 }
