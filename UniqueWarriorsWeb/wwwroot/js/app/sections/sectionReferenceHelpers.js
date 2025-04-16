@@ -398,6 +398,7 @@ class SectionReferenceHelpers {
         for (const group of groupedSnippets.values()) {
             if (group.blacklist) group.blacklist = group.blacklist + ', .snippetTarget';
             else group.blacklist = '.snippetTarget';
+            group.blacklist += ', ' + Tooltip.tooltipQuery;
         }
 
         let groups = [...groupedSnippets.values()].sort((a, b) => ((b.whitelist ?? '').length + (b.blacklist ?? '').length) - ((a.whitelist ?? '').length + (a.blacklist ?? '').length));
